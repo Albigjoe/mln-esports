@@ -54,9 +54,20 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   // Active tournaments
   const tournamentsMap: Record<string, any> = {};
   games.forEach(g => {
-    tournamentsMap[g.tournament.id] = g.tournament;
+    let t = g.tournament;
+    if (t.id === 'cmpbswve2000170oqkuet2sva') {
+      t = { ...t, name: 'AFL S2: NIGERIA QUALIFIERS' };
+    }
+    tournamentsMap[t.id] = t;
   });
-  const activeTournaments = Object.values(tournamentsMap);
+  let activeTournaments = Object.values(tournamentsMap);
+  if (activeTournaments.length === 0) {
+    activeTournaments = [{
+      id: 'cmpbswve2000170oqkuet2sva',
+      name: 'AFL S2: NIGERIA QUALIFIERS',
+      logoUrl: null
+    }];
+  }
 
   // Last 3 matches
   const lastMatches = completedGames.slice(0, 3);
