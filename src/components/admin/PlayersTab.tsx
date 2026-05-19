@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function PlayersTab({ players }: { players: any[] }) {
+export default function PlayersTab({ players, teams }: { players: any[], teams: any[] }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -11,6 +11,7 @@ export default function PlayersTab({ players }: { players: any[] }) {
   const [username, setUsername] = useState('');
   const [pictureUrl, setPictureUrl] = useState('');
   const [realName, setRealName] = useState('');
+  const [teamId, setTeamId] = useState('');
 
   const handleCreate = async () => {
     if (!username) { setMsg('Username is required'); return; }
@@ -19,21 +20,21 @@ export default function PlayersTab({ players }: { players: any[] }) {
       const res = await fetch('/api/players', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, pictureUrl, realName }),
+        body: JSON.stringify({ username, pictureUrl, realName, teamId }),
       });
       const data = await res.json();
       if (data.success) {
         setMsg('✓ Player created!');
-        setUsername(''); setPictureUrl(''); setRealName(''); setShowForm(false); router.refresh();
+        setUsername(''); setPictureUrl(''); setRealName(''); setTeamId(''); setShowForm(false); router.refresh();
       } else { setMsg('Error: ' + data.error); }
     } catch (e: any) { setMsg('Error: ' + e.message); }
     setSaving(false);
   };
 
-  const updatePicture = async (id: string, url: string) => {
+  const updatePlayerField = async (id: string, field: string, val: string) => {
     const res = await fetch(`/api/players/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pictureUrl: url }),
+      body: JSON.stringify({ [field]: val }),
     });
     if ((await res.json()).success) { router.refresh(); }
   };
@@ -54,10 +55,17 @@ export default function PlayersTab({ players }: { players: any[] }) {
         <div className="bg-surface border border-mln-green/30 rounded-xl p-6 mb-6 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
           <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Create Player Profile</div>
           <p className="text-gray-400 text-sm mb-4">Add a player so their picture appears on the stats pages when this username is typed in a game pick.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">In-Game Name</label><input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. Panda" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Real Name (Optional)</label><input value={realName} onChange={e => setRealName(e.target.value)} placeholder="e.g. John Doe" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Picture URL</label><input value={pictureUrl} onChange={e => setPictureUrl(e.target.value)} placeholder="/panda.png or https://..." className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
+            <div>
+              <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team (Optional)</label>
+              <select value={teamId} onChange={e => setTeamId(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none">
+                <option value="">Select Team</option>
+                {teams.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
           </div>
           <div className="flex gap-3 items-center">
             <button onClick={handleCreate} disabled={saving} className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50">{saving ? 'Saving...' : 'Create'}</button>
@@ -69,11 +77,16 @@ export default function PlayersTab({ players }: { players: any[] }) {
       <div className="bg-background border border-border-color rounded-xl overflow-hidden">
         <table className="w-full text-left text-sm text-gray-400">
           <thead className="bg-surface text-xs uppercase text-white">
-            <tr><th className="px-6 py-4">Player</th><th className="px-6 py-4">Real Name</th><th className="px-6 py-4">Picture URL</th></tr>
+            <tr>
+              <th className="px-6 py-4">Player</th>
+              <th className="px-6 py-4">Real Name</th>
+              <th className="px-6 py-4">Team</th>
+              <th className="px-6 py-4">Picture URL</th>
+            </tr>
           </thead>
           <tbody>
             {players.length === 0 ? (
-              <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No players added yet.</td></tr>
+              <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No players added yet.</td></tr>
             ) : players.map((p: any) => (
               <tr key={p.id} className="border-b border-border-color hover:bg-surface-hover transition-colors">
                 <td className="px-6 py-4 font-bold text-white flex items-center gap-3">
@@ -84,7 +97,13 @@ export default function PlayersTab({ players }: { players: any[] }) {
                 </td>
                 <td className="px-6 py-4">{p.realName || '-'}</td>
                 <td className="px-6 py-4">
-                  <input defaultValue={p.pictureUrl || ''} onBlur={e => e.target.value !== p.pictureUrl && updatePicture(p.id, e.target.value)} placeholder="Image URL..." className="w-full max-w-[300px] bg-surface border border-border-color rounded px-2 py-1 text-xs text-white focus:border-mln-green outline-none" />
+                  <select defaultValue={p.teamId || ''} onChange={e => updatePlayerField(p.id, 'teamId', e.target.value)} className="bg-surface border border-border-color rounded px-2 py-1 text-xs text-white focus:border-mln-green outline-none">
+                    <option value="">No Team</option>
+                    {teams.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </td>
+                <td className="px-6 py-4">
+                  <input defaultValue={p.pictureUrl || ''} onBlur={e => e.target.value !== p.pictureUrl && updatePlayerField(p.id, 'pictureUrl', e.target.value)} placeholder="Image URL..." className="w-full max-w-[300px] bg-surface border border-border-color rounded px-2 py-1 text-xs text-white focus:border-mln-green outline-none" />
                 </td>
               </tr>
             ))}

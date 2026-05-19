@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { getHeroImage, getPlayerImage } from '@/lib/utils';
+import Link from 'next/link';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 
@@ -261,8 +262,15 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                               <img src={getPlayerImage(mvp.player, players)} alt={mvp.player} className="w-full h-full object-cover" />
                             </div>
                             <div className="text-left">
-                              <div className="text-lg font-black text-white line-clamp-1 leading-none">{mvp.player}</div>
-                              <div className="text-[10px] text-gray-400 mt-1 line-clamp-1 font-bold uppercase tracking-widest">{mvp.team}</div>
+                              <Link href={`/players/${mvp.player}`} className="text-lg font-black text-white line-clamp-1 leading-none hover:text-mln-green transition-colors">{mvp.player}</Link>
+                              {(() => {
+                                const teamId = teams.find((t: any) => t.name.toLowerCase() === mvp.team.toLowerCase())?.id;
+                                return teamId ? (
+                                  <Link href={`/teams/${teamId}`} className="text-[10px] text-gray-400 hover:text-mln-green mt-1 line-clamp-1 font-bold uppercase tracking-widest block">{mvp.team}</Link>
+                                ) : (
+                                  <div className="text-[10px] text-gray-400 mt-1 line-clamp-1 font-bold uppercase tracking-widest">{mvp.team}</div>
+                                );
+                              })()}
                             </div>
                           </div>
                         </>
@@ -293,7 +301,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                   {games.slice(0, 5).map((g: any) => (
                     <div key={g.id} className="bg-surface border border-border-color hover:border-mln-green/30 transition-colors rounded-xl overflow-hidden p-6 flex flex-col md:flex-row items-center justify-between gap-6">
                       <div className="flex-1 text-center md:text-right">
-                        <span className={`font-black text-xl block md:inline ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</span>
+                        <Link href={`/teams/${g.team1Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</Link>
                         {g.winner === 'team1' && <span className="ml-0 md:ml-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
                       </div>
                       <div className="flex flex-col items-center justify-center text-center">
@@ -302,7 +310,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                       </div>
                       <div className="flex-1 text-center md:text-left">
                         {g.winner === 'team2' && <span className="mr-0 md:mr-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
-                        <span className={`font-black text-xl block md:inline ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</span>
+                        <Link href={`/teams/${g.team2Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</Link>
                       </div>
                     </div>
                   ))}
@@ -368,11 +376,25 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                                 <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
                               </div>
                               <div>
-                                <div className="font-black text-white text-sm md:text-base">{p.player}</div>
-                                <div className="block sm:hidden text-[10px] text-gray-500 font-bold mt-0.5">{p.team}</div>
+                                <Link href={`/players/${p.player}`} className="font-black text-white text-sm md:text-base hover:text-mln-green transition-colors">{p.player}</Link>
+                                {(() => {
+                                  const teamId = teams.find((t: any) => t.name.toLowerCase() === p.team.toLowerCase())?.id;
+                                  return teamId ? (
+                                    <Link href={`/teams/${teamId}`} className="block sm:hidden text-[10px] text-gray-500 hover:text-mln-green font-bold mt-0.5">{p.team}</Link>
+                                  ) : (
+                                    <div className="block sm:hidden text-[10px] text-gray-500 font-bold mt-0.5">{p.team}</div>
+                                  );
+                                })()}
                               </div>
                             </td>
-                            <td className="px-4 py-4 text-gray-300 font-semibold hidden sm:table-cell">{p.team}</td>
+                            <td className="px-4 py-4 text-gray-300 font-semibold hidden sm:table-cell">
+                              {(() => {
+                                const teamId = teams.find((t: any) => t.name.toLowerCase() === p.team.toLowerCase())?.id;
+                                return teamId ? (
+                                  <Link href={`/teams/${teamId}`} className="hover:text-mln-green transition-colors">{p.team}</Link>
+                                ) : p.team;
+                              })()}
+                            </td>
                             <td className="px-4 py-4 hidden md:table-cell">
                               <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{archLabel(p.arch)}</span>
                             </td>
@@ -422,15 +444,18 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                         <span className="text-gray-500 font-bold uppercase font-mono">Game {g.gameNumber}</span>
                         {g.date && <span className="text-gray-500 font-mono">{g.date}</span>}
                       </div>
+                      <Link href={`/matches/${g.id}`} className="text-xs text-mln-green hover:underline uppercase font-bold tracking-wider font-mono">
+                        View Details →
+                      </Link>
                     </div>
                     <div className="grid grid-cols-3 items-center p-6 gap-4">
                       <div className="text-center md:text-right">
-                        <div className={`text-xl font-black ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</div>
+                        <Link href={`/teams/${g.team1Id}`} className={`text-xl font-black hover:text-mln-green transition-colors ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</Link>
                         {g.winner === 'team1' && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 inline-block">WINNER</span>}
                       </div>
                       <div className="text-center text-gray-600 text-xs font-bold tracking-widest uppercase">VS</div>
                       <div className="text-center md:text-left">
-                        <div className={`text-xl font-black ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</div>
+                        <Link href={`/teams/${g.team2Id}`} className={`text-xl font-black hover:text-mln-green transition-colors ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</Link>
                         {g.winner === 'team2' && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 inline-block">WINNER</span>}
                       </div>
                     </div>
@@ -491,7 +516,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
             <h3 className="text-xl font-black text-white uppercase tracking-wider mb-6 border-l-4 border-mln-green pl-3">Participating Teams ({teams.length})</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {teams.map((team: any) => (
-                <div key={team.id} className="bg-surface border border-border-color rounded-xl p-6 text-center hover:border-mln-green/30 hover:scale-[1.02] transition-all duration-300">
+                <Link href={`/teams/${team.id}`} key={team.id} className="bg-surface border border-border-color rounded-xl p-6 text-center hover:border-mln-green/30 hover:scale-[1.02] transition-all duration-300 block">
                   <div className="w-20 h-20 mx-auto bg-background rounded-full border border-border-color flex items-center justify-center mb-4 overflow-hidden relative shadow-inner">
                     {team.logoUrl ? (
                       <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
@@ -499,9 +524,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                       <span className="text-gray-500 font-bold text-xs uppercase tracking-wider">AFL</span>
                     )}
                   </div>
-                  <h4 className="text-base font-black text-white line-clamp-1">{team.name}</h4>
+                  <h4 className="text-base font-black text-white line-clamp-1 hover:text-mln-green transition-colors">{team.name}</h4>
                   <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">AFL Nigeria Season</div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

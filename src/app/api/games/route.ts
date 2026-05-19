@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tournamentId, team1Id, team2Id, winner, week, gameNumber, date, bans, picks } = body;
+    const { tournamentId, team1Id, team2Id, winner, week, gameNumber, date, boFormat, duration, bans, picks } = body;
 
     if (!tournamentId || !team1Id || !team2Id || !winner) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -19,6 +19,8 @@ export async function POST(request: Request) {
         week: parseInt(week) || 1,
         gameNumber: parseInt(gameNumber) || 1,
         date: date || '',
+        boFormat: parseInt(boFormat) || 1,
+        duration: duration || '',
         bans: {
           create: (bans || []).filter((b: any) => b.hero?.trim()).map((b: any) => ({
             team: b.team,
@@ -37,6 +39,8 @@ export async function POST(request: Request) {
             assists: parseInt(p.assists) || 0,
             gold: parseInt(p.gold) || 0,
             damage: parseInt(p.damage) || 0,
+            savages: parseInt(p.savages) || 0,
+            maniacs: parseInt(p.maniacs) || 0,
             pickOrder: p.pickOrder || 0,
           })),
         },

@@ -31,6 +31,7 @@ model Team {
 
   homeGames   Game[]  @relation("HomeTeam")
   awayGames   Game[]  @relation("AwayTeam")
+  players     Player[]
 }
 
 model Game {
@@ -47,6 +48,8 @@ model Game {
   week          Int      @default(1)
   gameNumber    Int      @default(1)
   date          String   @default("")
+  boFormat      Int      @default(1)
+  duration      String   @default("")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -79,6 +82,8 @@ model Pick {
   assists         Int    @default(0)
   gold            Int    @default(0)
   damage          Int    @default(0)
+  savages         Int    @default(0)
+  maniacs         Int    @default(0)
   pickOrder       Int    @default(0)
 }
 
@@ -110,6 +115,8 @@ model Player {
   username    String   @unique
   pictureUrl  String?
   realName    String?
+  teamId      String?
+  team        Team?    @relation(fields: [teamId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

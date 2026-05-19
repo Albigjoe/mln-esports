@@ -12,7 +12,7 @@ const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
 
 function emptyPick() {
-  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '' };
+  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0' };
 }
 
 type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'news' | 'staff' | 'settings';
@@ -30,6 +30,8 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const [week, setWeek] = useState('1');
   const [gameNumber, setGameNumber] = useState('1');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [boFormat, setBoFormat] = useState('1');
+  const [duration, setDuration] = useState('15:00');
   const [bans1, setBans1] = useState(['', '', '', '', '']);
   const [bans2, setBans2] = useState(['', '', '', '', '']);
   const [picks1, setPicks1] = useState(Array(5).fill(null).map(emptyPick));
@@ -37,6 +39,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
   const resetForm = () => {
     setTeam1Id(''); setTeam2Id(''); setWinner(''); setWeek('1'); setGameNumber('1');
+    setBoFormat('1'); setDuration('15:00');
     setDate(new Date().toISOString().split('T')[0]);
     setBans1(['','','','','']); setBans2(['','','','','']);
     setPicks1(Array(5).fill(null).map(emptyPick)); setPicks2(Array(5).fill(null).map(emptyPick));
@@ -59,7 +62,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
     try {
       const res = await fetch('/api/games', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tournamentId, team1Id, team2Id, winner, week, gameNumber, date, bans, picks }),
+        body: JSON.stringify({ tournamentId, team1Id, team2Id, winner, week, gameNumber, date, boFormat, duration, bans, picks }),
       });
       const data = await res.json();
       if (data.success) { setMsg('✓ Game saved!'); resetForm(); router.refresh(); setTimeout(() => setTab('dashboard'), 1500); }
@@ -164,13 +167,15 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
           </div>
           <div className="bg-surface border border-border-color rounded-xl p-6">
             <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Match Info</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Tournament</label><select value={tournamentId} onChange={e => setTournamentId(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none">{tournaments.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Week</label><input type="number" min="1" value={week} onChange={e => setWeek(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Game #</label><input type="number" min="1" max="7" value={gameNumber} onChange={e => setGameNumber(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
+              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">BO Format</label><select value={boFormat} onChange={e => setBoFormat(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="1">BO1</option><option value="3">BO3</option><option value="5">BO5</option><option value="7">BO7</option></select></div>
+              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Duration</label><input type="text" value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 15:30" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 1</label><select value={team1Id} onChange={e => setTeam1Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 1</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 2</label><select value={team2Id} onChange={e => setTeam2Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 2</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Winner</label><select value={winner} onChange={e => setWinner(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Winner</option><option value="team1">{team1Name}</option><option value="team2">{team2Name}</option></select></div>
@@ -180,7 +185,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
             <BanSection label={`Bans · ${team1Name}`} bans={bans1} setBans={setBans1} />
             <BanSection label={`Bans · ${team2Name}`} bans={bans2} setBans={setBans2} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <PickSection label={`Picks · ${team1Name}`} picks={picks1} setPicks={setPicks1} />
             <PickSection label={`Picks · ${team2Name}`} picks={picks2} setPicks={setPicks2} />
           </div>
@@ -205,7 +210,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       {tab === 'teams' && <TeamsTab teams={teams || []} />}
 
       {/* PLAYERS TAB */}
-      {tab === 'players' && <PlayersTab players={players || []} />}
+      {tab === 'players' && <PlayersTab players={players || []} teams={teams || []} />}
 
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}
@@ -290,18 +295,61 @@ function PickSection({ label, picks, setPicks }: { label: string; picks: any[]; 
   return (
     <div className="bg-surface border border-border-color rounded-xl p-6">
       <div className="text-xs text-cyan-400 font-bold uppercase tracking-[3px] mb-3">{label}</div>
-      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">Hero · Player · Role · K · D · A · Gold · DMG</div>
+      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold hidden md:grid grid-cols-12 gap-1.5 px-2">
+        <div className="col-span-2">Hero</div>
+        <div className="col-span-2">Username</div>
+        <div className="col-span-2">Role</div>
+        <div className="col-span-1 text-center">K</div>
+        <div className="col-span-1 text-center">D</div>
+        <div className="col-span-1 text-center">A</div>
+        <div className="col-span-1 text-center">Gold</div>
+        <div className="col-span-1 text-center">DMG</div>
+        <div className="col-span-1 text-center">Sav</div>
+        <div className="col-span-1 text-center">Man</div>
+      </div>
       <div className="space-y-2">
         {picks.map((p, i) => (
-          <div key={i} className="grid grid-cols-8 gap-1">
-            <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => updatePick(i,'hero',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
-            <input placeholder="Username" value={p.playerUsername} onChange={e => updatePick(i,'playerUsername',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
-            <select value={p.role} onChange={e => updatePick(i,'role',e.target.value)} className="bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none"><option value="">Role</option>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
-            <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => updatePick(i,'kills',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-            <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => updatePick(i,'deaths',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-red-400 outline-none placeholder:text-gray-600" />
-            <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => updatePick(i,'assists',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-cyan-400 outline-none placeholder:text-gray-600" />
-            <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => updatePick(i,'gold',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
-            <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => updatePick(i,'damage',e.target.value)} className="bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+          <div key={i} className="grid grid-cols-2 md:grid-cols-12 gap-1.5 bg-background/50 p-2 md:p-0 rounded md:bg-transparent">
+            <div className="col-span-2">
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
+              <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => updatePick(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+            </div>
+            <div className="col-span-2">
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Username</label>
+              <input placeholder="Username" value={p.playerUsername} onChange={e => updatePick(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+            </div>
+            <div className="col-span-2">
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Role</label>
+              <select value={p.role} onChange={e => updatePick(i,'role',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none"><option value="">Role</option>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
+              <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => updatePick(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Deaths</label>
+              <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => updatePick(i,'deaths',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-red-400 outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Assists</label>
+              <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => updatePick(i,'assists',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-cyan-400 outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
+              <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => updatePick(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
+              <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => updatePick(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
+              <input placeholder="Sav" inputMode="numeric" value={p.savages} onChange={e => updatePick(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+            </div>
+            <div>
+              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
+              <input placeholder="Man" inputMode="numeric" value={p.maniacs} onChange={e => updatePick(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+            </div>
           </div>
         ))}
       </div>
