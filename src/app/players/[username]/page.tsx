@@ -10,7 +10,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
   // Find player profile in database
   const player = await prisma.player.findUnique({
     where: { username },
-    include: { team: true }
+    include: { team: true, awards: true }
   });
 
   // Fetch all picks for this player username
@@ -46,6 +46,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
   let totalDamage = 0;
   let savages = 0;
   let maniacs = 0;
+  let lordKills = 0;
+  let turtleKills = 0;
+  let mvpCount = 0;
 
   const heroStats: Record<string, { picks: number; wins: number; kills: number; deaths: number; assists: number }> = {};
   const tournamentsMap: Record<string, any> = {};
@@ -62,6 +65,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
     totalDamage += p.damage;
     savages += p.savages;
     maniacs += p.maniacs;
+    lordKills += (p as any).lordKills || 0;
+    turtleKills += (p as any).turtleKills || 0;
+    if ((p as any).isMvp) mvpCount++;
 
     // Track hero specific stats
     if (!heroStats[p.hero]) {
@@ -191,30 +197,50 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
               </div>
               <div className="bg-surface border border-border-color rounded-xl p-4 text-center">
                 <span className="text-[10px] text-gray-500 block uppercase tracking-wider font-bold mb-1">Avg KDA</span>
-                <span className="text-3xl font-black text-cyan-400">{avgKDA}</span>
+                <span className="text-3xl font-black text-white">{avgKDA}</span>
               </div>
               <div className="bg-surface border border-border-color rounded-xl p-4 text-center">
                 <span className="text-[10px] text-gray-500 block uppercase tracking-wider font-bold mb-1">Avg Gold</span>
-                <span className="text-3xl font-black text-yellow-400">{parseInt(avgGold).toLocaleString()}</span>
+                <span className="text-3xl font-black text-white">{parseInt(avgGold).toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Savages and Maniacs Highlights */}
-            {(savages > 0 || maniacs > 0) && (
-              <div className="bg-gradient-to-r from-purple-950/20 to-yellow-950/20 border border-purple-500/20 rounded-xl p-6 flex gap-8 justify-center">
-                {savages > 0 && (
-                  <div className="text-center">
-                    <span className="text-[10px] text-yellow-400 block uppercase tracking-[2px] font-bold mb-1">SAVAGES</span>
-                    <span className="text-4xl font-black text-yellow-400 animate-pulse">{savages}</span>
-                  </div>
-                )}
-                {savages > 0 && maniacs > 0 && <div className="w-px bg-border-color"></div>}
-                {maniacs > 0 && (
-                  <div className="text-center">
-                    <span className="text-[10px] text-purple-400 block uppercase tracking-[2px] font-bold mb-1">MANIACS</span>
-                    <span className="text-4xl font-black text-purple-400">{maniacs}</span>
-                  </div>
-                )}
+            {/* Milestones Highlights */}
+            {(savages > 0 || maniacs > 0 || mvpCount > 0 || lordKills > 0 || turtleKills > 0) && (
+              <div className="bg-surface border border-border-color rounded-xl p-5">
+                <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Career Milestones</div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+                  {mvpCount > 0 && (
+                    <div className="bg-background rounded-xl p-3">
+                      <div className="text-2xl font-black text-mln-green">★ {mvpCount}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">MVP</div>
+                    </div>
+                  )}
+                  {savages > 0 && (
+                    <div className="bg-background rounded-xl p-3">
+                      <div className="text-2xl font-black text-white">⚡ {savages}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Savages</div>
+                    </div>
+                  )}
+                  {maniacs > 0 && (
+                    <div className="bg-background rounded-xl p-3">
+                      <div className="text-2xl font-black text-white">🔥 {maniacs}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Maniacs</div>
+                    </div>
+                  )}
+                  {lordKills > 0 && (
+                    <div className="bg-background rounded-xl p-3">
+                      <div className="text-2xl font-black text-white">👑 {lordKills}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Lord Kills</div>
+                    </div>
+                  )}
+                  {turtleKills > 0 && (
+                    <div className="bg-background rounded-xl p-3">
+                      <div className="text-2xl font-black text-white">🐢 {turtleKills}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Turtle Kills</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -238,7 +264,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
                       <td className="px-6 py-4 font-bold text-white">{h.hero}</td>
                       <td className="px-6 py-4 text-center font-mono font-bold text-white">{h.picks}</td>
                       <td className="px-6 py-4 text-center font-mono font-bold text-mln-green">{h.winRate}%</td>
-                      <td className="px-6 py-4 text-center font-mono text-cyan-400">{h.kda}</td>
+                      <td className="px-6 py-4 text-center font-mono text-white">{h.kda}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -261,6 +287,26 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
                 </div>
               )}
             </div>
+
+            {/* Awards Cabinet */}
+            {player?.awards && player.awards.length > 0 && (
+              <>
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Award Cabinet</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {player.awards.map((a: any) => {
+                    const icons: Record<string, string> = { 'Champion': '🏆', 'MVP': '⭐', 'Best Roamer': '🛡️', 'Best Jungler': '🌿', 'Top Fragger': '⚔️', 'Finals MVP': '👑', 'Best Support': '💚' };
+                    const icon = Object.entries(icons).find(([k]) => a.title.toLowerCase().includes(k.toLowerCase()))?.[1] || '🎖️';
+                    return (
+                      <div key={a.id} className="bg-surface border border-border-color rounded-xl p-4 text-center hover:border-mln-green/40 transition-all">
+                        <div className="text-3xl mb-1">{icon}</div>
+                        <div className="font-black text-white text-sm leading-tight">{a.title}</div>
+                        {a.season && <div className="text-[10px] text-mln-green font-bold uppercase tracking-wider mt-1">{a.season}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
           </div>
 

@@ -32,6 +32,7 @@ model Team {
   homeGames   Game[]  @relation("HomeTeam")
   awayGames   Game[]  @relation("AwayTeam")
   players     Player[]
+  awards      Award[] @relation("TeamAwards")
 }
 
 model Game {
@@ -84,6 +85,11 @@ model Pick {
   damage          Int    @default(0)
   savages         Int    @default(0)
   maniacs         Int    @default(0)
+  tfp             Float  @default(0)
+  mvpScore        Float  @default(0)
+  isMvp           Boolean @default(false)
+  lordKills       Int    @default(0)
+  turtleKills     Int    @default(0)
   pickOrder       Int    @default(0)
 }
 
@@ -110,6 +116,19 @@ model BlogPost {
   updatedAt   DateTime @updatedAt
 }
 
+model Award {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  season      String   @default("")
+  imageUrl    String?
+  playerId    String?
+  player      Player?  @relation(fields: [playerId], references: [id])
+  teamId      String?
+  team        Team?    @relation("TeamAwards", fields: [teamId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
 model Player {
   id          String   @id @default(cuid())
   username    String   @unique
@@ -117,6 +136,7 @@ model Player {
   realName    String?
   teamId      String?
   team        Team?    @relation(fields: [teamId], references: [id])
+  awards      Award[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

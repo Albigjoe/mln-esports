@@ -19,7 +19,7 @@ export default async function AdminDashboard() {
   });
   const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } });
   const recentGames = await prisma.game.findMany({
-    take: 20,
+    take: 50,
     orderBy: { createdAt: 'desc' },
     include: { team1: true, team2: true, tournament: true }
   });
@@ -33,6 +33,10 @@ export default async function AdminDashboard() {
     select: { id: true, email: true, name: true, role: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   });
+  const awards = await prisma.award.findMany({
+    include: { player: true, team: true },
+    orderBy: { createdAt: 'desc' },
+  });
 
   return (
     <AdminClient
@@ -43,6 +47,7 @@ export default async function AdminDashboard() {
       posts={posts}
       staffUsers={staffUsers}
       players={players}
+      awards={awards}
     />
   );
 }

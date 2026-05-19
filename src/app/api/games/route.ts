@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { tournamentId, team1Id, team2Id, winner, week, gameNumber, date, boFormat, duration, bans, picks } = body;
 
-    if (!tournamentId || !team1Id || !team2Id || !winner) {
+    if (!tournamentId || !team1Id || !team2Id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -41,6 +41,11 @@ export async function POST(request: Request) {
             damage: parseInt(p.damage) || 0,
             savages: parseInt(p.savages) || 0,
             maniacs: parseInt(p.maniacs) || 0,
+            tfp: parseFloat(p.tfp) || 0,
+            mvpScore: parseFloat(p.mvpScore) || 0,
+            isMvp: p.isMvp === true || p.isMvp === 'true',
+            lordKills: parseInt(p.lordKills) || 0,
+            turtleKills: parseInt(p.turtleKills) || 0,
             pickOrder: p.pickOrder || 0,
           })),
         },

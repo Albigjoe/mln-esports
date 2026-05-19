@@ -7,15 +7,16 @@ import StaffTab from './admin/StaffTab';
 import TournamentsTab from './admin/TournamentsTab';
 import TeamsTab from './admin/TeamsTab';
 import PlayersTab from './admin/PlayersTab';
+import AwardsTab from './admin/AwardsTab';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
 
 function emptyPick() {
-  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0' };
+  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false, lordKills: '0', turtleKills: '0' };
 }
 
-type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'news' | 'staff' | 'settings';
+type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'awards' | 'news' | 'staff' | 'settings';
 
 function groupGamesIntoSeries(gamesList: any[]) {
   const seriesMap: Record<string, {
@@ -103,7 +104,7 @@ function getSeriesStatus(s: any) {
   return { completed: false, message: 'Unknown Format' };
 }
 
-export default function AdminClient({ session, tournaments, teams, recentGames, posts, staffUsers, players }: any) {
+export default function AdminClient({ session, tournaments, teams, recentGames, posts, staffUsers, players, awards }: any) {
   const router = useRouter();
   const [tab, setTab] = useState<TabType>('dashboard');
   const [saving, setSaving] = useState(false);
@@ -148,7 +149,6 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const handleSave = async () => {
     if (!team1Id || !team2Id) { setMsg('Select both teams'); return; }
     if (team1Id === team2Id) { setMsg('Teams must be different'); return; }
-    if (!winner) { setMsg('Select a winner'); return; }
     setSaving(true); setMsg('');
     const bans = [
       ...bans1.filter(h => h.trim()).map((h, i) => ({ team: 'team1', hero: h, banOrder: i + 1 })),
@@ -185,6 +185,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
     { key: 'tournaments', label: '🏆 Tournaments' },
     { key: 'teams', label: '🛡️ Teams' },
     { key: 'players', label: '🎮 Players' },
+    { key: 'awards', label: '🎖️ Awards' },
     { key: 'news', label: '📰 News' },
     { key: 'staff', label: '👥 Staff' },
     { key: 'settings', label: '⚙ Settings' },
@@ -358,6 +359,9 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       {/* PLAYERS TAB */}
       {tab === 'players' && <PlayersTab players={players || []} teams={teams || []} />}
 
+      {/* AWARDS TAB */}
+      {tab === 'awards' && <AwardsTab awards={awards || []} players={players || []} teams={teams || []} />}
+
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}
     </div>
@@ -435,66 +439,79 @@ function BanSection({ label, bans, setBans }: { label: string; bans: string[]; s
 }
 
 function PickSection({ label, picks, setPicks }: { label: string; picks: any[]; setPicks: (p: any[]) => void }) {
-  const updatePick = (i: number, field: string, value: string) => {
+  const updatePick = (i: number, field: string, value: any) => {
     const np = [...picks]; np[i] = { ...np[i], [field]: value }; setPicks(np);
   };
   return (
     <div className="bg-surface border border-border-color rounded-xl p-6">
       <div className="text-xs text-cyan-400 font-bold uppercase tracking-[3px] mb-3">{label}</div>
-      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold hidden md:grid grid-cols-12 gap-1.5 px-2">
-        <div className="col-span-2">Hero</div>
-        <div className="col-span-2">Username</div>
-        <div className="col-span-2">Role</div>
-        <div className="col-span-1 text-center">K</div>
-        <div className="col-span-1 text-center">D</div>
-        <div className="col-span-1 text-center">A</div>
-        <div className="col-span-1 text-center">Gold</div>
-        <div className="col-span-1 text-center">DMG</div>
-        <div className="col-span-1 text-center">Sav</div>
-        <div className="col-span-1 text-center">Man</div>
-      </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {picks.map((p, i) => (
-          <div key={i} className="grid grid-cols-2 md:grid-cols-12 gap-1.5 bg-background/50 p-2 md:p-0 rounded md:bg-transparent">
-            <div className="col-span-2">
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
-              <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => updatePick(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+          <div key={i} className="bg-background/50 rounded-xl p-3 space-y-2">
+            {/* Row 1: Hero, Username, Role, MVP */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
+                <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => updatePick(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Username</label>
+                <input placeholder="Username" value={p.playerUsername} onChange={e => updatePick(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Role</label>
+                <select value={p.role} onChange={e => updatePick(i,'role',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none"><option value="">Role</option>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 cursor-pointer select-none pb-1">
+                  <div onClick={() => updatePick(i, 'isMvp', !p.isMvp)} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${p.isMvp ? 'bg-mln-green border-mln-green' : 'border-border-color bg-background'}`}>
+                    {p.isMvp && <span className="text-black text-[10px] font-black">★</span>}
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">MVP</span>
+                </label>
+              </div>
             </div>
-            <div className="col-span-2">
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Username</label>
-              <input placeholder="Username" value={p.playerUsername} onChange={e => updatePick(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+            {/* Row 2: KDA + Gold + Damage */}
+            <div className="grid grid-cols-5 gap-2">
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
+                <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => updatePick(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Deaths</label>
+                <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => updatePick(i,'deaths',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-border-color outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Assists</label>
+                <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => updatePick(i,'assists',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
+                <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => updatePick(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
+                <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => updatePick(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
             </div>
-            <div className="col-span-2">
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Role</label>
-              <select value={p.role} onChange={e => updatePick(i,'role',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none"><option value="">Role</option>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
-              <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => updatePick(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Deaths</label>
-              <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => updatePick(i,'deaths',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-red-400 outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Assists</label>
-              <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => updatePick(i,'assists',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-cyan-400 outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
-              <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => updatePick(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
-              <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => updatePick(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
-              <input placeholder="Sav" inputMode="numeric" value={p.savages} onChange={e => updatePick(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
-            </div>
-            <div>
-              <label className="block md:hidden text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
-              <input placeholder="Man" inputMode="numeric" value={p.maniacs} onChange={e => updatePick(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-yellow-400 outline-none placeholder:text-gray-600" />
+            {/* Row 3: Milestones */}
+            <div className="grid grid-cols-4 gap-2">
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
+                <input placeholder="0" inputMode="numeric" value={p.savages} onChange={e => updatePick(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
+                <input placeholder="0" inputMode="numeric" value={p.maniacs} onChange={e => updatePick(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Lord Kills</label>
+                <input placeholder="0" inputMode="numeric" value={p.lordKills} onChange={e => updatePick(i,'lordKills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Turtle Kills</label>
+                <input placeholder="0" inputMode="numeric" value={p.turtleKills} onChange={e => updatePick(i,'turtleKills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
             </div>
           </div>
         ))}

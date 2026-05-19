@@ -10,7 +10,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const team = await prisma.team.findUnique({
     where: { id },
     include: {
-      players: true, // Explicit roster
+      players: true,
+      awards: true,
     }
   });
 
@@ -191,6 +192,26 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                 </div>
               )}
             </div>
+
+            {/* Awards Cabinet */}
+            {(team as any).awards?.length > 0 && (
+              <>
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Award Cabinet</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {(team as any).awards.map((a: any) => {
+                    const icons: Record<string, string> = { 'Champion': '🏆', 'MVP': '⭐', 'Best Roamer': '🛡️', 'Best Jungler': '🌿', 'Top Fragger': '⚔️', 'Finals MVP': '👑', 'Best Support': '💚' };
+                    const icon = Object.entries(icons).find(([k]) => a.title.toLowerCase().includes(k.toLowerCase()))?.[1] || '🎖️';
+                    return (
+                      <div key={a.id} className="bg-surface border border-border-color rounded-xl p-4 text-center hover:border-mln-green/40 transition-all">
+                        <div className="text-3xl mb-1">{icon}</div>
+                        <div className="font-black text-white text-sm leading-tight">{a.title}</div>
+                        {a.season && <div className="text-[10px] text-mln-green font-bold uppercase tracking-wider mt-1">{a.season}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Last Match Results & Upcoming Fixtures Side Panel */}
