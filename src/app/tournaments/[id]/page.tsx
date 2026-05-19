@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TournamentHub({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  console.log("Tournament Hub loading for ID:", id);
   const tournament = await prisma.tournament.findUnique({
     where: { id },
     include: {

@@ -118,7 +118,7 @@ function playerStats(games: any[]) {
           team: tn || '',
           role: pk.role || '',
           hero: pk.hero || '',
-          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, w: 0, score: 0, kpTotal: 0, heroes: {}
+          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, w: 0, score: 0, kpTotal: 0, heroes: {}, roles: {}
         };
       }
       p[key].g++;
@@ -134,7 +134,10 @@ function playerStats(games: any[]) {
         p[key].heroes[pk.hero] = (p[key].heroes[pk.hero] || 0) + 1;
         if (!p[key].hero) p[key].hero = pk.hero;
       }
-      if (!p[key].role && pk.role) p[key].role = pk.role;
+      if (pk.role) {
+        p[key].roles[pk.role] = (p[key].roles[pk.role] || 0) + 1;
+        if (!p[key].role) p[key].role = pk.role;
+      }
       
       const cs = calcScore(pk, teamKills);
       p[key].score += cs.score;
