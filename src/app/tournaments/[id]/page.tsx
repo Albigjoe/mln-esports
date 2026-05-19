@@ -19,6 +19,7 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
   if (!tournament) return notFound();
 
   const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } });
+  const players = await prisma.player.findMany();
 
   return (
     <div className="w-full">
@@ -59,7 +60,7 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} />
+        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} players={players} />
       </div>
     </div>
   );

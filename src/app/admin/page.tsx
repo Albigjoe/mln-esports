@@ -23,6 +23,9 @@ export default async function AdminDashboard() {
     orderBy: { createdAt: 'desc' },
     include: { team1: true, team2: true, tournament: true }
   });
+  const players = await prisma.player.findMany({
+    orderBy: { username: 'asc' },
+  });
   const posts = await prisma.blogPost.findMany({
     orderBy: { createdAt: 'desc' },
   });
@@ -39,6 +42,7 @@ export default async function AdminDashboard() {
       recentGames={recentGames}
       posts={posts}
       staffUsers={staffUsers}
+      players={players}
     />
   );
 }

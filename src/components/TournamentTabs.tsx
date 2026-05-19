@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { getHeroImage, getPlayerImage } from '@/lib/utils';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 
@@ -159,7 +160,7 @@ function playerStats(games: any[]) {
   });
 }
 
-export default function TournamentTabs({ tournament, games, teams }: any) {
+export default function TournamentTabs({ tournament, games, teams, players = [] }: any) {
   const [activeTab, setActiveTab] = useState('overview');
   const [roleFilter, setRoleFilter] = useState('all');
   const [sortField, setSortField] = useState('avgScore');
@@ -255,8 +256,15 @@ export default function TournamentTabs({ tournament, games, teams }: any) {
                       <div className="text-[10px] text-mln-green font-bold uppercase tracking-[2px] mb-2">{role}</div>
                       {mvp ? (
                         <>
-                          <div className="text-lg font-black text-white line-clamp-1">{mvp.player}</div>
-                          <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{mvp.team}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full border border-border-color overflow-hidden shrink-0">
+                              <img src={getPlayerImage(mvp.player, players)} alt={mvp.player} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="text-left">
+                              <div className="text-lg font-black text-white line-clamp-1 leading-none">{mvp.player}</div>
+                              <div className="text-[10px] text-gray-400 mt-1 line-clamp-1 font-bold uppercase tracking-widest">{mvp.team}</div>
+                            </div>
+                          </div>
                         </>
                       ) : (
                         <div className="text-gray-500 text-sm py-4">No data</div>
@@ -355,9 +363,14 @@ export default function TournamentTabs({ tournament, games, teams }: any) {
                             <td className="px-3 md:px-6 py-4 text-center">
                               {rankBadge(i + 1)}
                             </td>
-                            <td className="px-3 md:px-6 py-4">
-                              <div className="font-black text-white text-sm md:text-base">{p.player}</div>
-                              <div className="block sm:hidden text-[10px] text-gray-500 font-bold mt-0.5">{p.team}</div>
+                            <td className="px-3 md:px-6 py-4 flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full border border-border-color overflow-hidden shrink-0 hidden md:block">
+                                <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <div className="font-black text-white text-sm md:text-base">{p.player}</div>
+                                <div className="block sm:hidden text-[10px] text-gray-500 font-bold mt-0.5">{p.team}</div>
+                              </div>
                             </td>
                             <td className="px-4 py-4 text-gray-300 font-semibold hidden sm:table-cell">{p.team}</td>
                             <td className="px-4 py-4 hidden md:table-cell">
@@ -425,15 +438,43 @@ export default function TournamentTabs({ tournament, games, teams }: any) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pb-6 border-t border-border-color/60 pt-4">
                         <div>
                           <div className="text-xs text-red-400 font-bold uppercase tracking-widest mb-2">Bans · {g.team1.name}</div>
-                          <div className="flex flex-wrap gap-1.5 mb-4">{t1Bans.map((b: any) => <span key={b.id} className="bg-red-500/10 border border-red-500/30 text-red-400 px-2.5 py-1 rounded-md text-xs font-semibold">{b.hero}</span>)}</div>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {t1Bans.map((b: any) => (
+                              <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
+                                <img src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
+                                <span>{b.hero}</span>
+                              </div>
+                            ))}
+                          </div>
                           <div className="text-xs text-mln-green font-bold uppercase tracking-widest mb-2">Picks · {g.team1.name}</div>
-                          <div className="flex flex-wrap gap-1.5">{t1Picks.map((p: any) => <span key={p.id} className="bg-mln-green/10 border border-mln-green/30 text-mln-green px-2.5 py-1 rounded-md text-xs font-semibold">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>)}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {t1Picks.map((p: any) => (
+                              <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
+                                <img src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
+                                <span>{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                         <div>
                           <div className="text-xs text-red-400 font-bold uppercase tracking-widest mb-2">Bans · {g.team2.name}</div>
-                          <div className="flex flex-wrap gap-1.5 mb-4">{t2Bans.map((b: any) => <span key={b.id} className="bg-red-500/10 border border-red-500/30 text-red-400 px-2.5 py-1 rounded-md text-xs font-semibold">{b.hero}</span>)}</div>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {t2Bans.map((b: any) => (
+                              <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
+                                <img src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
+                                <span>{b.hero}</span>
+                              </div>
+                            ))}
+                          </div>
                           <div className="text-xs text-mln-green font-bold uppercase tracking-widest mb-2">Picks · {g.team2.name}</div>
-                          <div className="flex flex-wrap gap-1.5">{t2Picks.map((p: any) => <span key={p.id} className="bg-mln-green/10 border border-mln-green/30 text-mln-green px-2.5 py-1 rounded-md text-xs font-semibold">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>)}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {t2Picks.map((p: any) => (
+                              <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
+                                <img src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
+                                <span>{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -552,7 +593,10 @@ function HeroStatsTable({ games }: { games: any[] }) {
               const mp = h.picks >= 3 && h.wr !== null && h.wr >= 60;
               return (
                 <tr key={h.hero} className="hover:bg-surface-hover/30 transition-colors">
-                  <td className="px-3 md:px-6 py-4 font-black text-white text-sm md:text-base">{h.hero}</td>
+                  <td className="px-3 md:px-6 py-4 flex items-center gap-3">
+                    <img src={getHeroImage(h.hero)} alt={h.hero} className="w-8 h-8 rounded-full border border-border-color object-cover hidden sm:block" />
+                    <span className="font-black text-white text-sm md:text-base">{h.hero}</span>
+                  </td>
                   <td className="px-2 md:px-6 py-4 text-center text-mln-green font-bold font-mono text-sm md:text-base">{h.picks}</td>
                   <td className="px-2 md:px-6 py-4 text-center text-red-400 font-bold font-mono text-sm md:text-base">{h.bans}</td>
                   <td className="px-4 py-4 text-center font-mono hidden sm:table-cell">{h.wins}</td>

@@ -17,7 +17,7 @@ function emptyPick() {
 
 type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'news' | 'staff' | 'settings';
 
-export default function AdminClient({ session, tournaments, teams, recentGames, posts, staffUsers }: any) {
+export default function AdminClient({ session, tournaments, teams, recentGames, posts, staffUsers, players }: any) {
   const router = useRouter();
   const [tab, setTab] = useState<TabType>('dashboard');
   const [saving, setSaving] = useState(false);
@@ -205,7 +205,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       {tab === 'teams' && <TeamsTab teams={teams || []} />}
 
       {/* PLAYERS TAB */}
-      {tab === 'players' && <PlayersTab />}
+      {tab === 'players' && <PlayersTab players={players || []} />}
 
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}
