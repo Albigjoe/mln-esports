@@ -35,10 +35,14 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     }
   });
 
-  const matchesPlayed = games.length;
+  // Split into completed vs upcoming
+  const completedGames = games.filter(g => g.winner !== "" && g.winner !== "none");
+  const upcomingGames = games.filter(g => g.winner === "" || g.winner === "none");
+
+  const matchesPlayed = completedGames.length;
   
   // Calculate wins
-  const wins = games.filter(g => {
+  const wins = completedGames.filter(g => {
     if (g.team1Id === id && g.winner === 'team1') return true;
     if (g.team2Id === id && g.winner === 'team2') return true;
     return false;
@@ -54,7 +58,10 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const activeTournaments = Object.values(tournamentsMap);
 
   // Last 3 matches
-  const lastMatches = games.slice(0, 3);
+  const lastMatches = completedGames.slice(0, 3);
+
+  // Next 3 upcoming fixtures (closest first)
+  const upcomingMatches = [...upcomingGames].reverse().slice(0, 3);
 
   // Roster calculation
   // 1. Explicitly registered players
@@ -186,34 +193,63 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Last Match Results */}
-          <div>
-            <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3 mb-6">Recent Match History</h3>
-            <div className="space-y-4">
-              {lastMatches.length === 0 ? (
-                <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500">No match records yet.</div>
-              ) : lastMatches.map(g => {
-                const isTeam1 = g.team1Id === id;
-                const opponent = isTeam1 ? g.team2 : g.team1;
-                const won = (isTeam1 && g.winner === 'team1') || (!isTeam1 && g.winner === 'team2');
-                return (
-                  <Link href={`/matches/${g.id}`} key={g.id} className="block bg-surface border border-border-color hover:border-mln-green/40 p-4 rounded-xl transition-all">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${won ? 'bg-mln-green/20 text-mln-green' : 'bg-red-500/20 text-red-400'}`}>
-                        {won ? 'WIN' : 'LOSS'}
-                      </span>
+          {/* Last Match Results & Upcoming Fixtures Side Panel */}
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3 mb-6">Upcoming Fixtures</h3>
+              <div className="space-y-4">
+                {upcomingMatches.length === 0 ? (
+                  <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500 text-sm">No upcoming fixtures scheduled.</div>
+                ) : upcomingMatches.map(g => {
+                  const isTeam1 = g.team1Id === id;
+                  const opponent = isTeam1 ? g.team2 : g.team1;
+                  return (
+                    <div key={g.id} className="bg-surface border border-border-color p-4 rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
+                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-black px-2 py-0.5 rounded uppercase tracking-wider font-mono">UPCOMING</span>
+                      </div>
+                      <div className="flex items-center gap-3 justify-between">
+                        <span className="font-black text-white text-sm uppercase">vs {opponent.name}</span>
+                        <span className="text-xs text-gray-400 font-semibold">{g.date}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">
+                        BO{g.boFormat} · Game {g.gameNumber}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 justify-between">
-                      <span className="font-black text-white text-sm uppercase">vs {opponent.name}</span>
-                      <span className="text-xs text-gray-400 font-semibold">{g.date}</span>
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">
-                      BO{g.boFormat} · Game {g.gameNumber}
-                    </div>
-                  </Link>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3 mb-6">Recent Match History</h3>
+              <div className="space-y-4">
+                {lastMatches.length === 0 ? (
+                  <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500 text-sm">No match records yet.</div>
+                ) : lastMatches.map(g => {
+                  const isTeam1 = g.team1Id === id;
+                  const opponent = isTeam1 ? g.team2 : g.team1;
+                  const won = (isTeam1 && g.winner === 'team1') || (!isTeam1 && g.winner === 'team2');
+                  return (
+                    <Link href={`/matches/${g.id}`} key={g.id} className="block bg-surface border border-border-color hover:border-mln-green/40 p-4 rounded-xl transition-all">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${won ? 'bg-mln-green/20 text-mln-green' : 'bg-red-500/20 text-red-400'}`}>
+                          {won ? 'WIN' : 'LOSS'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 justify-between">
+                        <span className="font-black text-white text-sm uppercase">vs {opponent.name}</span>
+                        <span className="text-xs text-gray-400 font-semibold">{g.date}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">
+                        BO{g.boFormat} · Game {g.gameNumber}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

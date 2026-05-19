@@ -152,13 +152,81 @@ function playerStats(games: any[]) {
       avgA: +(s.a / gamesCount).toFixed(1),
       avgGold: Math.round(s.gold / gamesCount),
       avgDmg: Math.round(s.dmg / gamesCount),
-      avgScore: +(s.score / gamesCount).toFixed(1),
       avgKP: Math.round(s.kpTotal / gamesCount),
       wr: Math.round(s.w / gamesCount * 100),
-      arch: getArch(s.hero, s.role),
-      top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || ''
+      top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
+      arch: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
     };
   });
+}
+
+function groupGamesIntoSeries(gamesList: any[]) {
+  const seriesMap: Record<string, {
+    id: string;
+    week: number;
+    team1: any;
+    team2: any;
+    team1Id: string;
+    team2Id: string;
+    boFormat: number;
+    date: string;
+    games: any[];
+    score1: number;
+    score2: number;
+    createdAt: Date;
+  }> = {};
+
+  const sortedGames = [...gamesList].sort((a, b) => a.gameNumber - b.gameNumber);
+
+  sortedGames.forEach(game => {
+    const tKey = [game.team1Id, game.team2Id].sort().join('-');
+    const seriesKey = `${game.tournamentId || 'default'}-${game.week}-${tKey}-${game.boFormat}`;
+
+    if (!seriesMap[seriesKey]) {
+      seriesMap[seriesKey] = {
+        id: game.id,
+        week: game.week,
+        team1: game.team1,
+        team2: game.team2,
+        team1Id: game.team1Id,
+        team2Id: game.team2Id,
+        boFormat: game.boFormat,
+        date: game.date,
+        games: [],
+        score1: 0,
+        score2: 0,
+        createdAt: new Date(game.createdAt)
+      };
+    }
+
+    const series = seriesMap[seriesKey];
+    series.games.push(game);
+
+    if (game.winner === 'team1') {
+      if (game.team1Id === series.team1Id) {
+        series.score1++;
+      } else {
+        series.score2++;
+      }
+    } else if (game.winner === 'team2') {
+      if (game.team2Id === series.team2Id) {
+        series.score2++;
+      } else {
+        series.score1++;
+      }
+    }
+  });
+
+  return Object.values(seriesMap).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+function isCompleted(s: any) {
+  if (s.boFormat === 1) return s.games.length >= 1;
+  if (s.boFormat === 2) return s.games.length >= 2;
+  if (s.boFormat === 3) return s.score1 === 2 || s.score2 === 2;
+  if (s.boFormat === 5) return s.score1 === 3 || s.score2 === 3;
+  if (s.boFormat === 7) return s.score1 === 4 || s.score2 === 4;
+  return false;
 }
 
 export default function TournamentTabs({ tournament, games, teams, players = [] }: any) {
@@ -167,6 +235,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
   const [sortField, setSortField] = useState('avgScore');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  const seriesList = groupGamesIntoSeries(games);
   const ps = playerStats(games);
   const filteredPlayers = roleFilter === 'all' ? ps : ps.filter((p: any) => p.role === roleFilter);
   const sortedPlayers = [...filteredPlayers].sort((a: any, b: any) => {
@@ -198,9 +267,15 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
   // Calculate leading team
   const leadingTeam = () => {
     const tw: Record<string, number> = {};
-    games.forEach((g: any) => {
-      const w = g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : null;
-      if (w) tw[w] = (tw[w] || 0) + 1;
+    seriesList.forEach((s: any) => {
+      const isComp = isCompleted(s);
+      if (isComp) {
+        if (s.score1 > s.score2) {
+          tw[s.team1.name] = (tw[s.team1.name] || 0) + 1;
+        } else if (s.score2 > s.score1) {
+          tw[s.team2.name] = (tw[s.team2.name] || 0) + 1;
+        }
+      }
     });
     const sorted = Object.entries(tw).sort((a, b) => b[1] - a[1]);
     return sorted.length > 0 ? sorted[0][0] : '—';
@@ -236,7 +311,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
                 <div className="text-xs text-mln-green font-bold uppercase tracking-[4px] mb-2">AFL Nigeria · Official stats</div>
                 <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider mb-6">{tournament.name}</h2>
                 <div className="flex gap-6 md:gap-12 flex-wrap">
-                  <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{games.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Total Games</div></div>
+                  <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{seriesList.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Total Series</div></div>
                   <div className="w-px bg-border-color hidden md:block"></div>
                   <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{teams.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Teams</div></div>
                   <div className="w-px bg-border-color hidden md:block"></div>
@@ -291,29 +366,53 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
               </div>
             </div>
 
-            {/* Recent Matches */}
+            {/* Recent Match Series Log */}
             <div>
-              <h3 className="text-xl font-black text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">Recent Match Log</h3>
-              {games.length === 0 ? (
-                <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">No games recorded yet.</div>
+              <h3 className="text-xl font-black text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">Recent Match Series Log</h3>
+              {seriesList.length === 0 ? (
+                <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">No match series recorded yet.</div>
               ) : (
                 <div className="space-y-4">
-                  {games.slice(0, 5).map((g: any) => (
-                    <div key={g.id} className="bg-surface border border-border-color hover:border-mln-green/30 transition-colors rounded-xl overflow-hidden p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                      <div className="flex-1 text-center md:text-right">
-                        <Link href={`/teams/${g.team1Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</Link>
-                        {g.winner === 'team1' && <span className="ml-0 md:ml-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
+                  {seriesList.slice(0, 5).map((s: any) => {
+                    const isComp = isCompleted(s);
+                    return (
+                      <div key={s.id} className="bg-surface border border-border-color hover:border-mln-green/30 transition-colors rounded-xl overflow-hidden p-6 flex flex-col items-center gap-4">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+                          <div className="flex-1 text-center md:text-right">
+                            <Link href={`/teams/${s.team1Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${isComp && s.score1 > s.score2 ? 'text-mln-green' : 'text-white'}`}>{s.team1.name}</Link>
+                            {isComp && s.score1 > s.score2 && <span className="ml-0 md:ml-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
+                          </div>
+                          
+                          <div className="flex flex-col items-center justify-center text-center">
+                            <span className="text-xs bg-surface-hover border border-border-color/60 px-3 py-1 rounded-full text-yellow-400 font-bold font-mono">Week {s.week} · BO{s.boFormat}</span>
+                            <div className="text-3xl font-black text-white font-mono mt-2 tracking-widest">{s.score1} : {s.score2}</div>
+                            <span className="text-gray-500 text-[10px] mt-1 font-bold font-mono uppercase tracking-wider">{isComp ? 'Completed' : 'In Progress'}</span>
+                          </div>
+
+                          <div className="flex-1 text-center md:text-left">
+                            {isComp && s.score2 > s.score1 && <span className="mr-0 md:mr-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
+                            <Link href={`/teams/${s.team2Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${isComp && s.score2 > s.score1 ? 'text-mln-green' : 'text-white'}`}>{s.team2.name}</Link>
+                          </div>
+                        </div>
+
+                        {/* Series individual games */}
+                        <div className="w-full border-t border-border-color/60 pt-4 mt-2">
+                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 font-mono">Games in Series:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {s.games.map((g: any) => (
+                              <Link href={`/matches/${g.id}`} key={g.id} className="bg-background border border-border-color hover:border-mln-green/30 text-xs px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all">
+                                <span className="text-mln-green font-bold">Game {g.gameNumber}</span>
+                                <span className="text-gray-500 font-medium">({g.duration || 'N/A'})</span>
+                                <span className="text-[10px] bg-surface px-1.5 py-0.5 rounded text-gray-400 font-bold uppercase">
+                                  {g.winner === 'team1' ? 'Winner: ' + g.team1.name : g.winner === 'team2' ? 'Winner: ' + g.team2.name : 'TBD'}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-center justify-center text-center">
-                        <span className="text-xs bg-surface-hover border border-border-color/60 px-3 py-1 rounded-full text-yellow-400 font-bold font-mono">Week {g.week} · Game {g.gameNumber}</span>
-                        <span className="text-gray-600 text-xs mt-2 uppercase tracking-widest font-bold">VS</span>
-                      </div>
-                      <div className="flex-1 text-center md:text-left">
-                        {g.winner === 'team2' && <span className="mr-0 md:mr-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
-                        <Link href={`/teams/${g.team2Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</Link>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -427,82 +526,110 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
         {/* MATCHES LOG TAB */}
         {activeTab === 'matches' && (
           <div className="space-y-4">
-            <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Game Logs & Picks</h3>
-            {games.length === 0 ? (
-              <p className="text-gray-400">No games recorded yet.</p>
+            <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Match Series & Game Details</h3>
+            {seriesList.length === 0 ? (
+              <p className="text-gray-400">No match series recorded yet.</p>
             ) : (
-              games.map((g: any) => {
-                const t1Picks = (g.picks || []).filter((p: any) => p.team === 'team1');
-                const t2Picks = (g.picks || []).filter((p: any) => p.team === 'team2');
-                const t1Bans = (g.bans || []).filter((b: any) => b.team === 'team1');
-                const t2Bans = (g.bans || []).filter((b: any) => b.team === 'team2');
+              seriesList.map((s: any) => {
+                const isComp = isCompleted(s);
                 return (
-                  <div key={g.id} className="bg-surface border border-border-color hover:border-mln-green/40 transition-colors rounded-xl overflow-hidden shadow-lg">
-                    <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border-color text-xs">
-                      <div className="flex gap-3 items-center">
-                        <span className="bg-yellow-600/20 text-yellow-400 border border-yellow-600/40 px-3 py-1 rounded-lg font-bold uppercase tracking-wider font-mono">Week {g.week}</span>
-                        <span className="text-gray-500 font-bold uppercase font-mono">Game {g.gameNumber}</span>
-                        {g.date && <span className="text-gray-500 font-mono">{g.date}</span>}
+                  <div key={s.id} className="bg-surface border border-border-color rounded-xl overflow-hidden shadow-lg p-6 space-y-6">
+                    {/* Series Header Card */}
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-border-color/60">
+                      <div className="flex-1 text-center md:text-right">
+                        <Link href={`/teams/${s.team1Id}`} className={`text-2xl font-black hover:text-mln-green transition-colors uppercase ${isComp && s.score1 > s.score2 ? 'text-mln-green' : 'text-white'}`}>{s.team1.name}</Link>
+                        {isComp && s.score1 > s.score2 && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 md:mt-0 md:ml-3 inline-block">SERIES WINNER</span>}
                       </div>
-                      <Link href={`/matches/${g.id}`} className="text-xs text-mln-green hover:underline uppercase font-bold tracking-wider font-mono">
-                        View Details →
-                      </Link>
+                      
+                      <div className="flex flex-col items-center justify-center text-center shrink-0 px-6 py-2 bg-background border border-border-color rounded-xl min-w-[140px]">
+                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Week {s.week} · BO{s.boFormat}</span>
+                        <div className="text-3xl font-black text-white font-mono mt-1">{s.score1} : {s.score2}</div>
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded mt-1.5 ${isComp ? 'bg-mln-green/10 text-mln-green' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                          {isComp ? 'Completed' : 'In Progress'}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 text-center md:text-left">
+                        <Link href={`/teams/${s.team2Id}`} className={`text-2xl font-black hover:text-mln-green transition-colors uppercase ${isComp && s.score2 > s.score1 ? 'text-mln-green' : 'text-white'}`}>{s.team2.name}</Link>
+                        {isComp && s.score2 > s.score1 && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 md:mt-0 md:mr-3 inline-block">SERIES WINNER</span>}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 items-center p-6 gap-4">
-                      <div className="text-center md:text-right">
-                        <Link href={`/teams/${g.team1Id}`} className={`text-xl font-black hover:text-mln-green transition-colors ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</Link>
-                        {g.winner === 'team1' && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 inline-block">WINNER</span>}
-                      </div>
-                      <div className="text-center text-gray-600 text-xs font-bold tracking-widest uppercase">VS</div>
-                      <div className="text-center md:text-left">
-                        <Link href={`/teams/${g.team2Id}`} className={`text-xl font-black hover:text-mln-green transition-colors ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</Link>
-                        {g.winner === 'team2' && <span className="text-[10px] bg-mln-green/20 text-mln-green border border-mln-green/40 px-2 py-0.5 rounded font-bold mt-2 inline-block">WINNER</span>}
-                      </div>
+
+                    {/* Games Inside Series */}
+                    <div className="space-y-4">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider font-mono">Series Games:</div>
+                      {s.games.map((g: any) => {
+                        const t1Picks = (g.picks || []).filter((p: any) => p.team === 'team1');
+                        const t2Picks = (g.picks || []).filter((p: any) => p.team === 'team2');
+                        const t1Bans = (g.bans || []).filter((b: any) => b.team === 'team1');
+                        const t2Bans = (g.bans || []).filter((b: any) => b.team === 'team2');
+                        return (
+                          <div key={g.id} className="bg-background/40 border border-border-color/80 rounded-lg overflow-hidden">
+                            {/* Game Header */}
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-background border-b border-border-color text-xs">
+                              <div className="flex gap-3 items-center">
+                                <span className="text-yellow-400 font-bold uppercase tracking-wider font-mono">Game {g.gameNumber}</span>
+                                <span className="text-gray-500 font-mono">Duration: {g.duration || 'N/A'}</span>
+                                {g.date && <span className="text-gray-500 font-mono">{g.date}</span>}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-gray-400">Winner: <strong className="text-mln-green uppercase font-mono">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</strong></span>
+                                <Link href={`/matches/${g.id}`} className="text-xs text-mln-green hover:underline uppercase font-bold tracking-wider font-mono">
+                                  Scoreboard →
+                                </Link>
+                              </div>
+                            </div>
+
+                            {/* Picks & Bans Mini View */}
+                            {(t1Bans.length > 0 || t2Bans.length > 0 || t1Picks.length > 0 || t2Picks.length > 0) && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 text-xs">
+                                <div>
+                                  <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1.5">Bans · {g.team1.name}</div>
+                                  <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {t1Bans.map((b: any) => (
+                                      <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
+                                        <img src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
+                                        <span className="scale-90">{b.hero}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-1.5">Picks · {g.team1.name}</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {t1Picks.map((p: any) => (
+                                      <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
+                                        <img src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
+                                        <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1.5">Bans · {g.team2.name}</div>
+                                  <div className="flex flex-wrap gap-1.5 mb-3">
+                                    {t2Bans.map((b: any) => (
+                                      <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
+                                        <img src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
+                                        <span className="scale-90">{b.hero}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-1.5">Picks · {g.team2.name}</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {t2Picks.map((p: any) => (
+                                      <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
+                                        <img src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
+                                        <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {(t1Bans.length > 0 || t2Bans.length > 0 || t1Picks.length > 0 || t2Picks.length > 0) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pb-6 border-t border-border-color/60 pt-4">
-                        <div>
-                          <div className="text-xs text-red-400 font-bold uppercase tracking-widest mb-2">Bans · {g.team1.name}</div>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {t1Bans.map((b: any) => (
-                              <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
-                                <img src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
-                                <span>{b.hero}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="text-xs text-mln-green font-bold uppercase tracking-widest mb-2">Picks · {g.team1.name}</div>
-                          <div className="flex flex-wrap gap-2">
-                            {t1Picks.map((p: any) => (
-                              <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
-                                <img src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
-                                <span>{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-red-400 font-bold uppercase tracking-widest mb-2">Bans · {g.team2.name}</div>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {t2Bans.map((b: any) => (
-                              <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
-                                <img src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
-                                <span>{b.hero}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="text-xs text-mln-green font-bold uppercase tracking-widest mb-2">Picks · {g.team2.name}</div>
-                          <div className="flex flex-wrap gap-2">
-                            {t2Picks.map((p: any) => (
-                              <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2.5 rounded-full text-xs font-semibold overflow-hidden">
-                                <img src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
-                                <span>{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })

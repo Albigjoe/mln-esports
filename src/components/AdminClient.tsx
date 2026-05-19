@@ -17,11 +17,110 @@ function emptyPick() {
 
 type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'news' | 'staff' | 'settings';
 
+function groupGamesIntoSeries(gamesList: any[]) {
+  const seriesMap: Record<string, {
+    id: string;
+    tournamentId: string;
+    week: number;
+    team1: any;
+    team2: any;
+    team1Id: string;
+    team2Id: string;
+    boFormat: number;
+    date: string;
+    games: any[];
+    score1: number;
+    score2: number;
+    createdAt: Date;
+  }> = {};
+
+  const sortedGames = [...gamesList].sort((a, b) => a.gameNumber - b.gameNumber);
+
+  sortedGames.forEach(game => {
+    const tKey = [game.team1Id, game.team2Id].sort().join('-');
+    const seriesKey = `${game.tournamentId || 'default'}-${game.week}-${tKey}-${game.boFormat}`;
+
+    if (!seriesMap[seriesKey]) {
+      seriesMap[seriesKey] = {
+        id: game.id,
+        tournamentId: game.tournamentId,
+        week: game.week,
+        team1: game.team1,
+        team2: game.team2,
+        team1Id: game.team1Id,
+        team2Id: game.team2Id,
+        boFormat: game.boFormat,
+        date: game.date,
+        games: [],
+        score1: 0,
+        score2: 0,
+        createdAt: new Date(game.createdAt)
+      };
+    }
+
+    const series = seriesMap[seriesKey];
+    series.games.push(game);
+
+    if (game.winner === 'team1') {
+      if (game.team1Id === series.team1Id) {
+        series.score1++;
+      } else {
+        series.score2++;
+      }
+    } else if (game.winner === 'team2') {
+      if (game.team2Id === series.team2Id) {
+        series.score2++;
+      } else {
+        series.score1++;
+      }
+    }
+  });
+
+  return Object.values(seriesMap).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+function getSeriesStatus(s: any) {
+  const count = s.games.length;
+  if (s.boFormat === 1) {
+    return { completed: count >= 1, message: 'Complete' };
+  }
+  if (s.boFormat === 2) {
+    if (count < 2) return { completed: false, message: `Needs ${2 - count} more game(s)` };
+    return { completed: true, message: 'Complete' };
+  }
+  if (s.boFormat === 3) {
+    if (s.score1 === 2 || s.score2 === 2) return { completed: true, message: 'Complete' };
+    return { completed: false, message: `Needs more games (currently ${s.score1}:${s.score2})` };
+  }
+  if (s.boFormat === 5) {
+    if (s.score1 === 3 || s.score2 === 3) return { completed: true, message: 'Complete' };
+    return { completed: false, message: `Needs more games (currently ${s.score1}:${s.score2})` };
+  }
+  if (s.boFormat === 7) {
+    if (s.score1 === 4 || s.score2 === 4) return { completed: true, message: 'Complete' };
+    return { completed: false, message: `Needs more games (currently ${s.score1}:${s.score2})` };
+  }
+  return { completed: false, message: 'Unknown Format' };
+}
+
 export default function AdminClient({ session, tournaments, teams, recentGames, posts, staffUsers, players }: any) {
   const router = useRouter();
   const [tab, setTab] = useState<TabType>('dashboard');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+
+  const adminSeriesList = groupGamesIntoSeries(recentGames);
+
+  const startNextGameInSeries = (s: any) => {
+    setTournamentId(s.tournamentId);
+    setWeek(String(s.week));
+    setTeam1Id(s.team1Id);
+    setTeam2Id(s.team2Id);
+    setBoFormat(String(s.boFormat));
+    setGameNumber(String(s.games.length + 1));
+    setDate(s.date || new Date().toISOString().split('T')[0]);
+    setTab('add');
+  };
 
   const [tournamentId, setTournamentId] = useState(tournaments[0]?.id || '');
   const [team1Id, setTeam1Id] = useState('');
@@ -126,22 +225,69 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
               <div className="text-center"><div className="text-4xl font-black text-mln-green">{posts?.length || 0}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Posts</div></div>
             </div>
           </div>
-          <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">Recent Games</h3>
+          
+          <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">Match Series & Completion Validation</h3>
+          <div className="space-y-4 mb-8">
+            {adminSeriesList.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">No match series found. Add a game to begin!</div>
+            ) : adminSeriesList.map((s: any) => {
+              const status = getSeriesStatus(s);
+              return (
+                <div key={s.id} className="bg-surface border border-border-color rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-yellow-600/20 text-yellow-400 border border-yellow-600/40 px-2 py-0.5 rounded text-xs font-bold font-mono">W{s.week}</span>
+                      <span className="text-xs text-gray-500 font-bold uppercase">BO{s.boFormat} Series</span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${status.completed ? 'bg-mln-green/20 text-mln-green' : 'bg-red-500/20 text-red-400'}`}>
+                        {status.message}
+                      </span>
+                    </div>
+                    <div className="text-lg font-black text-white">
+                      {s.team1.name} <span className="text-mln-green font-mono">{s.score1} : {s.score2}</span> {s.team2.name}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Logged Games: {s.games.map((g: any) => `Game ${g.gameNumber}`).join(', ')}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!status.completed && (
+                      <button onClick={() => startNextGameInSeries(s)} className="bg-mln-green hover:bg-mln-green-dark text-black px-3 py-1.5 rounded text-xs font-black uppercase tracking-wider transition-colors">
+                        + Add Game {s.games.length + 1}
+                      </button>
+                    )}
+                    <button onClick={() => {
+                      if(confirm('Delete all games in this series?')) {
+                        s.games.forEach(async (g: any) => {
+                          await fetch(`/api/games/${g.id}`, { method: 'DELETE' });
+                        });
+                        setTimeout(() => router.refresh(), 1000);
+                      }
+                    }} className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors">
+                      Delete Series
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">All Individual Game Entries</h3>
           <div className="bg-background border border-border-color rounded-xl overflow-hidden">
             <table className="w-full text-left text-sm text-gray-400">
               <thead className="bg-surface text-xs uppercase text-white">
-                <tr><th className="px-6 py-4">Week</th><th className="px-6 py-4">Team 1</th><th className="px-6 py-4 text-center">VS</th><th className="px-6 py-4">Team 2</th><th className="px-6 py-4">Winner</th><th className="px-6 py-4 text-right">Actions</th></tr>
+                <tr><th className="px-6 py-4">Week</th><th className="px-6 py-4">Game #</th><th className="px-6 py-4">Team 1</th><th className="px-6 py-4 text-center">VS</th><th className="px-6 py-4">Team 2</th><th className="px-6 py-4">Winner</th><th className="px-6 py-4 text-right">Actions</th></tr>
               </thead>
               <tbody>
                 {recentGames.length === 0 ? (
-                  <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No games yet. Click &quot;Add Game&quot; to start!</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">No games yet. Click &quot;Add Game&quot; to start!</td></tr>
                 ) : recentGames.map((g: any) => (
                   <tr key={g.id} className="border-b border-border-color hover:bg-surface-hover transition-colors">
                     <td className="px-6 py-4"><span className="bg-yellow-600/20 text-yellow-400 border border-yellow-600/40 px-2 py-0.5 rounded text-xs font-bold">W{g.week}</span></td>
+                    <td className="px-6 py-4 font-mono font-bold text-white text-xs">Game {g.gameNumber} (BO{g.boFormat})</td>
                     <td className={`px-6 py-4 font-bold ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</td>
                     <td className="px-6 py-4 text-center text-gray-600">vs</td>
                     <td className={`px-6 py-4 font-bold ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</td>
-                    <td className="px-6 py-4 text-mln-green font-bold">{g.winner === 'team1' ? g.team1.name : g.team2.name}</td>
+                    <td className="px-6 py-4 text-mln-green font-bold">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</td>
                     <td className="px-6 py-4 text-right"><button onClick={() => handleDelete(g.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button></td>
                   </tr>
                 ))}
@@ -172,13 +318,13 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Week</label><input type="number" min="1" value={week} onChange={e => setWeek(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Game #</label><input type="number" min="1" max="7" value={gameNumber} onChange={e => setGameNumber(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
-              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">BO Format</label><select value={boFormat} onChange={e => setBoFormat(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="1">BO1</option><option value="3">BO3</option><option value="5">BO5</option><option value="7">BO7</option></select></div>
+              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">BO Format</label><select value={boFormat} onChange={e => setBoFormat(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="1">BO1</option><option value="2">BO2</option><option value="3">BO3</option><option value="5">BO5</option><option value="7">BO7</option></select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Duration</label><input type="text" value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 15:30" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 1</label><select value={team1Id} onChange={e => setTeam1Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 1</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 2</label><select value={team2Id} onChange={e => setTeam2Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 2</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Winner</label><select value={winner} onChange={e => setWinner(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Winner</option><option value="team1">{team1Name}</option><option value="team2">{team2Name}</option></select></div>
+              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Winner</label><select value={winner} onChange={e => setWinner(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Winner</option><option value="none">None (Upcoming / Draw)</option><option value="team1">{team1Name}</option><option value="team2">{team2Name}</option></select></div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
