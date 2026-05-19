@@ -54,7 +54,7 @@ export default async function Home() {
       {/* Hero */}
       <section className="relative w-full h-[70vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-background z-10" />
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/rnk-vs-astral.jpeg')" }} />
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
           <span className="text-mln-green font-bold tracking-widest uppercase mb-4 text-sm md:text-base">Welcome to the Arena</span>
           <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight uppercase mb-6 drop-shadow-lg">
