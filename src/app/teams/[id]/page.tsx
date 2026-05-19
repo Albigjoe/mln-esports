@@ -138,12 +138,12 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
               <div className="w-px bg-border-color"></div>
               <div>
                 <span className="text-[10px] text-gray-500 block uppercase tracking-wider font-bold">Losses</span>
-                <span className="text-2xl font-black text-red-400">{losses}</span>
+                <span className="text-2xl font-black text-gray-400">{losses}</span>
               </div>
               <div className="w-px bg-border-color"></div>
               <div>
                 <span className="text-[10px] text-gray-500 block uppercase tracking-wider font-bold">Win Rate</span>
-                <span className="text-2xl font-black text-yellow-400">{matchesPlayed > 0 ? ((wins/matchesPlayed)*100).toFixed(0) : 0}%</span>
+                <span className="text-2xl font-black text-white">{matchesPlayed > 0 ? ((wins/matchesPlayed)*100).toFixed(0) : 0}%</span>
               </div>
             </div>
           </div>
@@ -207,7 +207,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                     <div key={g.id} className="bg-surface border border-border-color p-4 rounded-xl">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
-                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-black px-2 py-0.5 rounded uppercase tracking-wider font-mono">UPCOMING</span>
+                        <span className="text-[10px] bg-surface-hover text-gray-300 border border-border-color font-black px-2 py-0.5 rounded uppercase tracking-wider font-mono">UPCOMING</span>
                       </div>
                       <div className="flex items-center gap-3 justify-between">
                         <span className="font-black text-white text-sm uppercase">vs {opponent.name}</span>
@@ -235,7 +235,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                     <Link href={`/matches/${g.id}`} key={g.id} className="block bg-surface border border-border-color hover:border-mln-green/40 p-4 rounded-xl transition-all">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${won ? 'bg-mln-green/20 text-mln-green' : 'bg-red-500/20 text-red-400'}`}>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${won ? 'bg-mln-green/20 text-mln-green' : 'bg-background text-gray-400 border border-border-color'}`}>
                           {won ? 'WIN' : 'LOSS'}
                         </span>
                       </div>
