@@ -1,0 +1,106 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  name        String
+  status      String   @default("upcoming")
+  startDate   DateTime
+  endDate     DateTime?
+  bannerUrl   String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  games       Game[]
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  homeGames   Game[]  @relation("HomeTeam")
+  awayGames   Game[]  @relation("AwayTeam")
+}
+
+model Game {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id])
+
+  team1Id       String
+  team1         Team       @relation("HomeTeam", fields: [team1Id], references: [id])
+  team2Id       String
+  team2         Team       @relation("AwayTeam", fields: [team2Id], references: [id])
+
+  winner        String   @default("")
+  week          Int      @default(1)
+  gameNumber    Int      @default(1)
+  date          String   @default("")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bans          Ban[]
+  picks         Pick[]
+}
+
+model Ban {
+  id        String @id @default(cuid())
+  gameId    String
+  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  team      String
+  hero      String
+  banOrder  Int
+}
+
+model Pick {
+  id              String @id @default(cuid())
+  gameId          String
+  game            Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  team            String
+  hero            String
+  playerUsername  String @default("")
+  role            String @default("")
+  kills           Int    @default(0)
+  deaths          Int    @default(0)
+  assists         Int    @default(0)
+  gold            Int    @default(0)
+  damage          Int    @default(0)
+  pickOrder       Int    @default(0)
+}
+
+model AdminUser {
+  id        String @id @default(cuid())
+  email     String @unique
+  password  String
+  name      String
+  role      String @default("staff") // admin, staff
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String
+  excerpt     String   @default("")
+  category    String   @default("news") // news, transfer, announcement, recap
+  imageUrl    String?
+  published   Boolean  @default(false)
+  authorName  String   @default("MLN Staff")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
