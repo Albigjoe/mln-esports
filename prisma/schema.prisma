@@ -88,8 +88,6 @@ model Pick {
   tfp             Float  @default(0)
   mvpScore        Float  @default(0)
   isMvp           Boolean @default(false)
-  lordKills       Int    @default(0)
-  turtleKills     Int    @default(0)
   pickOrder       Int    @default(0)
 }
 

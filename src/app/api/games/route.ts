@@ -44,8 +44,6 @@ export async function POST(request: Request) {
             tfp: parseFloat(p.tfp) || 0,
             mvpScore: parseFloat(p.mvpScore) || 0,
             isMvp: p.isMvp === true || p.isMvp === 'true',
-            lordKills: parseInt(p.lordKills) || 0,
-            turtleKills: parseInt(p.turtleKills) || 0,
             pickOrder: p.pickOrder || 0,
           })),
         },

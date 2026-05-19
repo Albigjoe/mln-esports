@@ -216,32 +216,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
 
           {/* Last Match Results & Upcoming Fixtures Side Panel */}
           <div className="space-y-8">
-            <div>
-              <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3 mb-6">Upcoming Fixtures</h3>
-              <div className="space-y-4">
-                {upcomingMatches.length === 0 ? (
-                  <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500 text-sm">No upcoming fixtures scheduled.</div>
-                ) : upcomingMatches.map(g => {
-                  const isTeam1 = g.team1Id === id;
-                  const opponent = isTeam1 ? g.team2 : g.team1;
-                  return (
-                    <div key={g.id} className="bg-surface border border-border-color p-4 rounded-xl">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{g.tournament.name}</span>
-                        <span className="text-[10px] bg-surface-hover text-gray-300 border border-border-color font-black px-2 py-0.5 rounded uppercase tracking-wider font-mono">UPCOMING</span>
-                      </div>
-                      <div className="flex items-center gap-3 justify-between">
-                        <span className="font-black text-white text-sm uppercase">vs {opponent.name}</span>
-                        <span className="text-xs text-gray-400 font-semibold">{g.date}</span>
-                      </div>
-                      <div className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">
-                        BO{g.boFormat} · Game {g.gameNumber}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+
 
             <div>
               <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3 mb-6">Recent Match History</h3>

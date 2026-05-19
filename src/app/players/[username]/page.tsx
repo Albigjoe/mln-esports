@@ -46,8 +46,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
   let totalDamage = 0;
   let savages = 0;
   let maniacs = 0;
-  let lordKills = 0;
-  let turtleKills = 0;
   let mvpCount = 0;
 
   const heroStats: Record<string, { picks: number; wins: number; kills: number; deaths: number; assists: number }> = {};
@@ -65,8 +63,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
     totalDamage += p.damage;
     savages += p.savages;
     maniacs += p.maniacs;
-    lordKills += (p as any).lordKills || 0;
-    turtleKills += (p as any).turtleKills || 0;
     if ((p as any).isMvp) mvpCount++;
 
     // Track hero specific stats
@@ -206,10 +202,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
             </div>
 
             {/* Milestones Highlights */}
-            {(savages > 0 || maniacs > 0 || mvpCount > 0 || lordKills > 0 || turtleKills > 0) && (
+            {(savages > 0 || maniacs > 0 || mvpCount > 0) && (
               <div className="bg-surface border border-border-color rounded-xl p-5">
                 <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Career Milestones</div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
                   {mvpCount > 0 && (
                     <div className="bg-background rounded-xl p-3">
                       <div className="text-2xl font-black text-mln-green">★ {mvpCount}</div>
@@ -226,18 +222,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ usernam
                     <div className="bg-background rounded-xl p-3">
                       <div className="text-2xl font-black text-white">🔥 {maniacs}</div>
                       <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Maniacs</div>
-                    </div>
-                  )}
-                  {lordKills > 0 && (
-                    <div className="bg-background rounded-xl p-3">
-                      <div className="text-2xl font-black text-white">👑 {lordKills}</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Lord Kills</div>
-                    </div>
-                  )}
-                  {turtleKills > 0 && (
-                    <div className="bg-background rounded-xl p-3">
-                      <div className="text-2xl font-black text-white">🐢 {turtleKills}</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Turtle Kills</div>
                     </div>
                   )}
                 </div>

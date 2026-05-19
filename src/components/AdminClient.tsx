@@ -13,7 +13,7 @@ const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
 
 function emptyPick() {
-  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false, lordKills: '0', turtleKills: '0' };
+  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
 }
 
 type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'awards' | 'news' | 'staff' | 'settings';
@@ -495,7 +495,7 @@ function PickSection({ label, picks, setPicks }: { label: string; picks: any[]; 
               </div>
             </div>
             {/* Row 3: Milestones */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
                 <input placeholder="0" inputMode="numeric" value={p.savages} onChange={e => updatePick(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -503,14 +503,6 @@ function PickSection({ label, picks, setPicks }: { label: string; picks: any[]; 
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
                 <input placeholder="0" inputMode="numeric" value={p.maniacs} onChange={e => updatePick(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Lord Kills</label>
-                <input placeholder="0" inputMode="numeric" value={p.lordKills} onChange={e => updatePick(i,'lordKills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Turtle Kills</label>
-                <input placeholder="0" inputMode="numeric" value={p.turtleKills} onChange={e => updatePick(i,'turtleKills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
           </div>
