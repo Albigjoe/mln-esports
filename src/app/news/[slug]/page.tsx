@@ -68,7 +68,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Banner Image */}
       {post.imageUrl && (
         <div className="rounded-xl overflow-hidden border border-border-color mb-10 shadow-2xl">
-          <img src={post.imageUrl} alt={post.title} className="w-full h-auto max-h-[400px] object-cover" />
+          <img src={post.imageUrl} alt={post.title} className="w-full h-auto rounded-xl" />
         </div>
       )}
 
