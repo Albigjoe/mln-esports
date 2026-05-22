@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Wallet, User } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -13,6 +13,11 @@ export default function Navbar() {
     { name: 'Heroes', href: '/heroes' },
     { name: 'News', href: '/news' },
     { name: 'About', href: '/#about' },
+  ];
+
+  const userLinks = [
+    { name: 'Wallet', href: '/wallet', icon: <Wallet size={16} /> },
+    { name: 'Profile', href: '/profile', icon: <User size={16} /> },
   ];
 
   return (
@@ -48,12 +53,23 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <Link 
-                href="/admin"
-                className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-md text-sm font-bold tracking-wide uppercase transition-colors"
-              >
-                Admin Panel
-              </Link>
+              <div className="flex items-center gap-2 border-l border-border-color pl-6 ml-2">
+                {userLinks.map(link => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="flex items-center gap-1.5 text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition-all"
+                  >
+                    {link.icon} {link.name}
+                  </Link>
+                ))}
+                <Link 
+                  href="/admin"
+                  className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-md text-sm font-bold tracking-wide uppercase transition-colors"
+                >
+                  Admin
+                </Link>
+              </div>
             </div>
           </div>
           
@@ -79,6 +95,16 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
               >
                 {link.name}
+              </Link>
+            ))}
+            {userLinks.map(link => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="flex items-center gap-2 text-gray-300 hover:text-mln-green px-3 py-2 rounded-md text-base font-medium tracking-wide uppercase"
+                onClick={() => setIsOpen(false)}
+              >
+                {link.icon} {link.name}
               </Link>
             ))}
             <Link 
