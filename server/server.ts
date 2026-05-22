@@ -94,7 +94,7 @@ setInterval(() => {
   });
 }, 5000); // Send update every 5 seconds
 
-const PORT = process.env.BACKEND_PORT || 3001;
+const PORT = process.env.PORT || process.env.BACKEND_PORT || 3001;
 
 httpServer.listen(PORT, () => {
   console.log(`🚀 MLN Esports Core Stateful Backend running on http://localhost:${PORT}`);
