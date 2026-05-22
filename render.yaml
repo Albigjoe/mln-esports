@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mln-backend-api
+    env: docker
+    dockerfilePath: server/Dockerfile
+    dockerContext: server
+    plan: free
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # User will input this on Render dashboard
