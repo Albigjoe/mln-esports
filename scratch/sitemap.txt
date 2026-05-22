@@ -1,0 +1,137 @@
+Home & DiscoveryTournamentsTeams & PlayersLeaderboard
+Profile & Wallet
+ NIGERIA ESPORTS · MOBILE LEGENDS · SITEMAP V1.0
+MLMLMLMLNGNGNGNGTOURNAMENT APPTOURNAMENT APPTOURNAMENT APPTOURNAMENT APPInformation Architecture · 5 Core Sections · 40+ Screens
+Dashboard / Feed
+Live matches, announcements, hero of the day
+Live Match Tracker
+Real-time scores, kills, objectives
+News & Updates
+Patches, meta shifts, tournament news
+Featured Highlights
+Clip reels, MVP plays, streaks
+Quick Actions
+Register, find team, share result
+MODALS / OVERLAYS
+Match Detail Sheet
+HomeDiscovery & live activity hub
+01 / 05
+8 screens
+⊥
+Tournament Lobby
+Active, upcoming, past — filter by state
+Tournament Detail
+Prizepool, rules, schedule, sponsors
+Bracket View
+Single/double elim, group stage
+Registration Flow
+Solo or team entry, entry fee, IGN verify
+Match Schedule
+Calendar grid, add to device calendar
+SUB-SCREENS
+Match Lobby Room
+TournamentsBrowse, register & compete
+02 / 05
+10 screens
+⊥
+Push Notification Prompt
+Onboarding Carousel
+⊥
+⊥
+Result Submission
+Screenshot Upload
+Dispute / Appeal
+Prize Claim
+⊥
+⊥
+⊥
+⊥
+Teams Directory
+Search by state, tier, win rate
+Team Profile
+Logo, roster, history, trophies
+Create / Manage Team
+Invite members, set roles, tag, logo
+Player Search
+Filter by role, rank, state
+Player Profile
+Hero pool, rank, tournament history
+SUB-SCREENS
+Scrim Request
+Team Chat
+Player Invite Modal
+Transfer / Leave
+TeamsRosters, recruitment & stats
+03 / 05
+9 screens
+⊥
+⊥
+⊥
+⊥
+National Rankings
+Top teams & players across Nigeria
+State/Regional Board
+Lagos, Abuja, Rivers, Kano, etc.
+Hero Stats
+Win rate, pick rate, ban rate by patch
+Season Archive
+Past season champions & records
+Achievements / Badges
+First win, 10-peat, MVP streak
+SUB-SCREENS
+Player Comparison
+Share Rank Card
+LeaderboardRankings, stats & achievements
+04 / 05
+7 screens
+⊥
+⊥
+My Profile
+Avatar, IGN, rank badge, bio
+Tournament History
+Past entries, results, earnings
+ProfileAccount, wallet & settings
+05 / 05
+10 screens
+
+5Main Sections
+44Total Screens
+16Modals & Overlays
+3User Roles
+PLAYER · TEAM CAPTAIN · TOURNAMENT ADMIN
+Wallet & Payouts
+Balance, deposit, withdraw (Paystack/Flutterwave)
+Notifications
+Match reminders, results, disputes
+Settings
+Privacy, security, linked accounts
+SUB-SCREENS
+Edit Profile
+KYC Verification
+Transaction History
+Help & Support
+Refer & Earn
+⊥
+⊥
+⊥
+⊥
+⊥
+ Auth Flow
+Splash / Launch
+Sign Up
+Log In
+Forgot Password
+OTP Verify
+Google/Facebook OAuth
+IGN Link
+Onboarding
+ Global / System
+Search (Global)
+Error / 404
+Maintenance Mode
+Terms & Conditions
+Privacy Policy
+FAQ
+Contact Support
+App Update Prompt
+

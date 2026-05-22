@@ -123,6 +123,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
     setTab('add');
   };
 
+  const [editingGameId, setEditingGameId] = useState<string | null>(null);
   const [tournamentId, setTournamentId] = useState(tournaments[0]?.id || '');
   const [team1Id, setTeam1Id] = useState('');
   const [team2Id, setTeam2Id] = useState('');
@@ -137,18 +138,184 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const [picks1, setPicks1] = useState(Array(5).fill(null).map(emptyPick));
   const [picks2, setPicks2] = useState(Array(5).fill(null).map(emptyPick));
 
+  const recalculateTeamStats = (teamPicks: any[]) => {
+    const totalKills = teamPicks.reduce((sum, p) => sum + (parseInt(p.kills) || 0), 0);
+    return teamPicks.map(p => {
+      const k = parseInt(p.kills) || 0;
+      const d = parseInt(p.deaths) || 0;
+      const a = parseInt(p.assists) || 0;
+      const gold = parseInt(p.gold) || 0;
+      const dmg = parseInt(p.damage) || 0;
+      
+      if (k === 0 && d === 0 && a === 0 && gold === 0 && dmg === 0) {
+        return { ...p, tfp: 0, mvpScore: 0 };
+      }
+
+      const tfp = totalKills > 0 ? ((k + a) / totalKills) * 100 : 0;
+      
+      const kdaRatio = d === 0 ? (k + a) * 1.2 : (k + a) / d;
+      const kdaWeight = Math.min(kdaRatio * 0.8, 6.0);
+      
+      const netPerf = (k * 0.5) + (a * 0.35) - (d * 0.6);
+      const goldWeight = Math.min((gold / 1000) * 0.35, 3.0);
+      const dmgWeight = Math.min((dmg / 10000) * 0.25, 3.0);
+      
+      let rating = 4.5 + kdaWeight + netPerf + goldWeight + dmgWeight;
+      const mvpScore = Math.max(3.0, Math.min(15.0, parseFloat(rating.toFixed(1))));
+      
+      return {
+        ...p,
+        tfp: parseFloat(tfp.toFixed(1)),
+        mvpScore
+      };
+    });
+  };
+
+  const determineMVPs = (p1: any[], p2: any[], winnerStr: string) => {
+    const newP1 = p1.map(p => ({ ...p, isMvp: false }));
+    const newP2 = p2.map(p => ({ ...p, isMvp: false }));
+    
+    if (winnerStr === 'team1') {
+      let maxIdx = 0;
+      let maxVal = -1;
+      newP1.forEach((p, idx) => {
+        if (p.mvpScore > maxVal) {
+          maxVal = p.mvpScore;
+          maxIdx = idx;
+        }
+      });
+      if (newP1[maxIdx]) newP1[maxIdx].isMvp = true;
+    } else if (winnerStr === 'team2') {
+      let maxIdx = 0;
+      let maxVal = -1;
+      newP2.forEach((p, idx) => {
+        if (p.mvpScore > maxVal) {
+          maxVal = p.mvpScore;
+          maxIdx = idx;
+        }
+      });
+      if (newP2[maxIdx]) newP2[maxIdx].isMvp = true;
+    }
+    
+    return [newP1, newP2];
+  };
+
+  const handlePickChange = (team: 'team1' | 'team2', i: number, field: string, value: any) => {
+    const isTeam1 = team === 'team1';
+    const picks = isTeam1 ? [...picks1] : [...picks2];
+    const otherPicks = isTeam1 ? picks2 : picks1;
+    
+    if (field === 'hero' && value.trim()) {
+      const matches = HEROES.filter(h => h.toLowerCase() === value.trim().toLowerCase());
+      if (matches.length > 0) {
+        const matchedHero = matches[0];
+        const duplicateOwn = picks.some((p, idx) => idx !== i && p.hero === matchedHero);
+        const duplicateOther = otherPicks.some(p => p.hero === matchedHero);
+        
+        if (duplicateOwn || duplicateOther) {
+          setMsg(`⚠️ Hero "${matchedHero}" is already picked! Duplicates are not allowed.`);
+          return;
+        }
+        value = matchedHero;
+      }
+    }
+    
+    const np = [...picks];
+    np[i] = { ...np[i], [field]: value };
+    
+    if (field === 'role' && value) {
+      const assignedRoles = np.map(p => p.role).filter(Boolean);
+      const unassignedIdx = np.map((p, idx) => !p.role ? idx : -1).filter(idx => idx !== -1);
+      if (unassignedIdx.length === 1) {
+        const remainingRole = ROLES.find(r => !assignedRoles.includes(r));
+        if (remainingRole) {
+          np[unassignedIdx[0]].role = remainingRole;
+        }
+      }
+    }
+    
+    const updatedTeam = recalculateTeamStats(np);
+    
+    if (isTeam1) {
+      const [finalP1, finalP2] = determineMVPs(updatedTeam, picks2, winner);
+      setPicks1(finalP1);
+      setPicks2(finalP2);
+    } else {
+      const [finalP1, finalP2] = determineMVPs(picks1, updatedTeam, winner);
+      setPicks1(finalP1);
+      setPicks2(finalP2);
+    }
+    setMsg('');
+  };
+
   const resetForm = () => {
     setTeam1Id(''); setTeam2Id(''); setWinner(''); setWeek('1'); setGameNumber('1');
     setBoFormat('1'); setDuration('15:00');
     setDate(new Date().toISOString().split('T')[0]);
     setBans1(['','','','','']); setBans2(['','','','','']);
     setPicks1(Array(5).fill(null).map(emptyPick)); setPicks2(Array(5).fill(null).map(emptyPick));
+    setEditingGameId(null);
     setMsg('');
+  };
+
+  const startEditGame = (g: any) => {
+    setEditingGameId(g.id);
+    setTournamentId(g.tournamentId);
+    setWeek(String(g.week));
+    setGameNumber(String(g.gameNumber));
+    setTeam1Id(g.team1Id);
+    setTeam2Id(g.team2Id);
+    setWinner(g.winner);
+    setBoFormat(String(g.boFormat));
+    setDuration(g.duration || '15:00');
+    setDate(g.date || new Date().toISOString().split('T')[0]);
+
+    const b1 = ['', '', '', '', ''];
+    const b2 = ['', '', '', '', ''];
+    (g.bans || []).forEach((b: any) => {
+      const idx = b.banOrder - 1;
+      if (idx >= 0 && idx < 5) {
+        if (b.team === 'team1') b1[idx] = b.hero;
+        else b2[idx] = b.hero;
+      }
+    });
+    setBans1(b1);
+    setBans2(b2);
+
+    const p1 = Array(5).fill(null).map(emptyPick);
+    const p2 = Array(5).fill(null).map(emptyPick);
+    const team1Picks = (g.picks || []).filter((p: any) => p.team === 'team1').sort((a: any, b: any) => a.pickOrder - b.pickOrder);
+    const team2Picks = (g.picks || []).filter((p: any) => p.team === 'team2').sort((a: any, b: any) => a.pickOrder - b.pickOrder);
+
+    team1Picks.forEach((p: any, idx: number) => {
+      if (idx < 5) p1[idx] = { ...p, isMvp: p.isMvp === true || p.isMvp === 'true' };
+    });
+    team2Picks.forEach((p: any, idx: number) => {
+      if (idx < 5) p2[idx] = { ...p, isMvp: p.isMvp === true || p.isMvp === 'true' };
+    });
+
+    setPicks1(p1);
+    setPicks2(p2);
+    setTab('add');
+    setMsg(`✏️ Editing Game ${g.gameNumber}`);
   };
 
   const handleSave = async () => {
     if (!team1Id || !team2Id) { setMsg('Select both teams'); return; }
     if (team1Id === team2Id) { setMsg('Teams must be different'); return; }
+    
+    // Strict Hero Name Validation (Prevent "rubbish" hero input)
+    for (let i = 0; i < picks1.length; i++) {
+      const p = picks1[i];
+      if (!p.hero.trim()) { setMsg(`Error: Player ${i+1} on ${team1Name} has no hero selected.`); return; }
+      if (!HEROES.includes(p.hero)) { setMsg(`Error: "${p.hero}" is not a valid MLBB hero. Please select from the autocomplete list.`); return; }
+    }
+    for (let i = 0; i < picks2.length; i++) {
+      const p = picks2[i];
+      if (!p.hero.trim()) { setMsg(`Error: Player ${i+1} on ${team2Name} has no hero selected.`); return; }
+      if (!HEROES.includes(p.hero)) { setMsg(`Error: "${p.hero}" is not a valid MLBB hero. Please select from the autocomplete list.`); return; }
+    }
+
     setSaving(true); setMsg('');
     const bans = [
       ...bans1.filter(h => h.trim()).map((h, i) => ({ team: 'team1', hero: h, banOrder: i + 1 })),
@@ -158,15 +325,26 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       ...picks1.filter(p => p.hero.trim()).map((p, i) => ({ team: 'team1', ...p, pickOrder: i + 1 })),
       ...picks2.filter(p => p.hero.trim()).map((p, i) => ({ team: 'team2', ...p, pickOrder: i + 1 })),
     ];
+
     try {
-      const res = await fetch('/api/games', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const url = editingGameId ? `/api/games/${editingGameId}` : '/api/games';
+      const method = editingGameId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tournamentId, team1Id, team2Id, winner, week, gameNumber, date, boFormat, duration, bans, picks }),
       });
       const data = await res.json();
-      if (data.success) { setMsg('✓ Game saved!'); resetForm(); router.refresh(); setTimeout(() => setTab('dashboard'), 1500); }
-      else { setMsg('Error: ' + data.error); }
-    } catch (e: any) { setMsg('Error: ' + e.message); }
+      if (data.success) {
+        setMsg(editingGameId ? '✓ Game updated!' : '✓ Game saved!');
+        resetForm();
+        router.refresh();
+        setTimeout(() => setTab('dashboard'), 1500);
+      } else {
+        setMsg('Error: ' + data.error);
+      }
+    } catch (e: any) {
+      setMsg('Error: ' + e.message);
+    }
     setSaving(false);
   };
 
@@ -289,7 +467,12 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
                     <td className="px-6 py-4 text-center text-gray-600">vs</td>
                     <td className={`px-6 py-4 font-bold ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</td>
                     <td className="px-6 py-4 text-mln-green font-bold">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</td>
-                    <td className="px-6 py-4 text-right"><button onClick={() => handleDelete(g.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button></td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-3">
+                        <button onClick={() => startEditGame(g)} className="text-mln-green hover:text-mln-green-light text-xs font-bold uppercase tracking-wider">Edit</button>
+                        <button onClick={() => handleDelete(g.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -325,7 +508,13 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 1</label><select value={team1Id} onChange={e => setTeam1Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 1</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
               <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Team 2</label><select value={team2Id} onChange={e => setTeam2Id(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Team 2</option>{teams.map((t:any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Winner</label><select value={winner} onChange={e => setWinner(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Winner</option><option value="none">None (Upcoming / Draw)</option><option value="team1">{team1Name}</option><option value="team2">{team2Name}</option></select></div>
+              <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Winner</label><select value={winner} onChange={e => {
+                const val = e.target.value;
+                setWinner(val);
+                const [finalP1, finalP2] = determineMVPs(picks1, picks2, val);
+                setPicks1(finalP1);
+                setPicks2(finalP2);
+              }} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="">Select Winner</option><option value="none">None (Upcoming / Draw)</option><option value="team1">{team1Name}</option><option value="team2">{team2Name}</option></select></div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -333,13 +522,13 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
             <BanSection label={`Bans · ${team2Name}`} bans={bans2} setBans={setBans2} />
           </div>
           <div className="grid grid-cols-1 gap-6">
-            <PickSection label={`Picks · ${team1Name}`} picks={picks1} setPicks={setPicks1} />
-            <PickSection label={`Picks · ${team2Name}`} picks={picks2} setPicks={setPicks2} />
+            <PickSection label={`Picks · ${team1Name}`} picks={picks1} onChange={(i, field, val) => handlePickChange('team1', i, field, val)} />
+            <PickSection label={`Picks · ${team2Name}`} picks={picks2} onChange={(i, field, val) => handlePickChange('team2', i, field, val)} />
           </div>
           <div className="flex gap-4 items-center">
-            <button onClick={handleSave} disabled={saving} className="bg-mln-green hover:bg-mln-green-dark text-black px-8 py-3 rounded font-bold tracking-widest uppercase transition-all disabled:opacity-50">{saving ? 'SAVING...' : 'SAVE GAME'}</button>
-            <button onClick={resetForm} className="border border-border-color text-gray-400 hover:text-white hover:border-mln-green px-6 py-3 rounded font-bold tracking-widest uppercase transition-all">Clear</button>
-            {msg && <span className={`text-sm font-bold ${msg.startsWith('✓') ? 'text-mln-green' : 'text-red-400'}`}>{msg}</span>}
+            <button onClick={handleSave} disabled={saving} className="bg-mln-green hover:bg-mln-green-dark text-black px-8 py-3 rounded font-bold tracking-widest uppercase transition-all disabled:opacity-50">{saving ? 'SAVING...' : editingGameId ? 'UPDATE GAME' : 'SAVE GAME'}</button>
+            <button onClick={resetForm} className="border border-border-color text-gray-400 hover:text-white hover:border-mln-green px-6 py-3 rounded font-bold tracking-widest uppercase transition-all">{editingGameId ? 'Cancel Edit' : 'Clear'}</button>
+            {msg && <span className={`text-sm font-bold ${msg.startsWith('✓') || msg.startsWith('✏️') || msg.startsWith('⚠️') ? 'text-mln-green' : 'text-red-400'}`}>{msg}</span>}
           </div>
         </div>
       )}
@@ -438,71 +627,81 @@ function BanSection({ label, bans, setBans }: { label: string; bans: string[]; s
   );
 }
 
-function PickSection({ label, picks, setPicks }: { label: string; picks: any[]; setPicks: (p: any[]) => void }) {
-  const updatePick = (i: number, field: string, value: any) => {
-    const np = [...picks]; np[i] = { ...np[i], [field]: value }; setPicks(np);
-  };
+function PickSection({ label, picks, onChange }: { label: string; picks: any[]; onChange: (i: number, field: string, value: any) => void }) {
   return (
     <div className="bg-surface border border-border-color rounded-xl p-6">
       <div className="text-xs text-cyan-400 font-bold uppercase tracking-[3px] mb-3">{label}</div>
       <div className="space-y-3">
         {picks.map((p, i) => (
           <div key={i} className="bg-background/50 rounded-xl p-3 space-y-2">
-            {/* Row 1: Hero, Username, Role, MVP */}
+            {/* Row 1: Hero, Username, Role, MVP, Calculated Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
-                <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => updatePick(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => onChange(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Username</label>
-                <input placeholder="Username" value={p.playerUsername} onChange={e => updatePick(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="Username" value={p.playerUsername} onChange={e => onChange(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Role</label>
-                <select value={p.role} onChange={e => updatePick(i,'role',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none"><option value="">Role</option>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+                <select value={p.role} onChange={e => onChange(i,'role',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none">
+                  <option value="">Role</option>
+                  {ROLES.filter(r => {
+                    const selected = picks.map((pk, idx) => idx !== i ? pk.role : '').filter(Boolean);
+                    return !selected.includes(r);
+                  }).map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
               </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer select-none pb-1">
-                  <div onClick={() => updatePick(i, 'isMvp', !p.isMvp)} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${p.isMvp ? 'bg-mln-green border-mln-green' : 'border-border-color bg-background'}`}>
-                    {p.isMvp && <span className="text-black text-[10px] font-black">★</span>}
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">MVP</span>
-                </label>
+              <div className="flex items-center gap-3 justify-between border border-border-color/60 bg-background/30 rounded px-2 py-1 select-none">
+                <div className="flex flex-col">
+                  <span className="text-[8px] text-gray-500 uppercase font-bold">MLBB Rating</span>
+                  <span className="text-xs font-black text-white">{parseFloat(p.mvpScore) > 0 ? parseFloat(p.mvpScore).toFixed(1) : '—'}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] text-gray-500 uppercase font-bold">TFP</span>
+                  <span className="text-xs font-black text-white">{parseFloat(p.tfp) > 0 ? `${parseFloat(p.tfp).toFixed(1)}%` : '—'}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${p.isMvp ? 'bg-mln-green text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
+                    {p.isMvp ? '★ MVP' : 'SVP'}
+                  </span>
+                </div>
               </div>
             </div>
             {/* Row 2: KDA + Gold + Damage */}
             <div className="grid grid-cols-5 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
-                <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => updatePick(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => onChange(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Deaths</label>
-                <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => updatePick(i,'deaths',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-border-color outline-none placeholder:text-gray-600" />
+                <input placeholder="D" inputMode="numeric" value={p.deaths} onChange={e => onChange(i,'deaths',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-border-color outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Assists</label>
-                <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => updatePick(i,'assists',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="A" inputMode="numeric" value={p.assists} onChange={e => onChange(i,'assists',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
-                <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => updatePick(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => onChange(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
-                <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => updatePick(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => onChange(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
             {/* Row 3: Milestones */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
-                <input placeholder="0" inputMode="numeric" value={p.savages} onChange={e => updatePick(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="0" inputMode="numeric" value={p.savages} onChange={e => onChange(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
-                <input placeholder="0" inputMode="numeric" value={p.maniacs} onChange={e => updatePick(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+                <input placeholder="0" inputMode="numeric" value={p.maniacs} onChange={e => onChange(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
           </div>

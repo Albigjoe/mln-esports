@@ -4,18 +4,13 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 
 // Lazy-init Prisma so the server boots even if DB is unreachable
-let prisma: PrismaClient | null = null;
+let prisma: PrismaClient;
 try {
-  prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
+  prisma = new PrismaClient();
   console.log('✅ PrismaClient initialized successfully');
 } catch (err: any) {
   console.warn('⚠️ PrismaClient failed to initialize, running in mock mode:', err.message);
+  prisma = null as unknown as PrismaClient;
 }
 
 // 🏆 RANK POINTS (RP) LEDGER (Non-Monetary Rewards)
@@ -47,7 +42,7 @@ router.post('/wallet/points', async (req, res) => {
         });
       }
 
-      if (wallet.balance + changeAmount < 0) {
+      if (Number(wallet.balance) + changeAmount < 0) {
         throw new Error('INSUFFICIENT_POINTS');
       }
 

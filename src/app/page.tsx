@@ -22,12 +22,13 @@ export default async function Home() {
   const playerMap: Record<string, {
     games: number; wins: number; kills: number; deaths: number; assists: number;
     damage: number; savages: number; maniacs: number; mvpCount: number;
+    totalMvpScore: number;
   }> = {};
 
   allPicks.forEach(p => {
     if (!p.playerUsername || p.playerUsername === '') return;
     const key = p.playerUsername;
-    if (!playerMap[key]) playerMap[key] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0, mvpCount: 0 };
+    if (!playerMap[key]) playerMap[key] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0, mvpCount: 0, totalMvpScore: 0 };
     playerMap[key].games++;
     playerMap[key].kills += p.kills;
     playerMap[key].deaths += p.deaths;
@@ -35,6 +36,7 @@ export default async function Home() {
     playerMap[key].damage += p.damage;
     playerMap[key].savages += p.savages;
     playerMap[key].maniacs += p.maniacs;
+    playerMap[key].totalMvpScore += p.mvpScore;
     if ((p as any).isMvp) playerMap[key].mvpCount++;
     const isTeam1 = p.team === 'team1';
     const won = (isTeam1 && p.game.winner === 'team1') || (!isTeam1 && p.game.winner === 'team2');
@@ -44,7 +46,8 @@ export default async function Home() {
   const leaderboard = Object.entries(playerMap).map(([username, s]) => {
     const kda = s.deaths > 0 ? (s.kills + s.assists) / s.deaths : s.kills + s.assists;
     const wr = s.games > 0 ? (s.wins / s.games) * 100 : 0;
-    const score = parseFloat(((kda * 0.4) + (wr * 0.4) + (s.savages * 2) + (s.maniacs)).toFixed(2));
+    const avgMvp = s.games > 0 ? s.totalMvpScore / s.games : 0;
+    const score = parseFloat(((avgMvp * 6) + (kda * 1.5) + (wr * 0.1) + (s.savages * 3) + (s.maniacs * 1.5)).toFixed(2));
     return { username, ...s, kda: parseFloat(kda.toFixed(2)), wr: parseFloat(wr.toFixed(0)), score };
   }).sort((a, b) => b.score - a.score).slice(0, 5);
 
