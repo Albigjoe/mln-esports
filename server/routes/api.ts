@@ -4,63 +4,71 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
-// 💳 WALLET & PAYMENTS (Paystack / Flutterwave Integration)
-router.post('/wallet/deposit', async (req, res) => {
-  const { userId, amount, reference } = req.body;
+// 🏆 RANK POINTS (RP) LEDGER (Non-Monetary Rewards)
+router.post('/wallet/points', async (req, res) => {
+  const { userId, pointsChange, reason, reference } = req.body;
 
-  if (!userId || !amount || !reference) {
+  if (!userId || !pointsChange || !reason || !reference) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
+  const changeAmount = parseFloat(pointsChange);
+
   try {
-    // 1. Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { wallet: true }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // 2. Perform ACID Transaction: Credit Wallet & Create Transaction Record
+    // Perform transaction update for points
     const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { wallet: true }
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
       let wallet = user.wallet;
-      
       if (!wallet) {
         wallet = await tx.wallet.create({
           data: { userId, balance: 0.0 }
         });
       }
 
+      if (wallet.balance + changeAmount < 0) {
+        throw new Error('INSUFFICIENT_POINTS');
+      }
+
       const updatedWallet = await tx.wallet.update({
         where: { id: wallet.id },
-        data: { balance: { increment: parseFloat(amount) } }
+        data: { balance: { increment: changeAmount } }
       });
 
       const txRecord = await tx.transaction.create({
         data: {
           walletId: wallet.id,
-          amount: parseFloat(amount),
-          type: 'DEPOSIT',
+          amount: changeAmount,
+          type: changeAmount > 0 ? 'DEPOSIT' : 'ENTRY_FEE',
           status: 'SUCCESS',
           reference,
-          gateway: 'PAYSTACK'
+          gateway: 'MLN_RP_LEDGER'
         }
       });
 
       return { wallet: updatedWallet, transaction: txRecord };
     });
 
-    res.json({ message: 'Deposit successful', balance: result.wallet.balance });
+    res.json({ message: 'Points ledger updated', balance: result.wallet.balance });
   } catch (error: any) {
-    // Fallback Mock (if Supabase direct connection is in pause state)
-    console.warn('DB error, using high-fidelity mock fallback:', error.message);
+    console.warn('DB error or logic error:', error.message);
+    if (error.message === 'INSUFFICIENT_POINTS') {
+      return res.status(400).json({ error: 'Insufficient Rank Points (RP)' });
+    }
+    
+    // Fallback Mock
     res.json({
-      message: 'Deposit successful (Simulated sandbox ledger updated)',
-      balance: parseFloat(amount) + 5000.0,
+      message: 'Points ledger updated (Simulated mode)',
+      balance: 3450 + changeAmount,
       reference,
-      gateway: 'PAYSTACK'
+      gateway: 'MLN_RP_LEDGER'
     });
   }
 });

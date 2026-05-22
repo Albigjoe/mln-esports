@@ -16,7 +16,7 @@ export default function Navbar() {
   ];
 
   const userLinks = [
-    { name: 'Wallet', href: '/wallet', icon: <Wallet size={16} /> },
+    { name: 'Rewards', href: '/wallet', icon: <Wallet size={16} /> },
     { name: 'Profile', href: '/profile', icon: <User size={16} /> },
   ];
 
