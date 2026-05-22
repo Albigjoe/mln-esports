@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DATABASE_URL,
+});
 
 // 🏆 RANK POINTS (RP) LEDGER (Non-Monetary Rewards)
 router.post('/wallet/points', async (req, res) => {
