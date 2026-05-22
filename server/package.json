@@ -1,0 +1,25 @@
+{
+  "name": "mln-esports-backend",
+  "version": "1.0.0",
+  "description": "Stateful Express and Socket.io server for MLN Esports",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "prisma": "^7.8.0",
+    "tsx": "^4.10.1",
+    "typescript": "^5.4.5"
+  }
+}

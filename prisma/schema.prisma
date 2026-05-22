@@ -57,6 +57,7 @@ model Game {
 
   bans          Ban[]
   picks         Pick[]
+  disputes      Dispute[]
 }
 
 model Ban {
@@ -132,9 +133,88 @@ model Player {
   username    String   @unique
   pictureUrl  String?
   realName    String?
+  role        String   @default("PLAYER") // PLAYER, CAPTAIN
+  state       String   @default("Lagos")  // For Lagos, Abuja, Rivers regional leaderboards
+  rank        String   @default("Epic")   // MLBB rank
   teamId      String?
   team        Team?    @relation(fields: [teamId], references: [id])
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
   awards      Award[]
+  disputes    Dispute[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String
+  role            String           @default("PLAYER") // PLAYER, ADMIN
+  kycStatus       String           @default("UNVERIFIED") // UNVERIFIED, PENDING, VERIFIED
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  player          Player?
+  wallet          Wallet?
+  kycVerification KycVerification?
+}
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Decimal  @default(0.0) // In Naira (NGN)
+  currency      String   @default("NGN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  walletId      String
+  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount        Decimal
+  type          String   // DEPOSIT, WITHDRAW, ENTRY_FEE, PRIZE_CLAIM
+  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  reference     String   @unique // Paystack or Flutterwave transaction reference
+  gateway       String   @default("PAYSTACK") // PAYSTACK, FLUTTERWAVE
+  createdAt     DateTime @default(now())
+}
+
+model KycVerification {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idType        String   // NIN, BVN, Passport
+  idNumber      String
+  idImageUrl    String
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model Dispute {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  screenshotUrl String
+  reason        String
+  status        String   @default("OPEN") // OPEN, UNDER_REVIEW, RESOLVED
+  resolvedBy    String?
+  createdAt     DateTime @default(now())
+}
+
+model ScrimRequest {
+  id              String   @id @default(cuid())
+  challengerTeamId String
+  receiverTeamId   String
+  status          String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  scheduledFor    DateTime
+  createdAt       DateTime @default(now())
+}
+
