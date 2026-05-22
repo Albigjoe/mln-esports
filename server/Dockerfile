@@ -9,6 +9,10 @@ RUN cd server && npm install
 # 2. Copy prisma schema from repository root
 COPY prisma ./prisma
 
+# Set a dummy DATABASE_URL environment variable so Prisma schema parser 
+# doesn't crash during the build phase. (Render overrides this at runtime).
+ENV DATABASE_URL="postgresql://mockuser:mockpassword@localhost:5432/mockdb"
+
 # 3. Generate prisma client inside server node_modules
 RUN cd server && npx prisma generate --schema=../prisma/schema.prisma
 
