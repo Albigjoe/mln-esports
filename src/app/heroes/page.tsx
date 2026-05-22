@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import HeroImage from '@/components/HeroImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -175,12 +176,7 @@ export default async function HeroesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={HERO_IMG(h.hero)}
-                            alt={h.hero}
-                            className="w-8 h-8 rounded-full object-cover bg-background border border-border-color"
-                            onError={(e: any) => { e.target.style.display = 'none'; }}
-                          />
+                          <HeroImage heroName={h.hero} />
                           <span className="font-bold text-white">{h.hero}</span>
                         </div>
                       </td>
