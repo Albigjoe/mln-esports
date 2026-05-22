@@ -29,25 +29,29 @@ async function buildHeroMeta() {
 
   allGames.forEach(game => {
     // Count bans
-    game.bans.forEach(ban => {
-      if (!heroMap[ban.hero]) heroMap[ban.hero] = { picks: 0, bans: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0 };
-      heroMap[ban.hero].bans++;
+    (game.bans || []).forEach(ban => {
+      if (!ban || !ban.hero || !ban.hero.trim()) return;
+      const hKey = ban.hero.trim();
+      if (!heroMap[hKey]) heroMap[hKey] = { picks: 0, bans: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0 };
+      heroMap[hKey].bans++;
     });
 
     // Count picks + performance
-    game.picks.forEach(pick => {
-      if (!heroMap[pick.hero]) heroMap[pick.hero] = { picks: 0, bans: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0 };
-      heroMap[pick.hero].picks++;
-      heroMap[pick.hero].kills += pick.kills;
-      heroMap[pick.hero].deaths += pick.deaths;
-      heroMap[pick.hero].assists += pick.assists;
-      heroMap[pick.hero].damage += pick.damage;
-      heroMap[pick.hero].savages += pick.savages;
-      heroMap[pick.hero].maniacs += pick.maniacs;
+    (game.picks || []).forEach(pick => {
+      if (!pick || !pick.hero || !pick.hero.trim()) return;
+      const hKey = pick.hero.trim();
+      if (!heroMap[hKey]) heroMap[hKey] = { picks: 0, bans: 0, wins: 0, kills: 0, deaths: 0, assists: 0, damage: 0, savages: 0, maniacs: 0 };
+      heroMap[hKey].picks++;
+      heroMap[hKey].kills += (pick.kills || 0);
+      heroMap[hKey].deaths += (pick.deaths || 0);
+      heroMap[hKey].assists += (pick.assists || 0);
+      heroMap[hKey].damage += (pick.damage || 0);
+      heroMap[hKey].savages += (pick.savages || 0);
+      heroMap[hKey].maniacs += (pick.maniacs || 0);
 
       const isTeam1 = pick.team === 'team1';
       const won = (isTeam1 && game.winner === 'team1') || (!isTeam1 && game.winner === 'team2');
-      if (won) heroMap[pick.hero].wins++;
+      if (won) heroMap[hKey].wins++;
     });
   });
 
