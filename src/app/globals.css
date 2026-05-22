@@ -24,9 +24,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ── Global Resets & Responsiveness ────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  min-height: 100dvh;
 }
+
+/* Prevent any element from breaking out of its container */
+img, video, svg, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables scroll horizontally on small screens */
+table {
+  width: 100%;
+}
+
+/* Ensure inputs/buttons are tap-friendly on mobile */
+button, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Hide horizontal scrollbar on tab lists */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+

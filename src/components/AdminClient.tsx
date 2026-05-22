@@ -4,10 +4,6 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import NewsTab from './admin/NewsTab';
 import StaffTab from './admin/StaffTab';
-import TournamentsTab from './admin/TournamentsTab';
-import TeamsTab from './admin/TeamsTab';
-import PlayersTab from './admin/PlayersTab';
-import AwardsTab from './admin/AwardsTab';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
@@ -16,7 +12,7 @@ function emptyPick() {
   return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
 }
 
-type TabType = 'dashboard' | 'add' | 'tournaments' | 'teams' | 'players' | 'awards' | 'news' | 'staff' | 'settings';
+type TabType = 'dashboard' | 'add' | 'news' | 'staff';
 
 function groupGamesIntoSeries(gamesList: any[]) {
   const seriesMap: Record<string, {
@@ -359,22 +355,17 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
   const tabs: { key: TabType; label: string }[] = [
     { key: 'dashboard', label: '📊 Dashboard' },
-    { key: 'add', label: '➕ Games' },
-    { key: 'tournaments', label: '🏆 Tournaments' },
-    { key: 'teams', label: '🛡️ Teams' },
-    { key: 'players', label: '🎮 Players' },
-    { key: 'awards', label: '🎖️ Awards' },
+    { key: 'add', label: editingGameId ? '✏️ Edit Game' : '➕ Add Game' },
     { key: 'news', label: '📰 News' },
     { key: 'staff', label: '👥 Staff' },
-    { key: 'settings', label: '⚙ Settings' },
   ];
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border-color mb-8 gap-4 pb-2 md:pb-0">
-        <div className="flex overflow-x-auto">
+    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-color mb-6 gap-3 pb-2 sm:pb-0">
+        <div className="flex overflow-x-auto gap-1 scrollbar-hide">
           {tabs.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`px-5 py-4 font-bold uppercase tracking-wider text-sm transition-colors whitespace-nowrap ${tab === t.key ? 'text-mln-green border-b-2 border-mln-green bg-surface' : 'text-gray-400 hover:text-white'}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-3 font-bold uppercase tracking-wider text-xs sm:text-sm transition-colors whitespace-nowrap rounded-t-lg ${tab === t.key ? 'text-mln-green border-b-2 border-mln-green bg-surface' : 'text-gray-400 hover:text-white'}`}>
               {t.label}
             </button>
           ))}
@@ -452,31 +443,33 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
           <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">All Individual Game Entries</h3>
           <div className="bg-background border border-border-color rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-gray-400">
               <thead className="bg-surface text-xs uppercase text-white">
-                <tr><th className="px-6 py-4">Week</th><th className="px-6 py-4">Game #</th><th className="px-6 py-4">Team 1</th><th className="px-6 py-4 text-center">VS</th><th className="px-6 py-4">Team 2</th><th className="px-6 py-4">Winner</th><th className="px-6 py-4 text-right">Actions</th></tr>
+                <tr><th className="px-4 py-3 whitespace-nowrap">Week</th><th className="px-4 py-3 whitespace-nowrap">Game #</th><th className="px-4 py-3 whitespace-nowrap">Team 1</th><th className="px-4 py-3 text-center whitespace-nowrap">VS</th><th className="px-4 py-3 whitespace-nowrap">Team 2</th><th className="px-4 py-3 whitespace-nowrap">Winner</th><th className="px-4 py-3 text-right whitespace-nowrap">Actions</th></tr>
               </thead>
               <tbody>
                 {recentGames.length === 0 ? (
                   <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">No games yet. Click &quot;Add Game&quot; to start!</td></tr>
                 ) : recentGames.map((g: any) => (
                   <tr key={g.id} className="border-b border-border-color hover:bg-surface-hover transition-colors">
-                    <td className="px-6 py-4"><span className="bg-yellow-600/20 text-yellow-400 border border-yellow-600/40 px-2 py-0.5 rounded text-xs font-bold">W{g.week}</span></td>
-                    <td className="px-6 py-4 font-mono font-bold text-white text-xs">Game {g.gameNumber} (BO{g.boFormat})</td>
-                    <td className={`px-6 py-4 font-bold ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</td>
-                    <td className="px-6 py-4 text-center text-gray-600">vs</td>
-                    <td className={`px-6 py-4 font-bold ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</td>
-                    <td className="px-6 py-4 text-mln-green font-bold">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-3"><span className="bg-yellow-600/20 text-yellow-400 border border-yellow-600/40 px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap">W{g.week}</span></td>
+                    <td className="px-4 py-3 font-mono font-bold text-white text-xs whitespace-nowrap">G{g.gameNumber} (BO{g.boFormat})</td>
+                    <td className={`px-4 py-3 font-bold whitespace-nowrap ${g.winner === 'team1' ? 'text-mln-green' : 'text-white'}`}>{g.team1.name}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">vs</td>
+                    <td className={`px-4 py-3 font-bold whitespace-nowrap ${g.winner === 'team2' ? 'text-mln-green' : 'text-white'}`}>{g.team2.name}</td>
+                    <td className="px-4 py-3 text-mln-green font-bold whitespace-nowrap">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</td>
+                    <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-3">
-                        <button onClick={() => startEditGame(g)} className="text-mln-green hover:text-mln-green-light text-xs font-bold uppercase tracking-wider">Edit</button>
-                        <button onClick={() => handleDelete(g.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider">Delete</button>
+                        <button onClick={() => startEditGame(g)} className="text-mln-green hover:text-mln-green-light text-xs font-bold uppercase tracking-wider whitespace-nowrap">Edit</button>
+                        <button onClick={() => handleDelete(g.id)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider whitespace-nowrap">Delete</button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -538,21 +531,6 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
       {/* STAFF TAB */}
       {tab === 'staff' && <StaffTab staffUsers={staffUsers || []} currentEmail={session?.user?.email || ''} />}
-
-      {/* TOURNAMENTS TAB */}
-      {tab === 'tournaments' && <TournamentsTab tournaments={tournaments || []} />}
-
-      {/* TEAMS TAB */}
-      {tab === 'teams' && <TeamsTab teams={teams || []} />}
-
-      {/* PLAYERS TAB */}
-      {tab === 'players' && <PlayersTab players={players || []} teams={teams || []} />}
-
-      {/* AWARDS TAB */}
-      {tab === 'awards' && <AwardsTab awards={awards || []} players={players || []} teams={teams || []} />}
-
-      {/* SETTINGS TAB */}
-      {tab === 'settings' && <SettingsTab tournaments={tournaments} />}
     </div>
   );
 }
