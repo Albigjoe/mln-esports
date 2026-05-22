@@ -3,7 +3,7 @@ services:
     name: mln-backend-api
     env: docker
     dockerfilePath: server/Dockerfile
-    dockerContext: server
+    dockerContext: .
     plan: free
     envVars:
       - key: PORT

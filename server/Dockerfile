@@ -2,17 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# 1. Install dependencies inside /app/server (include devDeps like tsx)
+COPY server/package*.json ./server/
+RUN cd server && npm install
 
-# Install production dependencies
-RUN npm install --omit=dev
+# 2. Copy prisma schema from repository root and generate client
+COPY prisma ./prisma
+RUN npx prisma generate --schema=prisma/schema.prisma
 
-# Copy source files
-COPY . .
+# 3. Copy server source code
+COPY server ./server
 
 # Expose backend port
 EXPOSE 3001
 
-# Start the server
+# Start the server from the server directory
+WORKDIR /app/server
 CMD ["npx", "tsx", "server.ts"]
