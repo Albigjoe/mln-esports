@@ -2,9 +2,21 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
-const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-});
+
+// Lazy-init Prisma so the server boots even if DB is unreachable
+let prisma: PrismaClient | null = null;
+try {
+  prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
+  console.log('✅ PrismaClient initialized successfully');
+} catch (err: any) {
+  console.warn('⚠️ PrismaClient failed to initialize, running in mock mode:', err.message);
+}
 
 // 🏆 RANK POINTS (RP) LEDGER (Non-Monetary Rewards)
 router.post('/wallet/points', async (req, res) => {
