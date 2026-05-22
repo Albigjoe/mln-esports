@@ -2,10 +2,18 @@
 
 import Link from 'next/link';
 import { Menu, X, Wallet, User } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    // Silently pre-warm/ping the Render backend server in the background
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://mln-backend-api.onrender.com';
+    fetch(`${backendUrl}/status`).catch(() => {
+      // Ignore errors silently as it is just a pre-warm call
+    });
+  }, []);
 
   const navLinks = [
     { name: 'Home', href: '/' },
