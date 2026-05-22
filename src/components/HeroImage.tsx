@@ -1,30 +1,43 @@
 'use client';
+import { useState } from 'react';
 
-import React, { useState } from 'react';
-
-const HERO_IMG = (name: string) => {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-  return `https://akmweb.youngjoygame.com/web/svnres/img/mlbb/homepage/hp_hero/hero_${slug}.png`;
-};
+// Generate a stable hue color from a hero's name
+function heroColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `${hue}`;
+}
 
 export default function HeroImage({ heroName }: { heroName: string }) {
-  const [error, setError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const hue = heroColor(heroName);
 
-  if (error) {
-    // Return a generic fallback icon/avatar or null
-    return (
-      <div className="w-8 h-8 rounded-full bg-background/80 border border-border-color flex items-center justify-center text-[10px] font-black text-gray-500">
-        🛡️
-      </div>
-    );
-  }
+  // Try the mobile legends fandom wiki which redirects to CDN
+  const imgSrc = `https://mobile-legends.fandom.com/wiki/Special:FilePath/${encodeURIComponent(heroName)}_hero_portrait.png`;
 
   return (
-    <img
-      src={HERO_IMG(heroName)}
-      alt={heroName}
-      className="w-8 h-8 rounded-full object-cover bg-background border border-border-color"
-      onError={() => setError(true)}
-    />
+    <div className="relative w-8 h-8 rounded-full shrink-0 overflow-hidden border border-white/10">
+      {/* Colored letter avatar — always rendered, fades out if image loads */}
+      <div
+        className={`absolute inset-0 flex items-center justify-center text-white font-black text-[10px] transition-opacity duration-300 ${imgLoaded && !imgError ? 'opacity-0' : 'opacity-100'}`}
+        style={{ background: `linear-gradient(135deg, hsl(${hue},65%,40%), hsl(${hue},65%,25%))` }}
+      >
+        {heroName.slice(0, 2).toUpperCase()}
+      </div>
+      {/* External image — fades in on load */}
+      {!imgError && (
+        <img
+          src={imgSrc}
+          alt={heroName}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgError(true)}
+        />
+      )}
+    </div>
   );
 }
