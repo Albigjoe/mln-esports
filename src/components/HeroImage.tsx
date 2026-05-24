@@ -16,8 +16,9 @@ export default function HeroImage({ heroName }: { heroName: string }) {
   const [imgError, setImgError] = useState(false);
   const hue = heroColor(heroName);
 
-  // Try the mobile legends fandom wiki which redirects to CDN
-  const imgSrc = `https://mobile-legends.fandom.com/wiki/Special:FilePath/${encodeURIComponent(heroName)}_hero_portrait.png`;
+  // Use the official mobile legends web CDN
+  const slug = heroName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  const imgSrc = `https://akmweb.youngjoygame.com/web/svnres/img/mlbb/homepage/hp_hero/hero_${slug}.png`;
 
   return (
     <div className="relative w-8 h-8 rounded-full shrink-0 overflow-hidden border border-white/10">

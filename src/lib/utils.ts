@@ -2,14 +2,9 @@ import heroImages from './hero_images.json';
 
 export function getHeroImage(heroName: string) {
   if (!heroName) return '';
-  // Format the name: lowercase, remove spaces, apostrophes, and hyphens to match typical asset naming
-  const formattedName = heroName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  
-  const mappedUrl = (heroImages as Record<string, string>)[formattedName];
-  if (mappedUrl) return mappedUrl;
-
-  // Fallback to community MLBB raw github repository for hero icons
-  return `https://raw.githubusercontent.com/ridwaanhall/api-mobilelegends/main/images/heroes/${formattedName}.png`;
+  // Use the official mobile legends web CDN
+  const slug = heroName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  return `https://akmweb.youngjoygame.com/web/svnres/img/mlbb/homepage/hp_hero/hero_${slug}.png`;
 }
 
 export function getPlayerImage(username: string, playersList: any[] = []) {

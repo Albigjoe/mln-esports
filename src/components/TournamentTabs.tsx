@@ -644,7 +644,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
         {activeTab === 'teams' && (
           <div>
             <h3 className="text-xl font-black text-white uppercase tracking-wider mb-6 border-l-4 border-mln-green pl-3">Participating Teams ({teams.length})</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
               {teams.map((team: any) => (
                 <Link href={`/teams/${team.id}`} key={team.id} className="bg-surface border border-border-color rounded-xl p-6 text-center hover:border-mln-green/30 hover:scale-[1.02] transition-all duration-300 block">
                   <div className="w-20 h-20 mx-auto bg-background rounded-full border border-border-color flex items-center justify-center mb-4 overflow-hidden relative shadow-inner">
@@ -704,6 +704,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
 }
 
 function HeroStatsTable({ games }: { games: any[] }) {
+  const [sortKey, setSortKey] = useState<string>('presence');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   const heroMap: Record<string, { picks: number; bans: number; wins: number }> = {};
   games.forEach((g: any) => {
     (g.bans || []).forEach((b: any) => {
@@ -719,33 +722,68 @@ function HeroStatsTable({ games }: { games: any[] }) {
     });
   });
   
+  const gamesWithDraft = games.filter(g => g.picks?.length > 0 || g.bans?.length > 0).length;
+  const validGamesCount = Math.max(gamesWithDraft, 1);
+
   const heroes = Object.entries(heroMap).map(([hero, s]) => ({
     hero, ...s,
-    wr: s.picks > 0 ? Math.round(s.wins / s.picks * 100) : null,
-    presence: Math.round((s.picks + s.bans) / Math.max(games.length, 1) * 100),
-  })).sort((a, b) => b.bans - a.bans);
+    wr: s.picks > 0 ? Math.round(s.wins / s.picks * 100) : 0,
+    presence: Math.round((s.picks + s.bans) / validGamesCount * 100),
+  }));
+
+  const sortedHeroes = [...heroes].sort((a: any, b: any) => {
+    const av = a[sortKey];
+    const bv = b[sortKey];
+    if (typeof av === 'string' && typeof bv === 'string') {
+      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
+
+  const toggleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const SortTh = ({ col, label, className = '' }: { col: string; label: string; className?: string }) => (
+    <th
+      className={`px-2 md:px-6 py-4 cursor-pointer select-none hover:text-mln-green transition-colors ${className}`}
+      onClick={() => toggleSort(col)}
+    >
+      <div className="flex items-center gap-1 justify-center sm:justify-start">
+        {label}
+        <span className="text-[10px] opacity-60">
+          {sortKey === col ? (sortDir === 'desc' ? '▼' : '▲') : '⇅'}
+        </span>
+      </div>
+    </th>
+  );
 
   if (heroes.length === 0) return <p className="text-gray-400">No hero data yet.</p>;
 
   return (
     <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-400">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
           <thead className="bg-background text-xs uppercase text-white border-b border-border-color">
             <tr>
-              <th className="px-3 md:px-6 py-4">Hero</th>
-              <th className="px-2 md:px-6 py-4 text-center">Picks</th>
-              <th className="px-2 md:px-6 py-4 text-center">Bans</th>
-              <th className="px-4 py-4 text-center hidden sm:table-cell">Wins</th>
-              <th className="px-2 md:px-6 py-4 text-center">Win Rate</th>
-              <th className="px-4 py-4 text-center hidden md:table-cell">Presence</th>
+              <SortTh col="hero" label="Hero" />
+              <SortTh col="picks" label="Picks" className="text-center" />
+              <SortTh col="bans" label="Bans" className="text-center" />
+              <SortTh col="wins" label="Wins" className="text-center hidden sm:table-cell" />
+              <SortTh col="wr" label="Win Rate" className="text-center" />
+              <SortTh col="presence" label="Presence" className="text-center hidden md:table-cell" />
               <th className="px-4 py-4 hidden sm:table-cell">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/60">
-            {heroes.map(h => {
+            {sortedHeroes.map(h => {
               const mb = h.bans >= 3;
-              const mp = h.picks >= 3 && h.wr !== null && h.wr >= 60;
+              const mp = h.picks >= 3 && h.wr >= 60;
               return (
                 <tr key={h.hero} className="hover:bg-surface-hover/30 transition-colors">
                   <td className="px-3 md:px-6 py-4 flex items-center gap-3">
@@ -755,8 +793,8 @@ function HeroStatsTable({ games }: { games: any[] }) {
                   <td className="px-2 md:px-6 py-4 text-center text-mln-green font-bold font-mono text-sm md:text-base">{h.picks}</td>
                   <td className="px-2 md:px-6 py-4 text-center text-red-400 font-bold font-mono text-sm md:text-base">{h.bans}</td>
                   <td className="px-4 py-4 text-center font-mono hidden sm:table-cell">{h.wins}</td>
-                  <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${h.wr !== null ? (h.wr >= 60 ? 'text-mln-green' : h.wr <= 40 ? 'text-red-400' : 'text-white') : 'text-gray-500'}`}>
-                    {h.wr !== null ? h.wr + '%' : 'N/A'}
+                  <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${h.picks > 0 ? (h.wr >= 60 ? 'text-mln-green' : h.wr <= 40 ? 'text-red-400' : 'text-white') : 'text-gray-500'}`}>
+                    {h.picks > 0 ? h.wr + '%' : 'N/A'}
                   </td>
                   <td className="px-4 py-4 text-center hidden md:table-cell">
                     <div className="flex items-center gap-3 justify-center">

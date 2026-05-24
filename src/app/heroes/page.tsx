@@ -41,16 +41,19 @@ async function buildHeroMeta() {
     });
   });
 
+  const gamesWithDraft = allGames.filter(g => g.picks.length > 0 || g.bans.length > 0).length;
+  const validGamesCount = Math.max(gamesWithDraft, 1);
+
   const heroStats = Object.entries(heroMap).map(([hero, s]) => {
-    const presence = ((s.picks + s.bans) / totalGames) * 100;
+    const presence = ((s.picks + s.bans) / validGamesCount) * 100;
     const kda = s.deaths > 0 ? (s.kills + s.assists) / s.deaths : s.kills + s.assists;
     return {
       hero,
       picks:     s.picks,
       bans:      s.bans,
       wins:      s.wins,
-      pickRate:  parseFloat(((s.picks / totalGames) * 100).toFixed(1)),
-      banRate:   parseFloat(((s.bans  / totalGames) * 100).toFixed(1)),
+      pickRate:  parseFloat(((s.picks / validGamesCount) * 100).toFixed(1)),
+      banRate:   parseFloat(((s.bans  / validGamesCount) * 100).toFixed(1)),
       presence:  parseFloat(presence.toFixed(1)),
       winRate:   parseFloat(s.picks > 0 ? ((s.wins / s.picks) * 100).toFixed(1) : '0'),
       kda:       parseFloat(kda.toFixed(2)),
@@ -60,7 +63,7 @@ async function buildHeroMeta() {
     };
   }).sort((a, b) => b.presence - a.presence);
 
-  return { heroStats, totalGames };
+  return { heroStats, totalGames: gamesWithDraft };
 }
 
 export default async function HeroesPage() {

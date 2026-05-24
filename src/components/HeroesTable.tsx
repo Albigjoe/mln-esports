@@ -74,8 +74,8 @@ export default function HeroesTable({ heroStats }: { heroStats: HeroStat[] }) {
         <h2 className="text-sm font-black text-white uppercase tracking-widest">Full Hero Statistics</h2>
         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Click any column to sort</span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="bg-background text-[10px] uppercase text-gray-400 font-bold tracking-widest">
             <tr>
               <th className="px-4 py-4 w-12">Tier</th>
