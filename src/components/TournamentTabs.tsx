@@ -50,7 +50,7 @@ function archLabel(arch: string) {
   return m[arch] || arch;
 }
 
-function calcScore(pk: any, teamKills: number) {
+function calcScore(pk: any, teamKills: number, won: boolean) {
   const k = pk.kills || 0, d = pk.deaths || 0, a = pk.assists || 0;
   const gold = pk.gold || 0, dmg = pk.damage || 0;
   const kp = teamKills > 0 ? Math.round((k + a) / teamKills * 100) : 0;
@@ -92,6 +92,14 @@ function calcScore(pk: any, teamKills: number) {
     default:
       score = kda; headline = 'KDA'; headVal = kda;
   }
+  
+  // Win Bonus
+  if (won) {
+    score += 5; // Flat +5 points for winning the game
+  } else {
+    score *= 0.5; // Halve the score if they lost the game
+  }
+
   return { score: Math.round(score * 10) / 10, kp, arch, headline, headVal, kda };
 }
 
@@ -139,7 +147,8 @@ function playerStats(games: any[]) {
         if (!p[key].role) p[key].role = pk.role;
       }
       
-      const cs = calcScore(pk, teamKills);
+      const won = pk.team === g.winner;
+      const cs = calcScore(pk, teamKills, won);
       p[key].score += cs.score;
       p[key].kpTotal += cs.kp;
     });
@@ -156,6 +165,7 @@ function playerStats(games: any[]) {
       avgGold: Math.round(s.gold / gamesCount),
       avgDmg: Math.round(s.dmg / gamesCount),
       avgKP: Math.round(s.kpTotal / gamesCount),
+      avgScore: +(s.score / gamesCount).toFixed(1),
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
       arch: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
