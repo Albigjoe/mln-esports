@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GET /api/tournaments — list all for registration form
+export async function GET() {
+  try {
+    const tournaments = await prisma.tournament.findMany({
+      orderBy: { startDate: 'desc' },
+      select: { id: true, name: true, status: true, startDate: true },
+    });
+    return NextResponse.json({ tournaments });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -17,3 +30,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

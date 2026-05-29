@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +67,7 @@ export default async function PlayerProfile({ params }: { params: Promise<{ user
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-16">
         
         {/* Profile Header */}

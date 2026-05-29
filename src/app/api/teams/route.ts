@@ -1,5 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+// GET /api/teams?q=searchterm — for autocomplete
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const q = searchParams.get('q') || '';
+    const teams = await prisma.team.findMany({
+      where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
+      take: 10,
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, logoUrl: true },
+    });
+    return NextResponse.json({ teams });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,3 +34,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

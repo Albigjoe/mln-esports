@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,8 @@ export default async function PlayersDirectory() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24">
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-8">
         
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4">
