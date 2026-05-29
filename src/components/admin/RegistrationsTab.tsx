@@ -29,7 +29,7 @@ export default function RegistrationsTab() {
       const res = await fetch(`/api/registrations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, teamName: reg.teamName, logoUrl: reg.logoUrl, players: reg.players })
+        body: JSON.stringify({ status, teamName: reg.teamName, logoUrl: reg.logoUrl, lineupImageUrl: reg.lineupImageUrl, players: reg.players })
       });
       if (res.ok) fetchRegistrations();
     } catch (e) {
@@ -64,11 +64,19 @@ export default function RegistrationsTab() {
         registrations.map(reg => (
           <div key={reg.id} className="bg-surface border border-border-color rounded-xl p-6">
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 pb-4 border-b border-border-color">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 {reg.logoUrl ? (
-                  <img src={reg.logoUrl} alt={reg.teamName} className="w-16 h-16 rounded-lg object-contain bg-background" />
+                  <img src={reg.logoUrl} alt={reg.teamName} className="w-16 h-16 rounded-lg object-contain bg-background border border-border-color/40" title="Squad Logo" />
                 ) : (
-                  <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center text-xs font-bold text-gray-500">NO LOGO</div>
+                  <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center text-[10px] font-bold text-gray-500 border border-border-color/40">NO LOGO</div>
+                )}
+                {reg.lineupImageUrl ? (
+                  <a href={reg.lineupImageUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
+                    <img src={reg.lineupImageUrl} alt={`${reg.teamName} Lineup`} className="w-24 h-16 rounded-lg object-cover bg-background border border-border-color/40 hover:opacity-80 transition-opacity" title="Squad Lineup Photo (Click to zoom)" />
+                    <span className="absolute bottom-1 right-1 bg-black/60 px-1 py-0.5 rounded text-[8px] text-white">Lineup 🔍</span>
+                  </a>
+                ) : (
+                  <div className="w-24 h-16 rounded-lg bg-background flex items-center justify-center text-[10px] font-bold text-gray-500 border border-border-color/40">NO LINEUP PIC</div>
                 )}
                 <div>
                   <h3 className="text-2xl font-black text-white uppercase">{reg.teamName}</h3>

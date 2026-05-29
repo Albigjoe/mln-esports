@@ -9,6 +9,7 @@ export default function RegisterTeamPage() {
   const [step, setStep] = useState(1);
   const [teamName, setTeamName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [lineupImageUrl, setLineupImageUrl] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [players, setPlayers] = useState([
     { username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '' },
@@ -49,7 +50,7 @@ export default function RegisterTeamPage() {
       const res = await fetch('/api/register-team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamName, logoUrl, contactEmail, players })
+        body: JSON.stringify({ teamName, logoUrl, lineupImageUrl, contactEmail, players })
       });
       const data = await res.json();
       if (res.ok) {
@@ -100,9 +101,13 @@ export default function RegisterTeamPage() {
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Leader Contact Email *</label>
                   <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="email@example.com" className="w-full bg-background border border-border-color rounded-xl px-4 py-3 text-white focus:border-mln-green outline-none" />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Team Logo URL (Optional)</label>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Team Logo URL (Optional - leave blank if we have it)</label>
                   <input type="url" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." className="w-full bg-background border border-border-color rounded-xl px-4 py-3 text-white focus:border-mln-green outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Squad Lineup / Roster Photo URL (Recommended)</label>
+                  <input type="url" value={lineupImageUrl} onChange={e => setLineupImageUrl(e.target.value)} placeholder="https://... group picture link" className="w-full bg-background border border-border-color rounded-xl px-4 py-3 text-white focus:border-mln-green outline-none" />
                 </div>
               </div>
               <button onClick={() => { if (teamName && contactEmail) setStep(2); else setMsg("Please fill out Name and Email"); }} className="w-full bg-mln-green text-black px-6 py-4 rounded-xl font-bold uppercase tracking-widest mt-6 hover:bg-white transition-colors">

@@ -7,6 +7,7 @@ import StaffTab from './admin/StaffTab';
 import PlayersTab from './admin/PlayersTab';
 import TeamsTab from './admin/TeamsTab';
 import RegistrationsTab from './admin/RegistrationsTab';
+import TournamentsTab from './admin/TournamentsTab';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
@@ -15,7 +16,7 @@ function emptyPick() {
   return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
 }
 
-type TabType = 'dashboard' | 'add' | 'news' | 'staff' | 'teams' | 'players' | 'settings' | 'registrations';
+type TabType = 'dashboard' | 'add' | 'news' | 'staff' | 'teams' | 'players' | 'settings' | 'registrations' | 'tournaments';
 
 function groupGamesIntoSeries(gamesList: any[]) {
   const seriesMap: Record<string, {
@@ -359,6 +360,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const tabs: { key: TabType; label: string }[] = [
     { key: 'dashboard', label: '📊 Dashboard' },
     { key: 'add', label: editingGameId ? '✏️ Edit Game' : '➕ Add Game' },
+    { key: 'tournaments', label: '🏆 Tournaments' },
     { key: 'news', label: '📰 News' },
     { key: 'staff', label: '👥 Staff' },
     { key: 'teams', label: '🛡️ Teams' },
@@ -550,6 +552,9 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
       {/* PLAYERS TAB */}
       {tab === 'players' && <PlayersTab players={players} teams={teams} />}
+
+      {/* TOURNAMENTS TAB */}
+      {tab === 'tournaments' && <TournamentsTab tournaments={tournaments} />}
 
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}

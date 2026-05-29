@@ -9,7 +9,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    const { status, teamName, logoUrl, players } = await req.json();
+    const { status, teamName, logoUrl, lineupImageUrl, players } = await req.json();
 
     const reg = await prisma.teamRegistration.update({
       where: { id },
@@ -21,7 +21,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       const newTeam = await prisma.team.create({
         data: {
           name: teamName,
-          logoUrl: logoUrl || ''
+          logoUrl: logoUrl || '',
+          lineupImageUrl: lineupImageUrl || ''
         }
       });
 

@@ -23,11 +23,12 @@ model Tournament {
 }
 
 model Team {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String   @unique
+  logoUrl        String?
+  lineupImageUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   homeGames   Game[]  @relation("HomeTeam")
   awayGames   Game[]  @relation("AwayTeam")
@@ -219,12 +220,13 @@ model ScrimRequest {
 }
 
 model TeamRegistration {
-  id           String   @id @default(cuid())
-  teamName     String
-  logoUrl      String?
-  contactEmail String
-  players      Json     // Array of player objects
-  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  teamName       String
+  logoUrl        String?
+  lineupImageUrl String?
+  contactEmail   String
+  players        Json     // Array of player objects
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
 }
 

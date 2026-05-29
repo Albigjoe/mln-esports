@@ -165,6 +165,22 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           
           {/* Roster list */}
           <div className="lg:col-span-2 space-y-6">
+            {team.lineupImageUrl && (
+              <div className="bg-surface border border-border-color rounded-xl overflow-hidden shadow-lg">
+                <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] p-4 bg-background/50 border-b border-border-color flex justify-between items-center">
+                  <span>Official Squad Lineup Photo</span>
+                  <a href={team.lineupImageUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase text-mln-green hover:underline">View Full Size 🔍</a>
+                </div>
+                <div className="relative w-full overflow-hidden border-t border-border-color bg-background/30" style={{ maxHeight: '400px' }}>
+                  <img
+                    src={team.lineupImageUrl}
+                    alt={`${team.name} Lineup`}
+                    className="w-full h-auto max-h-[400px] object-contain mx-auto"
+                  />
+                </div>
+              </div>
+            )}
+
             <h3 className="text-xl font-bold text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Active Roster</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {finalRoster.length === 0 ? (
