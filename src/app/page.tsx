@@ -71,6 +71,9 @@ export default async function Home() {
             <Link href="/tournaments" className="bg-mln-green hover:bg-mln-green-dark text-black px-8 py-4 rounded-md font-bold tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(0,200,83,0.4)] flex items-center justify-center gap-2 text-lg">
               <Trophy size={20} /> View Tournaments
             </Link>
+            <Link href="/register-team" className="bg-surface hover:bg-surface-hover border border-mln-green/40 hover:border-mln-green text-white px-8 py-4 rounded-md font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 text-lg">
+              Register Squad
+            </Link>
           </div>
         </div>
       </section>

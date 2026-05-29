@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import TournamentTabs from "@/components/TournamentTabs";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,20 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
             }`}>{tournament.status}</span>
             <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tight mb-4 drop-shadow-lg">{tournament.name}</h1>
             <p className="text-gray-300 text-lg max-w-2xl font-semibold drop-shadow">{tournament.games.length} games played · {teams.length} teams competing</p>
+            {tournament.status === 'upcoming' && (
+              <div className="mt-4">
+                <Link href="/register-team" className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-3 rounded-lg font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(0,200,83,0.3)] inline-block">
+                  Register Your Squad
+                </Link>
+              </div>
+            )}
+            {tournament.status === 'live' && (
+              <div className="mt-4">
+                <Link href="/register-team" className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg font-bold uppercase tracking-wider text-xs transition-all inline-block shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                  Roster Submission
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
