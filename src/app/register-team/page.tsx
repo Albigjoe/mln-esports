@@ -83,9 +83,9 @@ export default function RegisterTeamPage() {
     <div className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 text-center">
-          <span className="text-[10px] text-mln-green font-bold uppercase tracking-[4px]">AFL Season</span>
+          <span className="text-[10px] text-mln-green font-bold uppercase tracking-[4px]">MLN Tournaments</span>
           <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight mt-1 mb-2">Squad Registration</h1>
-          <p className="text-gray-400">Squad leaders, fill out this form to officially register your team and lineup.</p>
+          <p className="text-gray-400">Squad leaders, fill out this form to officially register your team and roster for any MLN tournament.</p>
         </div>
 
         <div className="bg-surface border border-border-color rounded-2xl p-6 md:p-8">
