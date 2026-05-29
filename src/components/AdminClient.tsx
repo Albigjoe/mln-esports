@@ -6,6 +6,7 @@ import NewsTab from './admin/NewsTab';
 import StaffTab from './admin/StaffTab';
 import PlayersTab from './admin/PlayersTab';
 import TeamsTab from './admin/TeamsTab';
+import RegistrationsTab from './admin/RegistrationsTab';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
@@ -14,7 +15,7 @@ function emptyPick() {
   return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
 }
 
-type TabType = 'dashboard' | 'add' | 'news' | 'staff' | 'teams' | 'players' | 'settings';
+type TabType = 'dashboard' | 'add' | 'news' | 'staff' | 'teams' | 'players' | 'settings' | 'registrations';
 
 function groupGamesIntoSeries(gamesList: any[]) {
   const seriesMap: Record<string, {
@@ -363,25 +364,32 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
     { key: 'teams', label: '🛡️ Teams' },
     { key: 'players', label: '🎮 Players' },
     { key: 'settings', label: '⚙️ Settings' },
+    { key: 'registrations', label: '📋 Registrations' },
   ];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-color mb-6 gap-3 pb-2 sm:pb-0">
-        <div className="flex overflow-x-auto gap-1 scrollbar-hide">
-          {tabs.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-3 font-bold uppercase tracking-wider text-xs sm:text-sm transition-colors whitespace-nowrap rounded-t-lg ${tab === t.key ? 'text-mln-green border-b-2 border-mln-green bg-surface' : 'text-gray-400 hover:text-white'}`}>
-              {t.label}
+    <div className="px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto py-6">
+      <div className="flex flex-col md:flex-row gap-8">
+        
+        {/* SIDEBAR */}
+        <div className="w-full md:w-64 shrink-0 flex flex-col">
+          <div className="flex items-center justify-between md:flex-col md:items-start border-b border-border-color mb-4 md:mb-6 pb-4 md:pb-6 gap-4">
+            <span className="text-xs text-gray-400">Signed in as <strong className="text-white block md:mt-1">{session?.user?.name || session?.user?.email}</strong></span>
+            <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+              Sign Out
             </button>
-          ))}
+          </div>
+          <div className="flex overflow-x-auto md:flex-col gap-2 scrollbar-hide pb-2 md:pb-0">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-3 font-bold uppercase tracking-wider text-xs transition-colors whitespace-nowrap text-left rounded-lg ${tab === t.key ? 'text-mln-green bg-surface border border-mln-green/30' : 'text-gray-400 hover:text-white hover:bg-surface border border-transparent'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-4 px-6 md:px-0">
-          <span className="text-xs text-gray-400">Signed in as <strong className="text-white">{session?.user?.name || session?.user?.email}</strong></span>
-          <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
-            Sign Out
-          </button>
-        </div>
-      </div>
+
+        {/* MAIN CONTENT */}
+        <div className="flex-1 min-w-0">
 
       {/* DASHBOARD TAB */}
       {tab === 'dashboard' && (
@@ -545,6 +553,11 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}
+
+      {/* REGISTRATIONS TAB */}
+      {tab === 'registrations' && <RegistrationsTab />}
+        </div>
+      </div>
     </div>
   );
 }

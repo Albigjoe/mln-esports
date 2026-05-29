@@ -218,3 +218,13 @@ model ScrimRequest {
   createdAt       DateTime @default(now())
 }
 
+model TeamRegistration {
+  id           String   @id @default(cuid())
+  teamName     String
+  logoUrl      String?
+  contactEmail String
+  players      Json     // Array of player objects
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+}
+

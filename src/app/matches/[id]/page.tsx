@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import HeroImage from '@/components/HeroImage';
 
 export const dynamic = "force-dynamic";
 
@@ -124,8 +125,8 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
               <span>{game.team1.name} Performance</span>
               <span className="text-xs text-gray-500 font-semibold">{game.winner === 'team1' ? 'WINNER' : 'DEFEATED'}</span>
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-400">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[700px] text-left text-sm text-gray-400">
                 <thead className="bg-background text-xs uppercase text-white font-bold">
                   <tr>
                     <th className="px-4 py-3">Player</th>
@@ -145,8 +146,13 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
                           {p.playerUsername || 'Unknown'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-300">{p.hero}</td>
-                      <td className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-gray-500">{p.role}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <HeroImage heroName={p.hero} className="w-8 h-8 rounded border border-border-color shrink-0" />
+                          <span className="font-semibold text-gray-300 whitespace-nowrap">{p.hero}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-gray-500 whitespace-nowrap">{p.role}</td>
                       <td className="px-4 py-3 text-center font-mono text-white font-bold">{p.kills}/{p.deaths}/{p.assists}</td>
                       <td className="px-4 py-3 text-right font-mono text-yellow-400 font-semibold">{(p.gold/1000).toFixed(1)}k</td>
                       <td className="px-4 py-3 text-right font-mono text-cyan-400 font-semibold">{p.damage.toLocaleString()}</td>
@@ -168,8 +174,8 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
               <span>{game.team2.name} Performance</span>
               <span className="text-xs text-gray-500 font-semibold">{game.winner === 'team2' ? 'WINNER' : 'DEFEATED'}</span>
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-400">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[700px] text-left text-sm text-gray-400">
                 <thead className="bg-background text-xs uppercase text-white font-bold">
                   <tr>
                     <th className="px-4 py-3">Player</th>
@@ -189,8 +195,13 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
                           {p.playerUsername || 'Unknown'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-300">{p.hero}</td>
-                      <td className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-gray-500">{p.role}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <HeroImage heroName={p.hero} className="w-8 h-8 rounded border border-border-color shrink-0" />
+                          <span className="font-semibold text-gray-300 whitespace-nowrap">{p.hero}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs uppercase tracking-wider font-semibold text-gray-500 whitespace-nowrap">{p.role}</td>
                       <td className="px-4 py-3 text-center font-mono text-white font-bold">{p.kills}/{p.deaths}/{p.assists}</td>
                       <td className="px-4 py-3 text-right font-mono text-yellow-400 font-semibold">{(p.gold/1000).toFixed(1)}k</td>
                       <td className="px-4 py-3 text-right font-mono text-cyan-400 font-semibold">{p.damage.toLocaleString()}</td>
