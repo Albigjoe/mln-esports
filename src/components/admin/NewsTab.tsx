@@ -1,6 +1,4 @@
-"use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Camera, X, Upload } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'news', label: 'News' },
@@ -8,6 +6,16 @@ const CATEGORIES = [
   { value: 'announcement', label: 'Announcement' },
   { value: 'recap', label: 'Match Recap' },
 ];
+
+async function uploadFile(file: File, folder: string): Promise<string> {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('folder', folder);
+  const res = await fetch('/api/upload', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.url;
+}
 
 export default function NewsTab({ posts }: { posts: any[] }) {
   const router = useRouter();
@@ -21,18 +29,58 @@ export default function NewsTab({ posts }: { posts: any[] }) {
   const [imageUrl, setImageUrl] = useState('');
   const [published, setPublished] = useState(true);
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageError, setImageError] = useState('');
+  const [uploading, setUploading] = useState(false);
+
   const resetForm = () => {
-    setTitle(''); setContent(''); setExcerpt(''); setCategory('news'); setImageUrl(''); setPublished(true); setMsg('');
+    setTitle('');
+    setContent('');
+    setExcerpt('');
+    setCategory('news');
+    setImageUrl('');
+    setPublished(true);
+    setImageFile(null);
+    setImagePreview('');
+    setImageError('');
+    setMsg('');
+  };
+
+  const handleImageFile = (file: File) => {
+    setImageError('');
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setImageError('Invalid format. Only JPG, PNG, or WEBP accepted.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setImageError('File too large. Maximum 2MB allowed.');
+      return;
+    }
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      setImageFile(file);
+      setImagePreview(img.src);
+    };
   };
 
   const handleSave = async () => {
     if (!title || !content) { setMsg('Title and content required'); return; }
     setSaving(true); setMsg('');
     try {
+      let finalImageUrl = imageUrl;
+      if (imageFile) {
+        setUploading(true);
+        finalImageUrl = await uploadFile(imageFile, 'posts');
+        setUploading(false);
+      }
+
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, excerpt, category, imageUrl, published }),
+        body: JSON.stringify({ title, content, excerpt, category, imageUrl: finalImageUrl, published }),
       });
       const data = await res.json();
       if (data.success) {
@@ -40,6 +88,7 @@ export default function NewsTab({ posts }: { posts: any[] }) {
       } else { setMsg('Error: ' + data.error); }
     } catch (e: any) { setMsg('Error: ' + e.message); }
     setSaving(false);
+    setUploading(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -94,10 +143,46 @@ export default function NewsTab({ posts }: { posts: any[] }) {
                 </div>
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Image URL (optional)</label>
-              <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" />
+            {/* Featured Image Upload */}
+            <div className="flex items-start gap-5 p-4 bg-background rounded-xl border border-border-color">
+              <div className="flex-shrink-0">
+                <label className="cursor-pointer group block">
+                  <div className="w-36 h-20 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors relative">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Upload size={22} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                    )}
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setImageFile(null); setImagePreview(''); setImageUrl(''); }}
+                        className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+                  />
+                </label>
+                <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Image (Max 2MB)</p>
+              </div>
+
+              <div className="flex-1">
+                {imageError && (
+                  <div className="text-[10px] font-bold px-3 py-2 rounded-lg mb-3 bg-red-400/10 text-red-400 border border-red-400/20">
+                    {imageError}
+                  </div>
+                )}
+                <p className="text-[10px] text-gray-500">Click the box to upload a featured image.<br/>JPG, PNG, or WEBP · Landscape ratio recommended · Max 2MB.</p>
+              </div>
             </div>
+
             <div>
               <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Excerpt (short summary)</label>
               <input value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Brief summary..." className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" />
@@ -107,8 +192,8 @@ export default function NewsTab({ posts }: { posts: any[] }) {
               <textarea value={content} onChange={e => setContent(e.target.value)} rows={8} placeholder="Write your article..." className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none resize-y" />
             </div>
             <div className="flex gap-3 items-center">
-              <button onClick={handleSave} disabled={saving} className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50">
-                {saving ? 'Saving...' : 'Publish Post'}
+              <button onClick={handleSave} disabled={saving || uploading} className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50">
+                {uploading ? 'Uploading Image...' : saving ? 'Saving...' : 'Publish Post'}
               </button>
               {msg && <span className={`text-sm font-bold ${msg.startsWith('✓') ? 'text-mln-green' : 'text-red-400'}`}>{msg}</span>}
             </div>

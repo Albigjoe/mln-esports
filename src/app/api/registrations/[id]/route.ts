@@ -26,18 +26,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         }
       });
 
-      // Create players
-      const playerPromises = players.map((p: any) => prisma.player.create({
-        data: {
-          username: p.username,
-          realName: p.realName || '',
-          role: p.role || 'PLAYER',
+      // Create or update players (upsert by username to avoid duplicate errors on re-approval)
+      const playerPromises = players.map((p: any) => {
+        const data = {
+          username:   p.username,
+          gameId:     p.gameId     || null,
+          realName:   p.realName   || '',
+          role:       p.role       || 'PLAYER',
           pictureUrl: p.pictureUrl || '',
-          teamId: newTeam.id,
-          state: p.state || 'Lagos',
-          rank: p.rank || 'Mythic'
-        }
-      }));
+          teamId:     newTeam.id,
+          state:      p.state      || 'Lagos',
+          rank:       p.rank       || 'Mythic',
+        };
+        return prisma.player.upsert({
+          where:  { username: p.username },
+          update: { ...data },
+          create: { ...data },
+        });
+      });
       await Promise.all(playerPromises);
     }
 

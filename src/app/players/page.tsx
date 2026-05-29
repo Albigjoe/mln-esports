@@ -58,9 +58,14 @@ export default async function PlayersDirectory() {
                 <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-wider truncate">
                   {player.username}
                 </h3>
-                {player.realName && (
+                {player.realName && !player.realName.startsWith('admin:') && (
                   <p className="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate mt-1">
                     {player.realName}
+                  </p>
+                )}
+                {player.gameId && (
+                  <p className="text-[9px] text-mln-green font-black uppercase tracking-widest mt-1">
+                    ✓ Verified
                   </p>
                 )}
               </div>

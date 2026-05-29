@@ -99,15 +99,35 @@ export default async function PlayerProfile({ params }: { params: Promise<{ user
             <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-wider mb-2 truncate">
               {player.username}
             </h1>
-            
-            {player.realName && (
-              <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mb-6 truncate">
+
+            {/* Real name — only show if it's not an internal admin tag */}
+            {player.realName && !player.realName.startsWith('admin:') && (
+              <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mb-2 truncate">
                 {player.realName}
               </p>
             )}
 
+            {/* Info chips */}
+            <div className="flex flex-wrap gap-2 mb-4 justify-center md:justify-start">
+              {player.state && (
+                <span className="text-[10px] bg-background border border-border-color text-gray-400 font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                  📍 {player.state}
+                </span>
+              )}
+              {player.rank && (
+                <span className="text-[10px] bg-background border border-border-color text-gray-400 font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                  🏅 {player.rank}
+                </span>
+              )}
+              {player.gameId && (
+                <span className="text-[10px] bg-mln-green/10 border border-mln-green/30 text-mln-green font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                  ✓ ID: {player.gameId}
+                </span>
+              )}
+            </div>
+
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
               <div className="bg-background border border-border-color rounded-lg p-3 text-center">
                 <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Win Rate</div>
                 <div className="text-xl font-black text-mln-green">{overallWr}%</div>

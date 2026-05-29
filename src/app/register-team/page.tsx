@@ -46,7 +46,7 @@ export default function RegisterTeamPage() {
   // Players
   const [players, setPlayers] = useState(
     Array.from({ length: 5 }, () => ({
-      username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: ''
+      username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: ''
     }))
   );
 
@@ -199,7 +199,7 @@ export default function RegisterTeamPage() {
   };
 
   const addPlayer = () => {
-    setPlayers(prev => [...prev, { username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null, picturePreview: '', pictureError: '' }]);
+    setPlayers(prev => [...prev, { username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null, picturePreview: '', pictureError: '' }]);
   };
 
   const removePlayer = (index: number) => {
@@ -218,6 +218,7 @@ export default function RegisterTeamPage() {
     if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament you are registering for.');
     for (let i = 0; i < players.length; i++) {
       if (!players[i].username) return setMsg(`Player ${i + 1} is missing an In-Game Username.`);
+      if (!players[i].gameId) return setMsg(`Player ${i + 1} is missing a Game ID. This is required to link their stats.`);
       if (players[i].pictureError && !players[i].pictureError.includes('Recommended')) {
         return setMsg(`Player ${i + 1} has a picture upload error: ${players[i].pictureError}`);
       }
@@ -240,7 +241,7 @@ export default function RegisterTeamPage() {
         if (p.pictureFile) {
           pictureUrl = await uploadFile(p.pictureFile, 'players');
         }
-        return { username: p.username, realName: p.realName, role: p.role, rank: p.rank, state: p.state, pictureUrl };
+        return { username: p.username, gameId: p.gameId, realName: p.realName, role: p.role, rank: p.rank, state: p.state, pictureUrl };
       }));
 
       const res = await fetch('/api/register-team', {
@@ -586,6 +587,17 @@ export default function RegisterTeamPage() {
                             placeholder="Your in-game username"
                             className="w-full bg-surface border border-border-color rounded-lg px-3 py-2 text-white focus:border-mln-green outline-none text-sm transition-colors"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-wider">Game ID *</label>
+                          <input
+                            type="text"
+                            value={p.gameId}
+                            onChange={e => handlePlayerChange(i, 'gameId', e.target.value)}
+                            placeholder="e.g. 123456789 (MLBB ID)"
+                            className="w-full bg-surface border border-border-color rounded-lg px-3 py-2 text-white focus:border-mln-green outline-none text-sm transition-colors"
+                          />
+                          <span className="text-[8px] text-gray-500 mt-0.5 block">Your unique MLBB numeric ID — used to link your stats</span>
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 tracking-wider">Real Name</label>

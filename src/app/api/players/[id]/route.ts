@@ -5,15 +5,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    const { pictureUrl, realName, username, teamId } = body;
+    const { username, gameId, realName, teamId, role, rank, state, pictureUrl } = body;
 
     const player = await prisma.player.update({
       where: { id },
-      data: { 
-        pictureUrl, 
-        realName, 
+      data: {
         username,
-        teamId: teamId || null
+        gameId:     gameId     || null,
+        realName:   realName   || '',
+        teamId:     teamId     || null,
+        role:       role       || '',
+        rank:       rank       || '',
+        state:      state      || '',
+        pictureUrl: pictureUrl || '',
       },
     });
 

@@ -32,26 +32,10 @@ export default async function ProfilePage() {
     where: { email: session.user.email },
   });
 
-  // Try to find a Player record associated with this admin by matching email-based username
-  // Convention: we store admin email in player record's username field with a special lookup
-  // We use a separate convention: find player where username starts with the first part of their email
-  const emailPrefix = session.user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-  
-  // Look for an existing player linked by admin email stored in a special metadata field
-  // We store the adminEmail in a Player record via the realName or a tag
-  // Simplest: look up player by username that matches adminUser name slug
-  const nameSlug = adminUser?.name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') || emailPrefix;
-
-  // Find any player the admin might have already created for themselves
-  let player = await prisma.player.findFirst({
-    where: {
-      OR: [
-        { username: nameSlug },
-        { username: emailPrefix },
-        { realName: adminUser?.name || '' },
-      ]
-    },
-    include: { team: true }
+  // Look up the player record tagged to this admin account via the stable "admin:<email>" convention
+  const player = await prisma.player.findFirst({
+    where: { realName: `admin:${session.user.email}` },
+    include: { team: true },
   });
 
   return (

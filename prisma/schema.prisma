@@ -98,6 +98,7 @@ model AdminUser {
   email     String @unique
   password  String
   name      String
+  gameId    String?
   role      String @default("staff") // admin, staff
   createdAt DateTime @default(now())
 }
@@ -132,6 +133,7 @@ model Award {
 model Player {
   id          String   @id @default(cuid())
   username    String   @unique
+  gameId      String?  @unique
   pictureUrl  String?
   realName    String?
   role        String   @default("PLAYER") // PLAYER, CAPTAIN

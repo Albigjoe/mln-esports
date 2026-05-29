@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   User, Trophy, ShieldCheck, Settings, Star,
   Swords, MapPin, BadgeCheck, Clock, AlertCircle,
-  Edit3, Save, X
+  Edit3, Save, X, Camera
 } from 'lucide-react';
 
 const NIGERIAN_STATES = [
@@ -25,6 +25,7 @@ const PLAYER_ROLES = ['PLAYER','CAPTAIN','COACH','ANALYST','MANAGER'];
 type Player = {
   id: string;
   username: string;
+  gameId: string | null;
   realName: string | null;
   role: string;
   state: string;
@@ -41,6 +42,16 @@ type Props = {
   player: Player | null;
 };
 
+async function uploadFile(file: File, folder: string): Promise<string> {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('folder', folder);
+  const res = await fetch('/api/upload', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.url;
+}
+
 export default function ProfileClient({ adminEmail, adminName, adminRole, player }: Props) {
   const router = useRouter();
 
@@ -51,22 +62,62 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
 
   const [form, setForm] = useState({
     username:  player?.username  || '',
+    gameId:    player?.gameId    || '',
     realName:  player?.realName  || '',
     state:     player?.state     || 'Lagos',
     rank:      player?.rank      || 'Epic',
     role:      player?.role      || 'PLAYER',
+    pictureUrl:player?.pictureUrl|| '',
   });
+
+  const [picFile, setPicFile] = useState<File | null>(null);
+  const [picPreview, setPicPreview] = useState(player?.pictureUrl || '');
+  const [picError, setPicError] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const handlePicFile = (file: File) => {
+    setPicError('');
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setPicError('Invalid format. Only JPG, PNG, or WEBP accepted.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setPicError('File too large. Maximum 2MB allowed.');
+      return;
+    }
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      if (ratio < 0.9 || ratio > 1.1) {
+        setPicError('⚠️ Recommended: Use a 1:1 square image (200×200px) for best results.');
+      }
+      setPicFile(file);
+      setPicPreview(img.src);
+    };
+  };
 
   const handleSave = async () => {
     if (!form.username.trim()) {
       setMsg('Username is required.'); setMsgType('err'); return;
     }
+    if (!form.gameId.trim()) {
+      setMsg('Game ID is required — this links your stats to your account.'); setMsgType('err'); return;
+    }
     setSaving(true); setMsg('');
     try {
+      let finalPicUrl = form.pictureUrl;
+      if (picFile) {
+        setUploading(true);
+        finalPicUrl = await uploadFile(picFile, 'players');
+        setUploading(false);
+      }
+
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, pictureUrl: finalPicUrl }),
       });
       const data = await res.json();
       if (data.success) {
@@ -80,6 +131,7 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
       setMsg('Network error. Please try again.'); setMsgType('err');
     }
     setSaving(false);
+    setUploading(false);
   };
 
   const initial = (player?.username || adminName || adminEmail)[0]?.toUpperCase() || '?';
@@ -96,9 +148,17 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
           <div className="px-6 pb-6 -mt-10">
             {/* Avatar */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-5">
-              <div className="w-20 h-20 rounded-2xl bg-mln-green/10 border-4 border-surface flex items-center justify-center text-3xl font-black text-mln-green shadow-xl shrink-0">
-                {initial}
-              </div>
+              {player?.pictureUrl ? (
+                <img
+                  src={player.pictureUrl}
+                  alt={player.username}
+                  className="w-20 h-20 rounded-2xl border-4 border-surface object-cover shadow-xl shrink-0"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-mln-green/10 border-4 border-surface flex items-center justify-center text-3xl font-black text-mln-green shadow-xl shrink-0">
+                  {initial}
+                </div>
+              )}
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-xl font-black text-white uppercase tracking-tight">
@@ -149,6 +209,46 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
             </div>
 
             <div className="space-y-4">
+              {/* Picture Upload */}
+              <div className="flex items-start gap-4 p-3 bg-background rounded-xl border border-border-color">
+                <div className="flex-shrink-0">
+                  <label className="cursor-pointer group block">
+                    <div className="w-16 h-16 rounded-xl border border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors relative">
+                      {picPreview ? (
+                        <img src={picPreview} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera size={18} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                      )}
+                      {picPreview && (
+                        <button
+                          type="button"
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); setPicFile(null); setPicPreview(''); setForm(f => ({ ...f, pictureUrl: '' })); }}
+                          className="absolute top-0.5 right-0.5 bg-black/80 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                        >
+                          <X size={8} />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handlePicFile(e.target.files[0])}
+                    />
+                  </label>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Profile Photo</span>
+                  {picError ? (
+                    <div className={`text-[9px] font-bold px-2 py-1 rounded bg-red-400/10 text-red-400 border border-red-400/20`}>
+                      {picError}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-gray-500 leading-snug">Click thumbnail to upload a profile picture. JPG/PNG/WEBP up to 2MB. Square ratio recommended.</p>
+                  )}
+                </div>
+              </div>
+
               {/* Username */}
               <div>
                 <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">
@@ -173,6 +273,21 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
                   placeholder="e.g. Joseph Alawaye"
                   className="w-full bg-background border border-border-color focus:border-mln-green rounded-lg px-4 py-3 text-white outline-none transition-colors placeholder-gray-600"
                 />
+              </div>
+
+              {/* Game ID */}
+              <div>
+                <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">
+                  Game ID (MLBB) <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.gameId}
+                  onChange={e => setForm(f => ({ ...f, gameId: e.target.value }))}
+                  placeholder="e.g. 123456789"
+                  className="w-full bg-background border border-border-color focus:border-mln-green rounded-lg px-4 py-3 text-white font-bold outline-none transition-colors placeholder-gray-600"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Your unique MLBB numeric ID — this links your match stats to your account.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -223,11 +338,11 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
               {/* Save Button */}
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || uploading}
                 className="w-full bg-mln-green hover:bg-mln-green-dark disabled:opacity-50 text-black font-black uppercase tracking-widest py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(0,200,83,0.2)] flex items-center justify-center gap-2"
               >
                 <Save size={16} />
-                {saving ? 'Saving…' : 'Save Profile'}
+                {uploading ? 'Uploading Photo...' : saving ? 'Saving Profile...' : 'Save Profile'}
               </button>
             </div>
           </div>
@@ -242,6 +357,7 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
                 { label: 'Username',  value: player.username },
+                { label: 'Game ID',   value: player.gameId || '—' },
                 { label: 'Real Name', value: player.realName || '—' },
                 { label: 'State',     value: player.state },
                 { label: 'MLBB Rank', value: player.rank },

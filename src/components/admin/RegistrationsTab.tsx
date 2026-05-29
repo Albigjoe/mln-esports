@@ -104,11 +104,18 @@ export default function RegistrationsTab() {
                 {reg.players?.map((p: any, i: number) => (
                   <div key={i} className="bg-background border border-border-color rounded-lg p-3 relative">
                     <span className="absolute top-2 right-2 text-[10px] font-bold text-gray-600">P{i+1}</span>
-                    <div className="font-bold text-white mb-1">{p.username || 'No IGN'}</div>
+                    {p.pictureUrl && (
+                      <img src={p.pictureUrl} alt={p.username} className="w-10 h-10 rounded-lg object-cover mb-2 border border-border-color" />
+                    )}
+                    <div className="font-bold text-white mb-0.5">{p.username || 'No IGN'}</div>
+                    {p.gameId && (
+                      <div className="text-[9px] text-mln-green font-black uppercase tracking-widest mb-1">ID: {p.gameId}</div>
+                    )}
                     <div className="text-[10px] text-gray-400 mb-2">{p.realName || '-'}</div>
                     <div className="flex flex-wrap gap-1">
                       <span className="bg-surface px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-mln-green border border-border-color">{p.role || 'Unassigned'}</span>
                       <span className="bg-surface px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-gray-300 border border-border-color">{p.rank || '-'}</span>
+                      {p.state && <span className="bg-surface px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-gray-400 border border-border-color">{p.state}</span>}
                     </div>
                   </div>
                 ))}
