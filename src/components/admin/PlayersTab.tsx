@@ -25,6 +25,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
   const [picError, setPicError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +109,24 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
     }
     setSaving(false);
     setUploading(false);
+  };
+
+  const handleDelete = async (player: any) => {
+    if (!confirm(`Delete player "${player.username}"? This cannot be undone.`)) return;
+    setDeletingId(player.id);
+    try {
+      const res = await fetch(`/api/players/${player.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMsg(`✓ Player "${player.username}" deleted.`);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setMsg(data.error || 'Failed to delete player.');
+      }
+    } catch {
+      setMsg('Network error.');
+    }
+    setDeletingId(null);
   };
 
   const filteredPlayers = players.filter(p =>
@@ -253,7 +272,16 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
                   <td className="px-4 py-3">{p.team?.name || <span className="text-gray-600">Free Agent</span>}</td>
                   <td className="px-4 py-3">{p.role || '-'}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => handleEdit(p)} className="text-mln-green hover:underline uppercase font-bold text-xs">Edit</button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => handleEdit(p)} className="text-mln-green hover:underline uppercase font-bold text-xs">Edit</button>
+                      <button
+                        onClick={() => handleDelete(p)}
+                        disabled={deletingId === p.id}
+                        className="text-red-400 hover:text-red-300 hover:underline uppercase font-bold text-xs disabled:opacity-40"
+                      >
+                        {deletingId === p.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
