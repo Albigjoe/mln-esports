@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, X, Upload } from 'lucide-react';
 

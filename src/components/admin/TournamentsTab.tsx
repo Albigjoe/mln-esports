@@ -1,3 +1,6 @@
+"use client";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Camera, X, Upload } from 'lucide-react';
 
 async function uploadFile(file: File, folder: string): Promise<string> {
