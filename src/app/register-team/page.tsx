@@ -46,7 +46,7 @@ export default function RegisterTeamPage() {
   // Players
   const [players, setPlayers] = useState(
     Array.from({ length: 5 }, () => ({
-      username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: ''
+      username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: ''
     }))
   );
 
@@ -154,12 +154,52 @@ export default function RegisterTeamPage() {
 
   // Player picture file
   const handlePlayerPicFile = (index: number, file: File) => {
-    const preview = URL.createObjectURL(file);
-    setPlayers(prev => prev.map((p, i) => i === index ? { ...p, pictureFile: file, picturePreview: preview } : p));
+    const updatePlayer = (props: Partial<typeof players[0]>) => {
+      setPlayers(prev => prev.map((p, i) => i === index ? { ...p, ...props } : p));
+    };
+
+    updatePlayer({ pictureError: '' });
+
+    // Check format (JPG, PNG, WEBP)
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      updatePlayer({
+        pictureError: 'Invalid format. Only JPG, PNG, or WEBP images are accepted.',
+        pictureFile: null,
+        picturePreview: ''
+      });
+      return;
+    }
+
+    // Check size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      updatePlayer({
+        pictureError: 'File too large. Maximum file size allowed is 2MB.',
+        pictureFile: null,
+        picturePreview: ''
+      });
+      return;
+    }
+
+    // Check dimensions / aspect ratio
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const isSquare = Math.abs(width - height) < 5 || (width / height >= 0.95 && width / height <= 1.05);
+
+      updatePlayer({
+        pictureFile: file,
+        picturePreview: img.src,
+        pictureError: isSquare ? '' : 'Recommended: Use a 1:1 square image (e.g. 200x200px) for best results.'
+      });
+    };
   };
 
   const addPlayer = () => {
-    setPlayers(prev => [...prev, { username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null, picturePreview: '' }]);
+    setPlayers(prev => [...prev, { username: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null, picturePreview: '', pictureError: '' }]);
   };
 
   const removePlayer = (index: number) => {
@@ -178,6 +218,9 @@ export default function RegisterTeamPage() {
     if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament you are registering for.');
     for (let i = 0; i < players.length; i++) {
       if (!players[i].username) return setMsg(`Player ${i + 1} is missing an In-Game Username.`);
+      if (players[i].pictureError && !players[i].pictureError.includes('Recommended')) {
+        return setMsg(`Player ${i + 1} has a picture upload error: ${players[i].pictureError}`);
+      }
     }
 
     setLoading(true); setMsg('');
@@ -515,20 +558,23 @@ export default function RegisterTeamPage() {
 
                     <div className="flex items-start gap-4 mt-2 mb-4">
                       {/* Player picture upload */}
-                      <label className="cursor-pointer group flex-shrink-0">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors">
-                          {p.picturePreview
-                            ? <img src={p.picturePreview} alt="" className="w-full h-full object-cover" />
-                            : <Camera size={20} className="text-gray-600 group-hover:text-mln-green transition-colors" />
-                          }
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
-                        />
-                      </label>
+                      <div className="flex-shrink-0 flex flex-col items-center">
+                        <label className="cursor-pointer group">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors">
+                            {p.picturePreview
+                              ? <img src={p.picturePreview} alt="" className="w-full h-full object-cover" />
+                              : <Camera size={20} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                            }
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            className="hidden"
+                            onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
+                          />
+                        </label>
+                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">Max 2MB</span>
+                      </div>
 
                       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -553,6 +599,13 @@ export default function RegisterTeamPage() {
                         </div>
                       </div>
                     </div>
+
+                    {p.pictureError && (
+                      <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg mb-4 border flex items-center gap-1.5 ${p.pictureError.includes('Recommended') ? 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20' : 'bg-red-400/10 text-red-400 border-red-400/20'}`}>
+                        <span>{p.pictureError.includes('Recommended') ? '⚠️' : '❌'}</span>
+                        <span>{p.pictureError}</span>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div>
