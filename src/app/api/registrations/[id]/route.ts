@@ -11,40 +11,65 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
     const { status, teamName, logoUrl, lineupImageUrl, players } = await req.json();
 
-    const reg = await prisma.teamRegistration.update({
-      where: { id },
-      data: { status }
-    });
+    let reg;
 
     if (status === 'APPROVED') {
-      // Create team
-      const newTeam = await prisma.team.create({
-        data: {
-          name: teamName,
-          logoUrl: logoUrl || '',
-          lineupImageUrl: lineupImageUrl || ''
-        }
-      });
+      reg = await prisma.$transaction(async (tx) => {
+        // 1. Find or create the team
+        let team = await tx.team.findUnique({
+          where: { name: teamName }
+        });
 
-      // Create or update players (upsert by username to avoid duplicate errors on re-approval)
-      const playerPromises = players.map((p: any) => {
-        const data = {
-          username:   p.username,
-          gameId:     p.gameId     || null,
-          realName:   p.realName   || '',
-          role:       p.role       || 'PLAYER',
-          pictureUrl: p.pictureUrl || '',
-          teamId:     newTeam.id,
-          state:      p.state      || 'Lagos',
-          rank:       p.rank       || 'Mythic',
-        };
-        return prisma.player.upsert({
-          where:  { username: p.username },
-          update: { ...data },
-          create: { ...data },
+        if (!team) {
+          team = await tx.team.create({
+            data: {
+              name: teamName,
+              logoUrl: logoUrl || '',
+              lineupImageUrl: lineupImageUrl || ''
+            }
+          });
+        } else {
+          // Update details of existing team if provided
+          team = await tx.team.update({
+            where: { id: team.id },
+            data: {
+              logoUrl: logoUrl || team.logoUrl,
+              lineupImageUrl: lineupImageUrl || team.lineupImageUrl
+            }
+          });
+        }
+
+        // 2. Upsert players under the team
+        for (const p of players) {
+          const data = {
+            username:   p.username,
+            gameId:     p.gameId     || null,
+            realName:   p.realName   || '',
+            role:       p.role       || 'PLAYER',
+            pictureUrl: p.pictureUrl || '',
+            teamId:     team.id,
+            state:      p.state      || 'Lagos',
+            rank:       p.rank       || 'Mythic',
+          };
+
+          await tx.player.upsert({
+            where:  { username: p.username },
+            update: { ...data },
+            create: { ...data },
+          });
+        }
+
+        // 3. Finally, update registration status
+        return await tx.teamRegistration.update({
+          where: { id },
+          data: { status }
         });
       });
-      await Promise.all(playerPromises);
+    } else {
+      reg = await prisma.teamRegistration.update({
+        where: { id },
+        data: { status }
+      });
     }
 
     return NextResponse.json({ success: true, data: reg });
