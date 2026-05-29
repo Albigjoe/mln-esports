@@ -354,8 +354,12 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
     router.refresh();
   };
 
-  const team1Name = teams.find((t: any) => t.id === team1Id)?.name || 'Team 1';
-  const team2Name = teams.find((t: any) => t.id === team2Id)?.name || 'Team 2';
+  const team1 = teams.find((t: any) => t.id === team1Id);
+  const team2 = teams.find((t: any) => t.id === team2Id);
+  const team1Name = team1?.name || 'Team 1';
+  const team2Name = team2?.name || 'Team 2';
+  const team1Players = team1?.players || [];
+  const team2Players = team2?.players || [];
 
   const tabs: { key: TabType; label: string }[] = [
     { key: 'dashboard', label: '📊 Dashboard' },
@@ -530,8 +534,8 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
             <BanSection label={`Bans · ${team2Name}`} bans={bans2} setBans={setBans2} />
           </div>
           <div className="grid grid-cols-1 gap-6">
-            <PickSection label={`Picks · ${team1Name}`} picks={picks1} onChange={(i, field, val) => handlePickChange('team1', i, field, val)} />
-            <PickSection label={`Picks · ${team2Name}`} picks={picks2} onChange={(i, field, val) => handlePickChange('team2', i, field, val)} />
+            <PickSection label={`Picks · ${team1Name}`} picks={picks1} teamPlayers={team1Players} onChange={(i, field, val) => handlePickChange('team1', i, field, val)} />
+            <PickSection label={`Picks · ${team2Name}`} picks={picks2} teamPlayers={team2Players} onChange={(i, field, val) => handlePickChange('team2', i, field, val)} />
           </div>
           <div className="flex gap-4 items-center">
             <button onClick={handleSave} disabled={saving} className="bg-mln-green hover:bg-mln-green-dark text-black px-8 py-3 rounded font-bold tracking-widest uppercase transition-all disabled:opacity-50">{saving ? 'SAVING...' : editingGameId ? 'UPDATE GAME' : 'SAVE GAME'}</button>
@@ -637,7 +641,7 @@ function BanSection({ label, bans, setBans }: { label: string; bans: string[]; s
   );
 }
 
-function PickSection({ label, picks, onChange }: { label: string; picks: any[]; onChange: (i: number, field: string, value: any) => void }) {
+function PickSection({ label, picks, teamPlayers, onChange }: { label: string; picks: any[]; teamPlayers?: any[]; onChange: (i: number, field: string, value: any) => void }) {
   return (
     <div className="bg-surface border border-border-color rounded-xl p-6">
       <div className="text-xs text-cyan-400 font-bold uppercase tracking-[3px] mb-3">{label}</div>
@@ -652,7 +656,20 @@ function PickSection({ label, picks, onChange }: { label: string; picks: any[]; 
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Username</label>
-                <input placeholder="Username" value={p.playerUsername} onChange={e => onChange(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+                {teamPlayers && teamPlayers.length > 0 ? (
+                  <select value={p.playerUsername} onChange={e => onChange(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-1 py-1.5 text-white text-xs focus:border-mln-green outline-none">
+                    <option value="">Select Player</option>
+                    {teamPlayers.map(player => (
+                      <option key={player.id} value={player.username}>{player.username}</option>
+                    ))}
+                    <option value="__other__">Other / Substitute...</option>
+                  </select>
+                ) : (
+                  <input placeholder="Username" value={p.playerUsername} onChange={e => onChange(i,'playerUsername',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+                )}
+                {p.playerUsername === '__other__' && (
+                  <input placeholder="Sub Username" onChange={e => onChange(i,'playerUsername',e.target.value)} className="w-full mt-1 bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
+                )}
               </div>
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Role</label>

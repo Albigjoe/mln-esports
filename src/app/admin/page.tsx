@@ -17,7 +17,10 @@ export default async function AdminDashboard() {
     orderBy: { startDate: 'desc' },
     include: { _count: { select: { games: true } } }
   });
-  const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } });
+  const teams = await prisma.team.findMany({ 
+    orderBy: { name: 'asc' },
+    include: { players: true }
+  });
   const recentGames = await prisma.game.findMany({
     take: 50,
     orderBy: { createdAt: 'desc' },
