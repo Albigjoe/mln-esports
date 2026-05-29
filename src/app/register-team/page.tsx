@@ -30,6 +30,7 @@ export default function RegisterTeamPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +76,7 @@ export default function RegisterTeamPage() {
     setTeamQuery(val);
     setSelectedTeam(null);
     setIsNewTeam(false);
+    setLogoError('');
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => fetchTeamSuggestions(val), 300);
   };
@@ -85,12 +87,14 @@ export default function RegisterTeamPage() {
     setIsNewTeam(false);
     setShowSuggestions(false);
     setLogoPreview(team.logoUrl || '');
+    setLogoError('');
   };
 
   const selectNewTeam = () => {
     setSelectedTeam(null);
     setIsNewTeam(true);
     setShowSuggestions(false);
+    setLogoError('');
   };
 
   // Close suggestions on outside click
@@ -106,8 +110,41 @@ export default function RegisterTeamPage() {
 
   // Logo file handler
   const handleLogoFile = (file: File) => {
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoError('');
+    
+    // Check format (JPG, PNG, WEBP)
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setLogoError('Invalid format. Only JPG, PNG, or WEBP images are accepted.');
+      setLogoFile(null);
+      setLogoPreview('');
+      return;
+    }
+    
+    // Check size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setLogoError('File too large. Maximum file size allowed is 2MB.');
+      setLogoFile(null);
+      setLogoPreview('');
+      return;
+    }
+    
+    // Check dimensions / aspect ratio
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const isSquare = Math.abs(width - height) < 5 || (width / height >= 0.95 && width / height <= 1.05);
+      
+      if (!isSquare) {
+        setLogoError('Recommended: Use a 1:1 square image (e.g. 200x200px) for best results.');
+      }
+      
+      setLogoFile(file);
+      setLogoPreview(img.src);
+    };
   };
 
   // Player field change
@@ -329,8 +366,8 @@ export default function RegisterTeamPage() {
 
               {/* Logo upload (only for new teams) */}
               {isNewTeam && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Squad Logo *</label>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Squad Logo *</label>
                   <label className="flex items-center gap-4 cursor-pointer group">
                     <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-background overflow-hidden flex-shrink-0 flex items-center justify-center transition-colors">
                       {logoPreview
@@ -340,10 +377,15 @@ export default function RegisterTeamPage() {
                     </div>
                     <div>
                       <p className="text-white text-sm font-bold">{logoPreview ? 'Change Logo' : 'Upload Squad Logo'}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">PNG, JPG, WebP — max 5MB</p>
+                      <p className="text-gray-500 text-xs mt-0.5">JPG, PNG, or WEBP — max 2MB (recommended: 1:1 ratio, 200x200px)</p>
                     </div>
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleLogoFile(e.target.files[0])} />
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={e => e.target.files?.[0] && handleLogoFile(e.target.files[0])} />
                   </label>
+                  {logoError && (
+                    <p className={`text-xs font-bold px-3 py-1.5 rounded-lg inline-block ${logoError.includes('Recommended') ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' : 'bg-red-400/10 text-red-400 border border-red-400/20'}`}>
+                      {logoError.includes('Recommended') ? '⚠️ ' : '❌ '} {logoError}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -376,6 +418,8 @@ export default function RegisterTeamPage() {
                 onClick={() => {
                   const teamName = isNewTeam ? teamQuery.trim() : selectedTeam?.name || teamQuery.trim();
                   if (!teamName) return setMsg('Please enter or select your squad name.');
+                  if (isNewTeam && !logoFile) return setMsg('Please upload a squad logo for your new team.');
+                  if (isNewTeam && logoError && !logoError.includes('Recommended')) return setMsg('Please resolve the logo upload error before proceeding.');
                   if (!contactEmail) return setMsg('Please enter your contact email.');
                   setMsg('');
                   setStep(2);

@@ -35,3 +35,68 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, ids, deleteAll } = body;
+
+    let teamIds: string[] = [];
+
+    if (deleteAll) {
+      const allTeams = await prisma.team.findMany({ select: { id: true } });
+      teamIds = allTeams.map(t => t.id);
+    } else if (ids && Array.isArray(ids)) {
+      teamIds = ids;
+    } else if (id) {
+      teamIds = [id];
+    }
+
+    if (teamIds.length === 0) {
+      return NextResponse.json({ success: true, message: 'No teams to delete' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update players referencing these teamIds to set teamId: null
+      await tx.player.updateMany({
+        where: { teamId: { in: teamIds } },
+        data: { teamId: null }
+      });
+
+      // 2. Update awards referencing these teamIds to set teamId: null
+      await tx.award.updateMany({
+        where: { teamId: { in: teamIds } },
+        data: { teamId: null }
+      });
+
+      // 3. Delete scrim requests referencing these teams
+      await tx.scrimRequest.deleteMany({
+        where: {
+          OR: [
+            { challengerTeamId: { in: teamIds } },
+            { receiverTeamId: { in: teamIds } }
+          ]
+        }
+      });
+
+      // 4. Delete games referencing these teamIds as team1Id or team2Id
+      await tx.game.deleteMany({
+        where: {
+          OR: [
+            { team1Id: { in: teamIds } },
+            { team2Id: { in: teamIds } }
+          ]
+        }
+      });
+
+      // 5. Delete the teams
+      await tx.team.deleteMany({
+        where: { id: { in: teamIds } }
+      });
+    });
+
+    return NextResponse.json({ success: true, count: teamIds.length });
+  } catch (error: any) {
+    console.error('Delete teams error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

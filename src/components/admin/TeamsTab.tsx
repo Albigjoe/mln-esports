@@ -1,13 +1,16 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Trash2, AlertTriangle, Edit, CheckSquare, Square } from 'lucide-react';
 
 export default function TeamsTab({ teams }: { teams: any[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', logoUrl: '' });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleEdit = (team: any) => {
     setEditingId(team.id);
@@ -40,8 +43,53 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
     setSaving(false);
   };
 
+  const handleDelete = async (options: { id?: string; ids?: string[]; deleteAll?: boolean }) => {
+    let confirmMsg = 'Are you sure you want to delete this team?';
+    if (options.deleteAll) {
+      confirmMsg = '⚠️ CRITICAL WARNING: Are you absolutely sure you want to delete ALL teams? This will permanently wipe all teams and delete all associated matches, picks, and bans from the database!';
+    } else if (options.ids) {
+      confirmMsg = `Are you sure you want to delete the ${options.ids.length} selected team(s)?`;
+    }
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeleting(true);
+    setMsg('');
+    try {
+      const res = await fetch('/api/teams', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options)
+      });
+      if (res.ok) {
+        setMsg(options.deleteAll ? 'Successfully wiped all teams!' : 'Successfully deleted team(s)!');
+        setSelectedIds([]);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setMsg(data.error || 'Failed to delete team(s).');
+      }
+    } catch {
+      setMsg('Network error.');
+    }
+    setDeleting(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === teams.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(teams.map(t => t.id));
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Save / Edit form */}
       <div className="bg-surface border border-border-color rounded-xl p-6">
         <h3 className="text-lg font-black text-white uppercase mb-4">{editingId ? 'Edit Team' : 'Add New Team'}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -61,27 +109,109 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
         </div>
       </div>
 
+      {/* Global Actions Area */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center p-4 bg-background border border-border-color rounded-xl">
+        <div>
+          <h4 className="text-sm font-black text-white uppercase">Team Database Actions</h4>
+          <p className="text-xs text-gray-500 mt-0.5">Manage existing teams, clear rosters, or perform bulk deletion.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {selectedIds.length > 0 && (
+            <button
+              onClick={() => handleDelete({ ids: selectedIds })}
+              disabled={deleting}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-bold uppercase text-xs tracking-wider transition-colors"
+            >
+              <Trash2 size={14} />
+              Delete Selected ({selectedIds.length})
+            </button>
+          )}
+          <button
+            onClick={() => handleDelete({ deleteAll: true })}
+            disabled={deleting}
+            className="flex items-center gap-2 bg-red-950/40 hover:bg-red-950 border border-red-500/30 hover:border-red-500 text-red-400 px-3 py-2 rounded-lg font-bold uppercase text-xs tracking-wider transition-colors"
+          >
+            <AlertTriangle size={14} className="text-red-500" />
+            Delete All Teams
+          </button>
+        </div>
+      </div>
+
+      {/* Table view */}
       <div className="bg-surface border border-border-color rounded-xl overflow-hidden">
         <table className="w-full text-left text-sm text-gray-400">
           <thead className="bg-background text-xs uppercase text-white border-b border-border-color">
             <tr>
+              <th className="px-4 py-3 w-12">
+                <button onClick={toggleSelectAll} className="text-gray-500 hover:text-white transition-colors">
+                  {selectedIds.length === teams.length && teams.length > 0 ? (
+                    <CheckSquare size={16} className="text-mln-green" />
+                  ) : (
+                    <Square size={16} />
+                  )}
+                </button>
+              </th>
               <th className="px-4 py-3">Logo</th>
               <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Actions</th>
+              <th className="px-4 py-3">Players Count</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/60">
-            {teams.map(t => (
-              <tr key={t.id} className="hover:bg-background/50">
-                <td className="px-4 py-3">
-                  {t.logoUrl ? <img src={t.logoUrl} alt={t.name} className="w-8 h-8 rounded object-cover" /> : <div className="w-8 h-8 rounded bg-background border border-border-color flex items-center justify-center text-[10px]">NO LOGO</div>}
-                </td>
-                <td className="px-4 py-3 font-bold text-white">{t.name}</td>
-                <td className="px-4 py-3">
-                  <button onClick={() => handleEdit(t)} className="text-mln-green hover:underline uppercase font-bold text-xs">Edit</button>
+            {teams.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  No teams registered in the database.
                 </td>
               </tr>
-            ))}
+            ) : (
+              teams.map(t => {
+                const isSelected = selectedIds.includes(t.id);
+                return (
+                  <tr key={t.id} className={`transition-colors ${isSelected ? 'bg-mln-green/5 hover:bg-mln-green/10' : 'hover:bg-background/50'}`}>
+                    <td className="px-4 py-3">
+                      <button onClick={() => toggleSelect(t.id)} className="text-gray-500 hover:text-white transition-colors">
+                        {isSelected ? (
+                          <CheckSquare size={16} className="text-mln-green" />
+                        ) : (
+                          <Square size={16} />
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      {t.logoUrl ? (
+                        <img src={t.logoUrl} alt={t.name} className="w-8 h-8 rounded-lg object-cover border border-border-color" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-background border border-border-color flex items-center justify-center text-[8px] font-black text-gray-600">NO LOGO</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-white">{t.name}</td>
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-500">
+                      {t.players?.length || 0} Player(s)
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => handleEdit(t)}
+                          className="flex items-center gap-1 text-mln-green hover:underline uppercase font-bold text-xs bg-mln-green/10 hover:bg-mln-green/20 px-2.5 py-1 rounded"
+                        >
+                          <Edit size={10} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete({ id: t.id })}
+                          disabled={deleting}
+                          className="flex items-center gap-1 text-red-400 hover:underline uppercase font-bold text-xs bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1 rounded"
+                        >
+                          <Trash2 size={10} />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
