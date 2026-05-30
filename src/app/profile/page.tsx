@@ -33,7 +33,7 @@ export default async function ProfilePage() {
   });
 
   // Look up the player record tagged to this admin account via the stable "admin:<email>" convention
-  const player = await prisma.player.findFirst({
+  let player = await prisma.player.findFirst({
     where: { realName: `admin:${session.user.email}` },
     include: {
       team: {
@@ -46,12 +46,53 @@ export default async function ProfilePage() {
     },
   });
 
+  // Synthesize or enhance player if they are a captain of a team but don't have a player record or their player record is not linked to their team
+  const ownedTeam = await prisma.team.findFirst({
+    where: { ownerEmail: session.user.email },
+    include: {
+      players: {
+        orderBy: { username: 'asc' }
+      }
+    }
+  });
+
+  if (!player && ownedTeam) {
+    // Synthesize a placeholder player for the squad leader so they can see and manage their team!
+    player = {
+      id: 'captain-placeholder',
+      username: adminUser?.name || session.user.name || 'Squad Captain',
+      gameId: adminUser?.gameId || '',
+      realName: adminUser?.name || '',
+      role: 'CAPTAIN',
+      state: 'Lagos',
+      rank: 'Mythic',
+      pictureUrl: null,
+      team: ownedTeam,
+      createdAt: new Date()
+    } as any;
+  } else if (player && ownedTeam && !player.team) {
+    // If the player record exists but is not linked to their owned team, force-link it!
+    player.team = ownedTeam as any;
+    player.teamId = ownedTeam.id;
+  }
+
+  // Fetch stats for the player if they exist
+  let picks: any[] = [];
+  if (player && player.username) {
+    picks = await prisma.pick.findMany({
+      where: { playerUsername: player.username },
+      include: { game: { include: { tournament: true } } },
+      orderBy: { game: { createdAt: "desc" } }
+    });
+  }
+
   return (
     <ProfileClient
       adminEmail={session.user.email}
       adminName={adminUser?.name || session.user.name || ''}
       adminRole={(adminUser as any)?.role || 'staff'}
       player={player ? JSON.parse(JSON.stringify(player)) : null}
+      picks={JSON.parse(JSON.stringify(picks))}
     />
   );
 }

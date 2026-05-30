@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User, Trophy, ShieldCheck, Settings, Star,
@@ -57,6 +57,7 @@ type Props = {
   adminName: string;
   adminRole: string;
   player: Player | null;
+  picks?: any[];
 };
 
 async function uploadFile(file: File, folder: string): Promise<string> {
@@ -69,11 +70,15 @@ async function uploadFile(file: File, folder: string): Promise<string> {
   return data.url;
 }
 
-export default function ProfileClient({ adminEmail, adminName, adminRole, player }: Props) {
+export default function ProfileClient({ adminEmail, adminName, adminRole, player, picks }: Props) {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<'details' | 'squad'>('details');
   const [team, setTeam] = useState<any>(player?.team || null);
+
+  useEffect(() => {
+    setTeam(player?.team || null);
+  }, [player?.team]);
 
   const isOwner = team && team.ownerEmail === adminEmail;
 
@@ -558,25 +563,132 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
 
         {/* Details Tab Content */}
         {player && !editing && activeTab === 'details' && (
-          <div className="bg-surface border border-border-color rounded-2xl p-6">
-            <h2 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Swords size={16} className="text-mln-green" /> Your Details
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { label: 'Username',  value: player.username },
-                { label: 'Game ID',   value: player.gameId || '—' },
-                { label: 'Real Name', value: player.realName || '—' },
-                { label: 'State',     value: player.state },
-                { label: 'MLBB Rank', value: player.rank },
-                { label: 'Role',      value: player.role },
-                { label: 'Team',      value: team?.name || 'No team yet' },
-              ].map(({ label, value }) => (
-                <div key={label} className="bg-background border border-border-color rounded-xl p-4">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{label}</div>
-                  <div className="font-black text-white text-sm">{value}</div>
-                </div>
-              ))}
+          <div className="space-y-6">
+            <div className="bg-surface border border-border-color rounded-2xl p-6">
+              <h2 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Swords size={16} className="text-mln-green" /> Your Details
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {[
+                  { label: 'Username',  value: player.username },
+                  { label: 'Game ID',   value: player.gameId || '—' },
+                  { label: 'Real Name', value: player.realName && !player.realName.startsWith('admin:') ? player.realName : '—' },
+                  { label: 'State',     value: player.state },
+                  { label: 'MLBB Rank', value: player.rank },
+                  { label: 'Role',      value: player.role },
+                  { label: 'Team',      value: team?.name || 'No team yet' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-background border border-border-color rounded-xl p-4">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{label}</div>
+                    <div className="font-black text-white text-sm">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Statistics & Performance Card */}
+            <div className="bg-surface border border-border-color rounded-2xl p-6">
+              <h2 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2 border-l-4 border-mln-green pl-3">
+                📊 Statistics & Performance
+              </h2>
+              {(() => {
+                const totalMatches = picks?.length || 0;
+                let wins = 0;
+                let totalKills = 0;
+                let totalDeaths = 0;
+                let totalAssists = 0;
+                let totalMvps = 0;
+                const heroStats: Record<string, { matches: number, wins: number, kills: number, deaths: number, assists: number }> = {};
+
+                picks?.forEach(p => {
+                  const isWin = p.game.winner === p.team;
+                  if (isWin) wins++;
+                  if (p.isMvp) totalMvps++;
+                  totalKills += p.kills;
+                  totalDeaths += p.deaths;
+                  totalAssists += p.assists;
+
+                  if (!heroStats[p.hero]) {
+                    heroStats[p.hero] = { matches: 0, wins: 0, kills: 0, deaths: 0, assists: 0 };
+                  }
+                  heroStats[p.hero].matches++;
+                  if (isWin) heroStats[p.hero].wins++;
+                  heroStats[p.hero].kills += p.kills;
+                  heroStats[p.hero].deaths += p.deaths;
+                  heroStats[p.hero].assists += p.assists;
+                });
+
+                const overallWr = totalMatches > 0 ? ((wins / totalMatches) * 100).toFixed(1) : "0.0";
+                const overallKdaRatio = totalDeaths === 0 && totalMatches > 0 ? (totalKills + totalAssists) : totalDeaths === 0 ? 0 : ((totalKills + totalAssists) / totalDeaths);
+                const overallKda = overallKdaRatio.toFixed(2);
+
+                const topHeroes = Object.entries(heroStats)
+                  .sort((a, b) => b[1].matches - a[1].matches)
+                  .slice(0, 3)
+                  .map(([hero, stats]) => ({
+                    hero,
+                    matches: stats.matches,
+                    wr: ((stats.wins / stats.matches) * 100).toFixed(1),
+                    kda: stats.deaths === 0 ? (stats.kills + stats.assists).toFixed(2) : ((stats.kills + stats.assists) / stats.deaths).toFixed(2)
+                  }));
+
+                if (totalMatches > 0) {
+                  return (
+                    <div className="space-y-6">
+                      {/* Grid stats */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-background border border-border-color rounded-xl p-4 text-center">
+                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Win Rate</div>
+                          <div className="text-xl font-black text-mln-green">{overallWr}%</div>
+                        </div>
+                        <div className="bg-background border border-border-color rounded-xl p-4 text-center">
+                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">KDA Ratio</div>
+                          <div className="text-xl font-black text-white">{overallKda}</div>
+                        </div>
+                        <div className="bg-background border border-border-color rounded-xl p-4 text-center">
+                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Matches Played</div>
+                          <div className="text-xl font-black text-white">{totalMatches}</div>
+                        </div>
+                        <div className="bg-background border border-border-color rounded-xl p-4 text-center">
+                          <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mb-1">MVP Awards</div>
+                          <div className="text-xl font-black text-yellow-400">{totalMvps}</div>
+                        </div>
+                      </div>
+
+                      {/* Top Heroes List */}
+                      {topHeroes.length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-black text-gray-400 uppercase tracking-[2px] mb-3">Top Signature Heroes</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {topHeroes.map((th: any, idx: number) => (
+                              <div key={idx} className="bg-background border border-border-color/60 rounded-xl p-4 flex items-center justify-between">
+                                <div>
+                                  <div className="font-bold text-white uppercase text-xs tracking-wider">{th.hero}</div>
+                                  <div className="text-[9px] text-gray-500 font-bold uppercase mt-1">{th.matches} Matches</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-black text-mln-green text-xs">{th.wr}% WR</div>
+                                  <div className="text-[10px] text-gray-500 font-bold">{th.kda} KDA</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="bg-background border border-border-color rounded-xl p-8 text-center">
+                    <div className="text-3xl mb-3">🎮</div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">No Match Stats Recorded</h3>
+                    <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
+                      Your match history, win rates, and KDA ratios will sync here automatically once tournament admins report matches featuring your in-game username (<span className="text-mln-green font-bold">{player.username}</span>).
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
