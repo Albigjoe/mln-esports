@@ -813,7 +813,7 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
               {/* Roster list */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {team.players?.map((p: any) => {
-                  const isCurrentPlayer = p.realName === `admin:${adminEmail}`;
+                  const isCurrentPlayer = p.id === player?.id;
 
                   return (
                     <div key={p.id} className="bg-surface border border-border-color/60 rounded-xl p-4 flex items-center justify-between gap-3">

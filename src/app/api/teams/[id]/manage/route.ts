@@ -131,7 +131,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     // Check permissions:
     // User can remove player if they are the owner OR if they are removing themselves (leaving the team)
     const isOwner = team.ownerEmail === session.user.email;
-    const isSelf = playerToRemove.realName === `admin:${session.user.email}`;
+
+    // Look up the calling user's player record to check if they're removing themselves
+    const callingPlayer = await prisma.player.findFirst({
+      where: { realName: `admin:${session.user.email}` }
+    });
+    const isSelf = callingPlayer ? playerToRemove.id === callingPlayer.id : false;
 
     if (!isOwner && !isSelf) {
       return NextResponse.json({ error: 'Unauthorized: You can only remove players if you are the owner, or remove yourself to leave the team' }, { status: 403 });

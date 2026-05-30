@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -26,7 +26,14 @@ export default function AdminLogin() {
       if (res?.error) {
         setError(res.error || 'Invalid credentials');
       } else {
-        router.push('/admin');
+        // Redirect based on role: staff/admin → /admin, players → /profile
+        const session = await getSession();
+        const role = (session?.user as any)?.role;
+        if (role === 'staff' || role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/profile');
+        }
         router.refresh();
       }
     } catch (err: any) {
@@ -46,7 +53,7 @@ export default function AdminLogin() {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-mln-green to-cyan-400"></div>
 
         <div className="text-center mb-8">
-          <div className="text-[10px] text-mln-green font-bold uppercase tracking-[4px] mb-2">AFL Nigeria Portal</div>
+          <div className="text-[10px] text-mln-green font-bold uppercase tracking-[4px] mb-2">MLN Portal</div>
           <h1 className="text-3xl font-black text-white uppercase tracking-wider">Sign In</h1>
           <p className="text-gray-400 text-sm mt-1">Log in to your MLN account</p>
         </div>

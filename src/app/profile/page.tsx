@@ -35,7 +35,15 @@ export default async function ProfilePage() {
   // Look up the player record tagged to this admin account via the stable "admin:<email>" convention
   const player = await prisma.player.findFirst({
     where: { realName: `admin:${session.user.email}` },
-    include: { team: true },
+    include: {
+      team: {
+        include: {
+          players: {
+            orderBy: { username: 'asc' }
+          }
+        }
+      }
+    },
   });
 
   return (
