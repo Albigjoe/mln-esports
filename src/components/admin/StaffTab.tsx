@@ -12,6 +12,10 @@ export default function StaffTab({ staffUsers, currentEmail }: { staffUsers: any
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('staff');
 
+  // Search and view states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState<'all' | 'staff' | 'players'>('all');
+
   // State for admin manual password reset
   const [resetResult, setResetResult] = useState<{ name: string; email: string; tempPw: string } | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
@@ -77,8 +81,17 @@ export default function StaffTab({ staffUsers, currentEmail }: { staffUsers: any
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Filter & split accounts
+  const filteredUsers = staffUsers.filter(u => 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const staffAndAdmins = filteredUsers.filter(u => u.role === 'admin' || u.role === 'staff');
+  const playerAccounts = filteredUsers.filter(u => u.role !== 'admin' && u.role !== 'staff');
+
   return (
-    <div className="relative">
+    <div className="relative space-y-6">
       {/* Password Reset Modal */}
       {resetResult && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
@@ -116,18 +129,19 @@ export default function StaffTab({ staffUsers, currentEmail }: { staffUsers: any
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-white uppercase tracking-wider flex items-center gap-2">
+      {/* Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
           <span className="w-1 h-6 bg-mln-green rounded-full"></span>
-          User Accounts & Staff ({staffUsers.length})
+          User Accounts ({staffUsers.length})
         </h3>
-        <button onClick={() => setShowForm(!showForm)} className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-wider transition-colors">
+        <button onClick={() => setShowForm(!showForm)} className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-wider transition-colors shrink-0 self-start sm:self-auto">
           {showForm ? 'Cancel' : '+ Add Staff'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-surface border border-mln-green/30 rounded-xl p-6 mb-6 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
+        <div className="bg-surface border border-mln-green/30 rounded-xl p-6 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
           <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Add New Staff Member</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -159,47 +173,165 @@ export default function StaffTab({ staffUsers, currentEmail }: { staffUsers: any
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {staffUsers.map((u: any) => (
-          <div key={u.id} className="bg-surface border border-border-color rounded-xl p-5 hover:border-mln-green/30 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-full bg-mln-green/20 border border-mln-green/40 flex items-center justify-center text-mln-green font-bold">
-                  {u.name.charAt(0).toUpperCase()}
-                </div>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                  u.role === 'admin' 
-                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30' 
-                    : u.role === 'staff'
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                    : 'bg-green-500/15 text-mln-green border border-mln-green/30'
-                }`}>
-                  {u.role}
-                </span>
-              </div>
-              <h4 className="text-white font-bold">{u.name}</h4>
-              <p className="text-gray-500 text-xs mb-3">{u.email}</p>
-            </div>
+      {/* Modern Search Input with integrated Search Action Label */}
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center bg-surface border border-border-color/60 p-4 rounded-2xl">
+        <div className="relative flex-1">
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search accounts by name or email..." 
+            className="w-full bg-background border border-border-color rounded-xl pl-10 pr-10 py-3 text-white outline-none focus:border-mln-green text-sm"
+          />
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-sm font-bold w-6 h-6 flex items-center justify-center bg-surface border border-border-color rounded-full"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        
+        {/* Toggle Filters */}
+        <div className="flex gap-1 bg-background/50 border border-border-color/60 p-1.5 rounded-xl self-start sm:self-auto">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'staff', label: 'Staff & Admin' },
+            { key: 'players', label: 'Players' }
+          ].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setActiveSubTab(opt.key as any)}
+              className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors ${
+                activeSubTab === opt.key 
+                  ? 'bg-mln-green text-black' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Accounts List Container */}
+      <div className="space-y-8">
+        
+        {/* SECTION 1: STAFF & ADMIN ACCOUNTS */}
+        {(activeSubTab === 'all' || activeSubTab === 'staff') && (
+          <div>
+            <h4 className="text-sm font-black text-gray-400 uppercase tracking-[3px] mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Staff & Admins ({staffAndAdmins.length})
+            </h4>
             
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-color/40">
-              <span className="text-gray-600 text-[10px]">Joined {new Date(u.createdAt).toLocaleDateString()}</span>
-              <div className="flex gap-3">
-                {u.email !== currentEmail && (
-                  <button 
-                    onClick={() => handleResetPassword(u.id, u.name, u.email)} 
-                    disabled={resettingId === u.id}
-                    className="text-mln-green hover:text-mln-green-light text-xs font-bold uppercase disabled:opacity-50"
-                  >
-                    {resettingId === u.id ? 'Resetting...' : 'Reset PW'}
-                  </button>
-                )}
-                {u.email !== currentEmail && (
-                  <button onClick={() => handleDelete(u.id, u.email)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase">Remove</button>
-                )}
+            {staffAndAdmins.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500 text-sm">
+                No staff or admin accounts found matching search.
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {staffAndAdmins.map((u: any) => (
+                  <AccountCard 
+                    key={u.id} 
+                    user={u} 
+                    currentEmail={currentEmail} 
+                    resettingId={resettingId}
+                    onResetPassword={handleResetPassword}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ))}
+        )}
+
+        {/* SECTION 2: PLAYER & CAPTAIN ACCOUNTS */}
+        {(activeSubTab === 'all' || activeSubTab === 'players') && (
+          <div>
+            <h4 className="text-sm font-black text-gray-400 uppercase tracking-[3px] mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-mln-green"></span>
+              Player Accounts ({playerAccounts.length})
+            </h4>
+            
+            {playerAccounts.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-6 text-center text-gray-500 text-sm">
+                No player accounts found matching search.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {playerAccounts.map((u: any) => (
+                  <AccountCard 
+                    key={u.id} 
+                    user={u} 
+                    currentEmail={currentEmail} 
+                    resettingId={resettingId}
+                    onResetPassword={handleResetPassword}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function AccountCard({ 
+  user, 
+  currentEmail, 
+  resettingId, 
+  onResetPassword, 
+  onDelete 
+}: { 
+  user: any; 
+  currentEmail: string; 
+  resettingId: string | null; 
+  onResetPassword: (id: string, name: string, email: string) => void;
+  onDelete: (id: string, email: string) => void;
+}) {
+  return (
+    <div className="bg-surface border border-border-color rounded-xl p-5 hover:border-mln-green/30 transition-all flex flex-col justify-between">
+      <div>
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 rounded-full bg-mln-green/20 border border-mln-green/40 flex items-center justify-center text-mln-green font-bold">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+            user.role === 'admin' 
+              ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30' 
+              : user.role === 'staff'
+              ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+              : 'bg-green-500/15 text-mln-green border border-mln-green/30'
+          }`}>
+            {user.role}
+          </span>
+        </div>
+        <h4 className="text-white font-bold">{user.name}</h4>
+        <p className="text-gray-500 text-xs mb-3">{user.email}</p>
+      </div>
+      
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-color/40">
+        <span className="text-gray-600 text-[10px]">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+        <div className="flex gap-3">
+          {user.email !== currentEmail && (
+            <button 
+              onClick={() => onResetPassword(user.id, user.name, user.email)} 
+              disabled={resettingId === user.id}
+              className="text-mln-green hover:text-mln-green-light text-xs font-bold uppercase disabled:opacity-50"
+            >
+              {resettingId === user.id ? 'Resetting...' : 'Reset PW'}
+            </button>
+          )}
+          {user.email !== currentEmail && (
+            <button onClick={() => onDelete(user.id, user.email)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase">Remove</button>
+          )}
+        </div>
       </div>
     </div>
   );
