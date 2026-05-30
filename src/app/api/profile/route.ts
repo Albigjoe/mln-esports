@@ -20,7 +20,15 @@ export async function GET() {
   // Find player linked by adminEmail stored in realName field as "admin:<email>"
   const player = await prisma.player.findFirst({
     where: { realName: `admin:${session.user.email}` },
-    include: { team: true },
+    include: {
+      team: {
+        include: {
+          players: {
+            orderBy: { username: 'asc' }
+          }
+        }
+      }
+    },
   });
 
   return NextResponse.json({ adminUser, player });
@@ -52,22 +60,24 @@ export async function PUT(req: Request) {
   // We store admin identity in Player.realName as "admin:<email>" so we can look it up
   const adminTag = `admin:${session.user.email}`;
 
-  // Check if another player already has this username (that isn't ours)
+  // Check if another player already has this username AND is linked to another user
   const usernameConflict = await prisma.player.findFirst({
     where: {
       username: username.trim(),
       NOT: { realName: adminTag },
+      realName: { startsWith: 'admin:' }
     },
   });
   if (usernameConflict) {
     return NextResponse.json({ error: 'That username is already taken by another player' }, { status: 400 });
   }
 
-  // Check if another player already has this gameId (that isn't ours)
+  // Check if another player already has this gameId AND is linked to another user
   const gameIdConflict = await prisma.player.findFirst({
     where: {
       gameId: gameId.trim(),
       NOT: { realName: adminTag },
+      realName: { startsWith: 'admin:' }
     },
   });
   if (gameIdConflict) {
@@ -95,18 +105,48 @@ export async function PUT(req: Request) {
       },
     });
   } else {
-    // Create a brand-new player record tagged to this admin account
-    player = await prisma.player.create({
-      data: {
-        username:   username.trim(),
-        gameId:     gameId.trim(),
-        realName:   adminTag,
-        state:      state      || 'Lagos',
-        rank:       rank       || 'Epic',
-        role:       role       || 'PLAYER',
-        pictureUrl: pictureUrl || null,
-      },
+    // We are setting up a profile for the first time.
+    // Check if there is an unlinked player record created during team registration approval.
+    const unlinked = await prisma.player.findFirst({
+      where: {
+        OR: [
+          { username: username.trim() },
+          { gameId: gameId.trim() }
+        ],
+        NOT: {
+          realName: { startsWith: 'admin:' }
+        }
+      }
     });
+
+    if (unlinked) {
+      // Link the existing player record to this user!
+      player = await prisma.player.update({
+        where: { id: unlinked.id },
+        data: {
+          username:   username.trim(),
+          gameId:     gameId.trim(),
+          realName:   adminTag, // Link it!
+          state:      state      || unlinked.state,
+          rank:       rank       || unlinked.rank,
+          role:       role       || unlinked.role,
+          pictureUrl: pictureUrl || unlinked.pictureUrl || null,
+        }
+      });
+    } else {
+      // Create a brand-new player record tagged to this admin account
+      player = await prisma.player.create({
+        data: {
+          username:   username.trim(),
+          gameId:     gameId.trim(),
+          realName:   adminTag,
+          state:      state      || 'Lagos',
+          rank:       rank       || 'Epic',
+          role:       role       || 'PLAYER',
+          pictureUrl: pictureUrl || null,
+        },
+      });
+    }
   }
 
   return NextResponse.json({ success: true, player });

@@ -11,6 +11,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
     const { status, teamName, logoUrl, lineupImageUrl, players } = await req.json();
 
+    const registrationRecord = await prisma.teamRegistration.findUnique({
+      where: { id }
+    });
+    if (!registrationRecord) return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
+
     let reg;
 
     if (status === 'APPROVED') {
@@ -25,7 +30,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             data: {
               name: teamName,
               logoUrl: logoUrl || '',
-              lineupImageUrl: lineupImageUrl || ''
+              lineupImageUrl: lineupImageUrl || '',
+              ownerEmail: registrationRecord.contactEmail
             }
           });
         } else {
@@ -34,7 +40,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             where: { id: team.id },
             data: {
               logoUrl: logoUrl || team.logoUrl,
-              lineupImageUrl: lineupImageUrl || team.lineupImageUrl
+              lineupImageUrl: lineupImageUrl || team.lineupImageUrl,
+              ownerEmail: team.ownerEmail || registrationRecord.contactEmail
             }
           });
         }
