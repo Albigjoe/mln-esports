@@ -37,11 +37,20 @@ export default function RegistrationsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Permanently delete this registration record?')) return;
+  const handleDelete = async (id: string, status: string, teamName: string) => {
+    const msg = status === 'APPROVED'
+      ? `Permanently delete this APPROVED registration?\n\n⚠️ WARNING: This will permanently delete the Team "${teamName}" and all of its players from the system so the leader can resubmit.`
+      : 'Permanently delete this registration record?';
+
+    if (!confirm(msg)) return;
     try {
-      await fetch(`/api/registrations/${id}`, { method: 'DELETE' });
-      fetchRegistrations();
+      const res = await fetch(`/api/registrations/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchRegistrations();
+      } else {
+        const data = await res.json();
+        alert('Error: ' + (data.error || 'Failed to delete'));
+      }
     } catch (e) {
       alert('Error deleting registration');
     }
@@ -94,7 +103,7 @@ export default function RegistrationsTab() {
                     <button onClick={() => handleAction(reg.id, 'REJECTED', reg)} className="bg-red-500/10 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs hover:bg-red-500/20">Reject</button>
                   </>
                 )}
-                <button onClick={() => handleDelete(reg.id)} className="bg-background border border-border-color text-gray-400 px-3 py-2 rounded-lg hover:text-white transition-colors">🗑️</button>
+                <button onClick={() => handleDelete(reg.id, reg.status, reg.teamName)} className="bg-background border border-border-color text-gray-400 px-3 py-2 rounded-lg hover:text-white transition-colors" title="Delete Registration Record">🗑️</button>
               </div>
             </div>
 

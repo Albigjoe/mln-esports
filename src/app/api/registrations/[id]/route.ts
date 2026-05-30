@@ -90,10 +90,56 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    // Only admin/staff allowed
+    const callingUser = await prisma.adminUser.findUnique({
+      where: { email: session.user.email || '' },
+    });
+    if (!callingUser || !['admin', 'staff'].includes(callingUser.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const { id } = await params;
-    await prisma.teamRegistration.delete({ where: { id } });
+
+    // Fetch the registration record first to check status and name
+    const reg = await prisma.teamRegistration.findUnique({
+      where: { id }
+    });
+
+    if (!reg) {
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
+    }
+
+    // Perform transaction to clean up team and players if already approved
+    await prisma.$transaction(async (tx) => {
+      if (reg.status === 'APPROVED') {
+        // Find corresponding team
+        const team = await tx.team.findUnique({
+          where: { name: reg.teamName }
+        });
+
+        if (team) {
+          // Delete all players associated with this team
+          await tx.player.deleteMany({
+            where: { teamId: team.id }
+          });
+
+          // Delete the team itself
+          await tx.team.delete({
+            where: { id: team.id }
+          });
+        }
+      }
+
+      // Delete the registration record itself
+      await tx.teamRegistration.delete({
+        where: { id }
+      });
+    });
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('DELETE registration error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
