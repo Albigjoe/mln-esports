@@ -6,14 +6,6 @@ export async function POST(req: Request) {
   try {
     const { email, password, name, inviteCode } = await req.json();
 
-    const secureInviteCode = process.env.REGISTRATION_INVITE_CODE || 'MLN-STAFF-2026';
-    if (inviteCode !== secureInviteCode) {
-      return NextResponse.json(
-        { error: 'Invalid invitation/access code. Registration denied.' },
-        { status: 403 }
-      );
-    }
-
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: 'Please provide all required fields' },
@@ -33,6 +25,19 @@ export async function POST(req: Request) {
       );
     }
 
+    // Determine role based on invite code
+    let role = 'player';
+    if (inviteCode && inviteCode.trim() !== '') {
+      const secureInviteCode = process.env.REGISTRATION_INVITE_CODE || 'MLN-STAFF-2026';
+      if (inviteCode.trim() !== secureInviteCode) {
+        return NextResponse.json(
+          { error: 'Invalid invitation/access code. Registration denied.' },
+          { status: 403 }
+        );
+      }
+      role = 'staff';
+    }
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -42,12 +47,12 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         name,
-        role: 'staff',
+        role,
       },
     });
 
     return NextResponse.json(
-      { message: 'Staff account successfully created', userId: newUser.id },
+      { message: 'Account successfully created', userId: newUser.id, role },
       { status: 201 }
     );
   } catch (err: any) {
@@ -57,3 +62,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

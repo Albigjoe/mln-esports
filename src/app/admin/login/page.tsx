@@ -47,8 +47,8 @@ export default function AdminLogin() {
 
         <div className="text-center mb-8">
           <div className="text-[10px] text-mln-green font-bold uppercase tracking-[4px] mb-2">AFL Nigeria Portal</div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-wider">Staff Sign In</h1>
-          <p className="text-gray-400 text-sm mt-1">Authorized tournament organizers only</p>
+          <h1 className="text-3xl font-black text-white uppercase tracking-wider">Sign In</h1>
+          <p className="text-gray-400 text-sm mt-1">Log in to your MLN account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

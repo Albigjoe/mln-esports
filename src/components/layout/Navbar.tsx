@@ -3,9 +3,16 @@
 import Link from 'next/link';
 import { Menu, X, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const showAdmin = session?.user && (
+    (session.user as any).role === 'staff' || 
+    (session.user as any).role === 'admin'
+  );
 
   useEffect(() => {
     // Silently pre-warm the Render backend so it never sleeps on first user visit
@@ -59,12 +66,14 @@ export default function Navbar() {
               >
                 <User size={14} /> Profile
               </Link>
-              <Link
-                href="/admin"
-                className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-md text-sm font-bold tracking-wide uppercase transition-colors"
-              >
-                Admin
-              </Link>
+              {showAdmin && (
+                <Link
+                  href="/admin"
+                  className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-md text-sm font-bold tracking-wide uppercase transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
 
@@ -102,13 +111,15 @@ export default function Navbar() {
             >
               <User size={16} /> Profile
             </Link>
-            <Link
-              href="/admin"
-              className="block w-full text-center mt-2 bg-mln-green hover:bg-mln-green-dark text-black px-4 py-3 rounded-md text-base font-bold tracking-wide uppercase transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Admin Panel
-            </Link>
+            {showAdmin && (
+              <Link
+                href="/admin"
+                className="block w-full text-center mt-2 bg-mln-green hover:bg-mln-green-dark text-black px-4 py-3 rounded-md text-base font-bold tracking-wide uppercase transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
       )}

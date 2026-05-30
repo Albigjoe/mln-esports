@@ -13,6 +13,11 @@ export default async function AdminDashboard() {
     redirect("/admin/login");
   }
 
+  const role = (session.user as any)?.role;
+  if (role !== 'staff' && role !== 'admin') {
+    redirect("/profile");
+  }
+
   const tournaments = await prisma.tournament.findMany({
     orderBy: { startDate: 'desc' },
     include: { _count: { select: { games: true } } }

@@ -56,8 +56,8 @@ export default function StaffRegister() {
 
         <div className="text-center mb-8">
           <div className="text-[10px] text-mln-green font-bold uppercase tracking-[4px] mb-2">MLN Portal</div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-wider">Staff Registration</h1>
-          <p className="text-gray-400 text-sm mt-1">Create a new tournament organizer account</p>
+          <h1 className="text-3xl font-black text-white uppercase tracking-wider">Create Account</h1>
+          <p className="text-gray-400 text-sm mt-1">Join Mobile Legends Nigeria</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -71,7 +71,7 @@ export default function StaffRegister() {
           {success && (
             <div className="bg-green-500/10 border border-green-500/30 text-green-400 p-3 rounded-lg text-sm font-semibold flex items-center gap-2">
               <span className="text-lg">✓</span>
-              <span>{success}</span>
+              <span>Account successfully created! Redirecting to login...</span>
             </div>
           )}
 
@@ -112,13 +112,12 @@ export default function StaffRegister() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs text-gray-400 uppercase tracking-widest font-bold">Invite Access Code</label>
+            <label className="block text-xs text-gray-400 uppercase tracking-widest font-bold">Invite Access Code (Staff Only)</label>
             <input
               type="password"
-              required
               value={inviteCode}
               onChange={e => setInviteCode(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Leave blank for players/captains"
               className="w-full bg-background border border-border-color rounded-xl px-4 py-3 text-white text-sm outline-none transition-all focus:border-mln-green focus:shadow-[0_0_15px_rgba(0,200,83,0.1)]"
             />
           </div>
