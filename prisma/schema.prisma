@@ -233,3 +233,11 @@ model TeamRegistration {
   createdAt      DateTime @default(now())
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+

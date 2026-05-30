@@ -79,7 +79,12 @@ export default function AdminLogin() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs text-gray-400 uppercase tracking-widest font-bold">Password</label>
+            <div className="flex justify-between items-center">
+              <label className="block text-xs text-gray-400 uppercase tracking-widest font-bold">Password</label>
+              <Link href="/admin/forgot-password" className="text-xs text-mln-green hover:text-mln-green-light font-bold transition-colors">
+                Forgot Password?
+              </Link>
+            </div>
             <input
               type="password"
               required
