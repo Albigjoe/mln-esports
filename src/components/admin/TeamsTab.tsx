@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2, AlertTriangle, Edit, CheckSquare, Square, Upload, X, Camera } from 'lucide-react';
 
@@ -142,6 +142,8 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
     }
   };
 
+  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       {/* Save / Edit form */}
@@ -267,7 +269,8 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
               teams.map(t => {
                 const isSelected = selectedIds.includes(t.id);
                 return (
-                  <tr key={t.id} className={`transition-colors ${isSelected ? 'bg-mln-green/5 hover:bg-mln-green/10' : 'hover:bg-background/50'}`}>
+                  <Fragment key={t.id}>
+                  <tr className={`transition-colors ${isSelected ? 'bg-mln-green/5 hover:bg-mln-green/10' : 'hover:bg-background/50'}`}>
                     <td className="px-4 py-3">
                       <button onClick={() => toggleSelect(t.id)} className="text-gray-500 hover:text-white transition-colors">
                         {isSelected ? (
@@ -291,6 +294,12 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
                     <td className="px-4 py-3 text-right">
                       <div className="flex gap-2 justify-end">
                         <button
+                          onClick={() => setExpandedTeamId(expandedTeamId === t.id ? null : t.id)}
+                          className={`flex items-center gap-1 uppercase font-bold text-xs px-2.5 py-1 rounded transition-colors ${expandedTeamId === t.id ? 'bg-gray-700 text-white' : 'bg-gray-800 text-gray-300 hover:text-white'}`}
+                        >
+                          {expandedTeamId === t.id ? 'Hide Roster' : 'View Roster'}
+                        </button>
+                        <button
                           onClick={() => handleEdit(t)}
                           className="flex items-center gap-1 text-mln-green hover:underline uppercase font-bold text-xs bg-mln-green/10 hover:bg-mln-green/20 px-2.5 py-1 rounded"
                         >
@@ -308,6 +317,36 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
                       </div>
                     </td>
                   </tr>
+                  {expandedTeamId === t.id && (
+                    <tr className="bg-background/80 border-t border-border-color">
+                      <td colSpan={5} className="px-4 py-6">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 border-l-2 border-mln-green pl-2">Current Roster</h4>
+                        {t.players && t.players.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {t.players.map((p: any) => (
+                              <div key={p.id} className="bg-surface border border-border-color rounded-lg p-3 flex gap-3 items-center">
+                                {p.pictureUrl ? (
+                                  <img src={p.pictureUrl} alt={p.username} className="w-10 h-10 rounded-lg object-cover border border-border-color" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-background border border-border-color flex items-center justify-center text-[10px] font-bold text-gray-600">NO PIC</div>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="font-bold text-white text-sm truncate leading-tight mb-0.5">{p.username}</div>
+                                  <div className="text-[9px] text-mln-green font-black uppercase tracking-widest leading-tight truncate">ID: {p.gameId || '—'}</div>
+                                  <div className="flex gap-1 mt-1">
+                                    <span className="text-[8px] bg-background border border-border-color px-1 py-0.5 rounded text-gray-400 uppercase">{p.role || 'Player'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 text-sm italic">No players are currently assigned to this team.</div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })
             )}

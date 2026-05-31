@@ -115,11 +115,20 @@ export default function RegistrationsTab() {
               <div className="flex gap-2 shrink-0">
                 {reg.status === 'PENDING' && (
                   <>
-                    <button onClick={() => handleAction(reg.id, 'APPROVED', reg)} className="bg-mln-green text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs">Approve & Add</button>
-                    <button onClick={() => handleAction(reg.id, 'REJECTED', reg)} className="bg-red-500/10 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs hover:bg-red-500/20">Reject</button>
+                    <button onClick={() => handleAction(reg.id, 'APPROVED', reg)} className="bg-mln-green text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs hover:bg-mln-green-dark transition-colors shadow-lg shadow-mln-green/20">Approve & Add</button>
+                    <button onClick={() => handleAction(reg.id, 'REJECTED', reg)} className="bg-red-500/10 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs hover:bg-red-500/20 transition-colors">Reject</button>
                   </>
                 )}
-                <button onClick={() => handleDelete(reg.id, reg.status, reg.teamName)} className="bg-background border border-border-color text-gray-400 px-3 py-2 rounded-lg hover:text-white transition-colors" title="Delete Registration Record">🗑️</button>
+                {reg.status === 'APPROVED' && (
+                  <button 
+                    onClick={() => handleAction(reg.id, 'APPROVED', reg)} 
+                    className="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-3 py-2 rounded-lg font-bold uppercase tracking-wider text-xs transition-colors"
+                    title="If players failed to add previously due to a bug, click this to retry adding them to the team."
+                  >
+                    ↻ Force Sync Roster
+                  </button>
+                )}
+                <button onClick={() => handleDelete(reg.id, reg.status, reg.teamName)} className="bg-background border border-border-color text-gray-400 px-3 py-2 rounded-lg hover:text-white hover:bg-red-500/10 hover:border-red-500/30 transition-colors" title="Delete Registration Record">🗑️</button>
               </div>
             </div>
 
