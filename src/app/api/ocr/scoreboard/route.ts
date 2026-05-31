@@ -9,15 +9,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { imageBase64, mimeType } = body;
+    const { images } = body; // Array of { imageBase64, mimeType }
 
-    if (!imageBase64) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return NextResponse.json({ error: 'No images provided' }, { status: 400 });
     }
 
     const prompt = `You are an expert at reading Mobile Legends: Bang Bang post-game scoreboard screenshots.
-
-Analyze this screenshot and extract ALL game data you can see. Return ONLY a valid JSON object (no markdown, no code fences) with this exact structure:
+You have been provided with up to 3 screenshots from a single match (e.g., Bans/Picks, Stats Page 1, Stats Page 2).
+Analyze these screenshots and extract ALL game data you can see across all of them. Merge the data together. 
+Return ONLY a valid JSON object (no markdown, no code fences) with this exact structure:
 
 {
   "duration": "MM:SS format if visible",
@@ -31,7 +32,8 @@ Analyze this screenshot and extract ALL game data you can see. Return ONLY a val
       "deaths": 0,
       "assists": 0,
       "gold": 0,
-      "damage": 0
+      "damage": 0,
+      "damageTaken": 0
     }
   ],
   "team2_picks": [
@@ -43,7 +45,8 @@ Analyze this screenshot and extract ALL game data you can see. Return ONLY a val
       "deaths": 0,
       "assists": 0,
       "gold": 0,
-      "damage": 0
+      "damage": 0,
+      "damageTaken": 0
     }
   ],
   "team1_bans": ["Hero1", "Hero2", "Hero3"],
@@ -52,30 +55,33 @@ Analyze this screenshot and extract ALL game data you can see. Return ONLY a val
 
 Important rules:
 - Extract exactly what you see. Do not guess or fabricate data.
+- Merge the data from all provided screenshots. (e.g. kda from one, damage/damageTaken from another).
 - If you cannot read a value clearly, use 0 for numbers or "" for strings.
 - Gold values should be the raw number (e.g. 12500, not "12.5K").
-- Damage values should be the raw number.
+- Damage and damageTaken values should be the raw number (e.g. 60500, not "60.5K").
 - Hero names must match official MLBB names exactly (e.g. "Lancelot" not "lance", "Chang'e" not "Change").
-- If bans are not visible, return empty arrays.
+- If bans are not visible in any screenshot, return empty arrays.
 - team1 is always the LEFT/TOP team, team2 is the RIGHT/BOTTOM team.
 - Return ONLY the JSON. No explanations, no markdown.`;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    const parts: any[] = [{ text: prompt }];
+    images.forEach((img: any) => {
+      parts.push({
+        inlineData: {
+          mimeType: img.mimeType || 'image/png',
+          data: img.imageBase64
+        }
+      });
+    });
 
     const geminiResponse = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: mimeType || 'image/png',
-                data: imageBase64
-              }
-            }
-          ]
+          parts
         }],
         generationConfig: {
           temperature: 0.1,

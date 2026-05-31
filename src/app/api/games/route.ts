@@ -39,6 +39,7 @@ export async function POST(request: Request) {
             assists: parseInt(p.assists) || 0,
             gold: parseInt(p.gold) || 0,
             damage: parseInt(p.damage) || 0,
+            damageTaken: parseInt(p.damageTaken) || 0,
             savages: parseInt(p.savages) || 0,
             maniacs: parseInt(p.maniacs) || 0,
             tfp: parseFloat(p.tfp) || 0,

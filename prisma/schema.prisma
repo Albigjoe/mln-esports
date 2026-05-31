@@ -97,6 +97,7 @@ model Pick {
   assists         Int    @default(0)
   gold            Int    @default(0)
   damage          Int    @default(0)
+  damageTaken     Int    @default(0)
   savages         Int    @default(0)
   maniacs         Int    @default(0)
   tfp             Float  @default(0)

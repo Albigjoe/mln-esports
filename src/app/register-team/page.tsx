@@ -521,21 +521,50 @@ export default function RegisterTeamPage() {
                 </div>
               )}
 
-              {selectedTournaments.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-mln-green font-bold">
+              {/* No Tournament Option */}
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (selectedTournaments.includes('NONE')) {
+                      setSelectedTournaments(selectedTournaments.filter(id => id !== 'NONE'));
+                    } else {
+                      setSelectedTournaments(['NONE']);
+                    }
+                  }}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedTournaments.includes('NONE') ? 'border-mln-green bg-mln-green/10 shadow-[0_0_20px_rgba(0,200,83,0.1)]' : 'border-border-color bg-background hover:border-gray-600'}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedTournaments.includes('NONE') ? 'bg-mln-green border-mln-green' : 'border-gray-600'}`}>
+                        {selectedTournaments.includes('NONE') && <Check size={12} className="text-black" />}
+                      </div>
+                      <div>
+                        <p className="text-white font-black text-sm">Squad Registration Only</p>
+                        <p className="text-gray-500 text-xs mt-0.5">Register your squad without joining a tournament right now</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full flex-shrink-0 bg-gray-700 text-gray-400">
+                      N/A
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              {selectedTournaments.length > 0 && !selectedTournaments.includes('NONE') && (
+                <div className="flex items-center gap-2 text-xs text-mln-green font-bold mt-4">
                   <Check size={12} /> {selectedTournaments.length} tournament{selectedTournaments.length > 1 ? 's' : ''} selected
                 </div>
               )}
 
-              {msg && <p className="text-red-400 text-center font-bold text-sm bg-red-400/10 py-3 px-4 rounded-xl">{msg}</p>}
+              {msg && <p className="text-red-400 text-center font-bold text-sm bg-red-400/10 py-3 px-4 rounded-xl mt-4">{msg}</p>}
 
               <button
                 onClick={() => {
-                  if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament.');
+                  if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament or "Squad Registration Only".');
                   setMsg('');
                   setStep(3);
                 }}
-                className="w-full bg-mln-green text-black px-6 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-white transition-colors text-sm sm:text-base"
+                className="w-full bg-mln-green text-black px-6 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-white transition-colors text-sm sm:text-base mt-4"
               >
                 Continue → Player Lineup
               </button>

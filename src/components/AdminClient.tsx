@@ -13,7 +13,7 @@ const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const HEROES = ["Aamon","Akai","Aldous","Alice","Alpha","Alucard","Angela","Argus","Arlott","Atlas","Aulus","Aurora","Badang","Balmond","Bane","Barats","Baxia","Beatrix","Belerick","Benedetta","Brody","Bruno","Carmilla","Cecilion","Chang'e","Chip","Chou","Cici","Claude","Clint","Cyclops","Diggie","Dyrroth","Edith","Esmeralda","Estes","Eudora","Fanny","Faramis","Floryn","Franco","Fredrinn","Freya","Gatotkaca","Gloo","Gord","Granger","Grock","Guinevere","Gusion","Hanabi","Hanzo","Harith","Harley","Hayabusa","Helcurt","Hilda","Hylos","Irithel","Ixia","Jawhead","Johnson","Joy","Julian","Kadita","Kagura","Kaja","Kalea","Karina","Karrie","Khaleed","Khufra","Kimmy","Lancelot","Lapu-Lapu","Layla","Leomord","Lesley","Ling","Lolita","Lukas","Lunox","Luo Yi","Lylia","Marcel","Martis","Masha","Mathilda","Melissa","Minotaur","Minsitthar","Miya","Moskov","Nana","Natalia","Natan","Nolan","Novaria","Obsidia","Odette","Paquito","Pharsa","Phoveus","Popol and Kupa","Rafaela","Roger","Ruby","Saber","Selena","Silvanna","Sora","Sun","Suyou","Terizla","Thamuz","Tigreal","Uranus","Vale","Valentina","Valir","Vexana","Wanwan","X.Borg","Xavier","Yi Sun-shin","Yin","Yu Zhong","Yve","Zetian","Zhask","Zhuxin","Zilong"];
 
 function emptyPick() {
-  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
+  return { hero: '', playerUsername: '', role: '', kills: '', deaths: '', assists: '', gold: '', damage: '', damageTaken: '', savages: '0', maniacs: '0', tfp: '0', mvpScore: '0', isMvp: false };
 }
 
 type TabType = 'dashboard' | 'add' | 'news' | 'staff' | 'teams' | 'players' | 'settings' | 'registrations' | 'tournaments';
@@ -142,8 +142,12 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const [ocrError, setOcrError] = useState('');
 
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (files.length > 3) {
+      setOcrError('You can only upload up to 3 screenshots at a time.');
+      return;
+    }
 
     if (!team1Id || !team2Id) {
       setOcrError('Please select Team 1 and Team 2 first before auto-filling!');
@@ -152,89 +156,82 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
 
     setOcrLoading(true);
     setOcrError('');
-    setMsg('Analyzing screenshot with Gemini AI...');
+    setMsg('Analyzing screenshots with Gemini AI...');
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = (reader.result as string).split(',')[1];
-        
-        const res = await fetch('/api/ocr/scoreboard', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64String,
-            mimeType: file.type
-          })
+      const readImage = (file: File): Promise<{ imageBase64: string, mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve({ imageBase64: base64String, mimeType: file.type });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
-
-        const data = await res.json();
-        
-        if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
-        if (!data.data) throw new Error('No data returned from AI');
-
-        const { duration: ocrDuration, winner: ocrWinner, team1_picks, team2_picks, team1_bans, team2_bans } = data.data;
-
-        if (ocrDuration) setDuration(ocrDuration);
-        if (ocrWinner === 'team1' || ocrWinner === 'team2') setWinner(ocrWinner);
-
-        if (team1_bans && Array.isArray(team1_bans)) {
-          const newBans = [...bans1];
-          team1_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
-          setBans1(newBans);
-        }
-
-        if (team2_bans && Array.isArray(team2_bans)) {
-          const newBans = [...bans2];
-          team2_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
-          setBans2(newBans);
-        }
-
-        let newPicks1 = [...picks1];
-        if (team1_picks && Array.isArray(team1_picks)) {
-          newPicks1 = newPicks1.map((p, i) => {
-            const op = team1_picks[i];
-            if (!op) return p;
-            return {
-              ...p,
-              hero: op.hero || p.hero,
-              playerUsername: op.playerUsername || p.playerUsername,
-              role: op.role || p.role,
-              kills: op.kills?.toString() || p.kills,
-              deaths: op.deaths?.toString() || p.deaths,
-              assists: op.assists?.toString() || p.assists,
-              gold: op.gold?.toString() || p.gold,
-              damage: op.damage?.toString() || p.damage
-            };
-          });
-        }
-
-        let newPicks2 = [...picks2];
-        if (team2_picks && Array.isArray(team2_picks)) {
-          newPicks2 = newPicks2.map((p, i) => {
-            const op = team2_picks[i];
-            if (!op) return p;
-            return {
-              ...p,
-              hero: op.hero || p.hero,
-              playerUsername: op.playerUsername || p.playerUsername,
-              role: op.role || p.role,
-              kills: op.kills?.toString() || p.kills,
-              deaths: op.deaths?.toString() || p.deaths,
-              assists: op.assists?.toString() || p.assists,
-              gold: op.gold?.toString() || p.gold,
-              damage: op.damage?.toString() || p.damage
-            };
-          });
-        }
-
-        const [finalP1, finalP2] = determineMVPs(newPicks1, newPicks2, ocrWinner || winner);
-        setPicks1(finalP1);
-        setPicks2(finalP2);
-        
-        setMsg('✓ Auto-filled successfully! Please review the data.');
       };
-      reader.readAsDataURL(file);
+
+      const images = await Promise.all(files.map(readImage));
+
+      const res = await fetch('/api/ocr/scoreboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to analyze images');
+      if (!data.data) throw new Error('No data returned from AI');
+
+      const { duration: ocrDuration, winner: ocrWinner, team1_picks, team2_picks, team1_bans, team2_bans } = data.data;
+
+      if (ocrDuration) setDuration(ocrDuration);
+      if (ocrWinner === 'team1' || ocrWinner === 'team2') setWinner(ocrWinner);
+
+      if (team1_bans && Array.isArray(team1_bans)) {
+        const newBans = [...bans1];
+        team1_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
+        setBans1(newBans);
+      }
+
+      if (team2_bans && Array.isArray(team2_bans)) {
+        const newBans = [...bans2];
+        team2_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
+        setBans2(newBans);
+      }
+
+      const mapPicks = (currentPicks: any[], newPicks: any[]) => {
+        let updated = [...currentPicks];
+        if (newPicks && Array.isArray(newPicks)) {
+          updated = updated.map((p, i) => {
+            const op = newPicks[i];
+            if (!op) return p;
+            return {
+              ...p,
+              hero: op.hero || p.hero,
+              playerUsername: op.playerUsername || p.playerUsername,
+              role: op.role || p.role,
+              kills: op.kills?.toString() || p.kills,
+              deaths: op.deaths?.toString() || p.deaths,
+              assists: op.assists?.toString() || p.assists,
+              gold: op.gold?.toString() || p.gold,
+              damage: op.damage?.toString() || p.damage,
+              damageTaken: op.damageTaken?.toString() || p.damageTaken
+            };
+          });
+        }
+        return updated;
+      };
+
+      const newPicks1 = mapPicks(picks1, team1_picks);
+      const newPicks2 = mapPicks(picks2, team2_picks);
+
+      const [finalP1, finalP2] = determineMVPs(newPicks1, newPicks2, ocrWinner || winner);
+      setPicks1(finalP1);
+      setPicks2(finalP2);
+      
+      setMsg('✓ Auto-filled successfully! Please review the data.');
     } catch (err: any) {
       setOcrError(err.message);
       setMsg('');
@@ -253,8 +250,9 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       const a = parseInt(p.assists) || 0;
       const gold = parseInt(p.gold) || 0;
       const dmg = parseInt(p.damage) || 0;
+      const dmgTaken = parseInt(p.damageTaken) || 0;
       
-      if (k === 0 && d === 0 && a === 0 && gold === 0 && dmg === 0) {
+      if (k === 0 && d === 0 && a === 0 && gold === 0 && dmg === 0 && dmgTaken === 0) {
         return { ...p, tfp: 0, mvpScore: 0 };
       }
 
@@ -266,8 +264,13 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       const netPerf = (k * 0.5) + (a * 0.35) - (d * 0.6);
       const goldWeight = Math.min((gold / 1000) * 0.35, 3.0);
       const dmgWeight = Math.min((dmg / 10000) * 0.25, 3.0);
+
+      let dmgTakenWeight = 0;
+      if (['Roamer', 'Exp Lane', 'Jungle'].includes(p.role)) {
+        dmgTakenWeight = Math.min((dmgTaken / 10000) * 0.25, 3.0);
+      }
       
-      let rating = 4.5 + kdaWeight + netPerf + goldWeight + dmgWeight;
+      let rating = 4.5 + kdaWeight + netPerf + goldWeight + dmgWeight + dmgTakenWeight;
       const mvpScore = Math.max(3.0, Math.min(15.0, parseFloat(rating.toFixed(1))));
       
       return {
@@ -614,6 +617,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
                   className="hidden" 
                   id="screenshot-upload"
                   disabled={ocrLoading}
+                  multiple
                 />
                 <label 
                   htmlFor="screenshot-upload" 
@@ -824,7 +828,7 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               </div>
             </div>
             {/* Row 2: KDA + Gold + Damage */}
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
                 <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => onChange(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -844,6 +848,10 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
                 <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => onChange(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">DMG Taken</label>
+                <input placeholder="DMG Taken" inputMode="numeric" value={p.damageTaken} onChange={e => onChange(i,'damageTaken',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
             {/* Row 3: Milestones */}
