@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const participants = await prisma.tournamentParticipant.findMany({
-      where: { tournamentId: params.id },
+      where: { tournamentId: id },
       include: { team: true },
     });
     return NextResponse.json({ participants });
@@ -13,14 +14,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { teamId } = body;
 
     const participant = await prisma.tournamentParticipant.create({
       data: {
-        tournamentId: params.id,
+        tournamentId: id,
         teamId,
       },
       include: { team: true },
@@ -32,8 +34,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('teamId');
 
@@ -41,7 +44,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     await prisma.tournamentParticipant.deleteMany({
       where: {
-        tournamentId: params.id,
+        tournamentId: id,
         teamId,
       },
     });
