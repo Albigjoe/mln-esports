@@ -742,7 +742,7 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
         {picks.map((p, i) => (
           <div key={i} className="bg-background/50 rounded-xl p-3 space-y-2">
             {/* Row 1: Hero, Username, Role, MVP, Calculated Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
                 <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => onChange(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -774,10 +774,10 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
                   }).map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              <div className="flex items-center gap-3 justify-between border border-border-color/60 bg-background/30 rounded px-2 py-1 select-none">
+              <div className="flex items-center gap-2 md:gap-3 justify-between border border-border-color/60 bg-background/30 rounded px-2 py-1 select-none">
                 <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">MLBB Rating</span>
-                  <input placeholder="Rating" inputMode="decimal" value={p.mvpScore} onChange={e => onChange(i,'mvpScore',e.target.value)} className="w-12 bg-transparent text-white text-xs font-black focus:outline-none border-b border-dashed border-gray-600 focus:border-mln-green placeholder:text-gray-600" />
+                  <span className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">Rating</span>
+                  <input placeholder="0.0" inputMode="decimal" value={p.mvpScore} onChange={e => onChange(i,'mvpScore',e.target.value)} className="w-8 md:w-12 bg-transparent text-white text-xs font-black focus:outline-none border-b border-dashed border-gray-600 focus:border-mln-green placeholder:text-gray-600" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[8px] text-gray-500 uppercase font-bold">TFP</span>
@@ -794,7 +794,7 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               </div>
             </div>
             {/* Row 2: KDA + Gold + Damage */}
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
                 <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => onChange(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />

@@ -1,133 +1,123 @@
-// This is your Prisma schema file
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model Tournament {
-  id          String   @id @default(cuid())
-  name        String
-  format      String   @default("SINGLE_ELIMINATION")
-  registrationStatus String @default("OPEN")
-  pointsPerWin Int     @default(3)
-  pointsPerTie Int     @default(1)
-  status      String   @default("upcoming")
-  startDate   DateTime
-  endDate     DateTime?
-  bannerUrl   String?
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  games       Game[]
-  participants TournamentParticipant[]
-  bracketMatches BracketMatch[]
+  id                 String                  @id @default(cuid())
+  name               String
+  status             String                  @default("upcoming")
+  startDate          DateTime
+  endDate            DateTime?
+  bannerUrl          String?
+  logoUrl            String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  format             String                  @default("SINGLE_ELIMINATION")
+  pointsPerTie       Int                     @default(1)
+  pointsPerWin       Int                     @default(3)
+  registrationStatus String                  @default("OPEN")
+  bracketMatches     BracketMatch[]
+  games              Game[]
+  participants       TournamentParticipant[]
 }
 
 model Team {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  logoUrl        String?
-  lineupImageUrl String?
-  ownerEmail     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  homeGames   Game[]  @relation("HomeTeam")
-  awayGames   Game[]  @relation("AwayTeam")
-  players     Player[]
-  awards      Award[] @relation("TeamAwards")
-  joinRequests JoinRequest[] @relation("TeamJoinRequests")
+  id                     String                  @id @default(cuid())
+  name                   String                  @unique
+  logoUrl                String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  lineupImageUrl         String?
+  ownerEmail             String?
+  awards                 Award[]                 @relation("TeamAwards")
+  bracketHomeGames       BracketMatch[]          @relation("BracketHomeTeam")
+  bracketAwayGames       BracketMatch[]          @relation("BracketAwayTeam")
+  homeGames              Game[]                  @relation("HomeTeam")
+  awayGames              Game[]                  @relation("AwayTeam")
+  joinRequests           JoinRequest[]           @relation("TeamJoinRequests")
+  players                Player[]
   tournamentParticipants TournamentParticipant[] @relation("TeamParticipants")
-  bracketHomeGames BracketMatch[] @relation("BracketHomeTeam")
-  bracketAwayGames BracketMatch[] @relation("BracketAwayTeam")
 }
 
 model Game {
-  id            String   @id @default(cuid())
-  tournamentId  String
-  tournament    Tournament @relation(fields: [tournamentId], references: [id])
-
-  team1Id       String
-  team1         Team       @relation("HomeTeam", fields: [team1Id], references: [id])
-  team2Id       String
-  team2         Team       @relation("AwayTeam", fields: [team2Id], references: [id])
-
-  winner        String   @default("")
-  week          Int      @default(1)
-  gameNumber    Int      @default(1)
-  date          String   @default("")
-  boFormat      Int      @default(1)
-  duration      String   @default("")
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  bans          Ban[]
-  picks         Pick[]
-  disputes      Dispute[]
-  bracketMatch  BracketMatch?
+  id           String        @id @default(cuid())
+  tournamentId String
+  team1Id      String
+  team2Id      String
+  winner       String        @default("")
+  week         Int           @default(1)
+  gameNumber   Int           @default(1)
+  date         String        @default("")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  boFormat     Int           @default(1)
+  duration     String        @default("")
+  bans         Ban[]
+  bracketMatch BracketMatch?
+  disputes     Dispute[]
+  team1        Team          @relation("HomeTeam", fields: [team1Id], references: [id])
+  team2        Team          @relation("AwayTeam", fields: [team2Id], references: [id])
+  tournament   Tournament    @relation(fields: [tournamentId], references: [id])
+  picks        Pick[]
 }
 
 model Ban {
-  id        String @id @default(cuid())
-  gameId    String
-  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  team      String
-  hero      String
-  banOrder  Int
+  id       String @id @default(cuid())
+  gameId   String
+  team     String
+  hero     String
+  banOrder Int
+  game     Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 }
 
 model Pick {
-  id              String @id @default(cuid())
-  gameId          String
-  game            Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  team            String
-  hero            String
-  playerUsername  String @default("")
-  role            String @default("")
-  kills           Int    @default(0)
-  deaths          Int    @default(0)
-  assists         Int    @default(0)
-  gold            Int    @default(0)
-  damage          Int    @default(0)
-  damageTaken     Int    @default(0)
-  savages         Int    @default(0)
-  maniacs         Int    @default(0)
-  tfp             Float  @default(0)
-  mvpScore        Float  @default(0)
-  isMvp           Boolean @default(false)
-  pickOrder       Int    @default(0)
+  id             String  @id @default(cuid())
+  gameId         String
+  team           String
+  hero           String
+  playerUsername String  @default("")
+  role           String  @default("")
+  kills          Int     @default(0)
+  deaths         Int     @default(0)
+  assists        Int     @default(0)
+  gold           Int     @default(0)
+  damage         Int     @default(0)
+  pickOrder      Int     @default(0)
+  maniacs        Int     @default(0)
+  savages        Int     @default(0)
+  isMvp          Boolean @default(false)
+  mvpScore       Float   @default(0)
+  tfp            Float   @default(0)
+  damageTaken    Int     @default(0)
+  game           Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
 }
 
 model AdminUser {
-  id        String @id @default(cuid())
-  email     String @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   password  String
   name      String
-  gameId    String?
-  role      String @default("staff") // admin, staff
+  role      String   @default("staff")
   createdAt DateTime @default(now())
+  gameId    String?
 }
 
 model BlogPost {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  content     String
-  excerpt     String   @default("")
-  category    String   @default("news") // news, transfer, announcement, recap
-  imageUrl    String?
-  published   Boolean  @default(false)
-  authorName  String   @default("MLN Staff")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  content    String
+  excerpt    String   @default("")
+  category   String   @default("news")
+  imageUrl   String?
+  published  Boolean  @default(false)
+  authorName String   @default("MLN Staff")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Award {
@@ -137,30 +127,30 @@ model Award {
   season      String   @default("")
   imageUrl    String?
   playerId    String?
-  player      Player?  @relation(fields: [playerId], references: [id])
   teamId      String?
-  team        Team?    @relation("TeamAwards", fields: [teamId], references: [id])
   createdAt   DateTime @default(now())
+  player      Player?  @relation(fields: [playerId], references: [id])
+  team        Team?    @relation("TeamAwards", fields: [teamId], references: [id])
 }
 
 model Player {
-  id          String   @id @default(cuid())
-  username    String   @unique
-  gameId      String?  @unique
-  pictureUrl  String?
-  realName    String?
-  role        String   @default("PLAYER") // PLAYER, CAPTAIN
-  state       String   @default("Lagos")  // For Lagos, Abuja, Rivers regional leaderboards
-  rank        String   @default("Epic")   // MLBB rank
-  teamId      String?
-  team        Team?    @relation(fields: [teamId], references: [id])
-  userId      String?  @unique
-  user        User?    @relation(fields: [userId], references: [id])
-  awards      Award[]
-  disputes    Dispute[]
+  id           String        @id @default(cuid())
+  username     String        @unique
+  pictureUrl   String?
+  realName     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  teamId       String?
+  rank         String        @default("Epic")
+  role         String        @default("PLAYER")
+  state        String        @default("Lagos")
+  userId       String?       @unique
+  gameId       String?       @unique
+  awards       Award[]
+  disputes     Dispute[]
   joinRequests JoinRequest[] @relation("PlayerJoinRequests")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  team         Team?         @relation(fields: [teamId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -168,82 +158,80 @@ model User {
   email           String           @unique
   password        String
   name            String
-  role            String           @default("PLAYER") // PLAYER, ADMIN
-  kycStatus       String           @default("UNVERIFIED") // UNVERIFIED, PENDING, VERIFIED
+  role            String           @default("PLAYER")
+  kycStatus       String           @default("UNVERIFIED")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-
+  kycVerification KycVerification?
   player          Player?
   wallet          Wallet?
-  kycVerification KycVerification?
 }
 
 model Wallet {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance       Decimal  @default(0.0) // In Naira (NGN)
-  currency      String   @default("NGN")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  transactions  Transaction[]
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  balance      Decimal       @default(0.0)
+  currency     String        @default("NGN")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
-  id            String   @id @default(cuid())
-  walletId      String
-  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  amount        Decimal
-  type          String   // DEPOSIT, WITHDRAW, ENTRY_FEE, PRIZE_CLAIM
-  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
-  reference     String   @unique // Paystack or Flutterwave transaction reference
-  gateway       String   @default("PAYSTACK") // PAYSTACK, FLUTTERWAVE
-  createdAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  walletId  String
+  amount    Decimal
+  type      String
+  status    String   @default("PENDING")
+  reference String   @unique
+  gateway   String   @default("PAYSTACK")
+  createdAt DateTime @default(now())
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
 }
 
 model KycVerification {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  idType        String   // NIN, BVN, Passport
-  idNumber      String
-  idImageUrl    String
-  verifiedAt    DateTime?
-  createdAt     DateTime @default(now())
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  idType     String
+  idNumber   String
+  idImageUrl String
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Dispute {
   id            String   @id @default(cuid())
   gameId        String
-  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   playerId      String
-  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
   screenshotUrl String
   reason        String
-  status        String   @default("OPEN") // OPEN, UNDER_REVIEW, RESOLVED
+  status        String   @default("OPEN")
   resolvedBy    String?
   createdAt     DateTime @default(now())
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 }
 
 model ScrimRequest {
-  id              String   @id @default(cuid())
+  id               String   @id @default(cuid())
   challengerTeamId String
   receiverTeamId   String
-  status          String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
-  scheduledFor    DateTime
-  createdAt       DateTime @default(now())
+  status           String   @default("PENDING")
+  scheduledFor     DateTime
+  createdAt        DateTime @default(now())
 }
 
 model TeamRegistration {
   id             String   @id @default(cuid())
   teamName       String
   logoUrl        String?
-  lineupImageUrl String?
   contactEmail   String
-  players        Json     // Array of player objects
-  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  players        Json
+  status         String   @default("PENDING")
   createdAt      DateTime @default(now())
+  lineupImageUrl String?
 }
 
 model PasswordResetToken {
@@ -257,20 +245,17 @@ model PasswordResetToken {
 model JoinRequest {
   id        String   @id @default(cuid())
   playerId  String
-  player    Player   @relation("PlayerJoinRequests", fields: [playerId], references: [id], onDelete: Cascade)
   teamId    String
-  team      Team     @relation("TeamJoinRequests", fields: [teamId], references: [id], onDelete: Cascade)
-  status    String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
+  player    Player   @relation("PlayerJoinRequests", fields: [playerId], references: [id], onDelete: Cascade)
+  team      Team     @relation("TeamJoinRequests", fields: [teamId], references: [id], onDelete: Cascade)
 }
 
 model TournamentParticipant {
   id           String     @id @default(cuid())
   tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   teamId       String
-  team         Team       @relation("TeamParticipants", fields: [teamId], references: [id], onDelete: Cascade)
-  
   seed         Int?
   groupId      String?
   points       Int        @default(0)
@@ -278,40 +263,34 @@ model TournamentParticipant {
   losses       Int        @default(0)
   ties         Int        @default(0)
   buchholz     Float      @default(0.0)
-  
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  team         Team       @relation("TeamParticipants", fields: [teamId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, teamId])
 }
 
 model BracketMatch {
-  id              String   @id @default(cuid())
-  tournamentId    String
-  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  
-  team1Id         String?
-  team1           Team?      @relation("BracketHomeTeam", fields: [team1Id], references: [id])
-  team2Id         String?
-  team2           Team?      @relation("BracketAwayTeam", fields: [team2Id], references: [id])
-  
-  winnerId        String?
-  
-  stage           String     @default("KNOCKOUT")
-  round           Int        @default(1)
-  matchOrder      Int        @default(1)
-  nextMatchId     String?
+  id               String     @id @default(cuid())
+  tournamentId     String
+  team1Id          String?
+  team2Id          String?
+  winnerId         String?
+  stage            String     @default("KNOCKOUT")
+  round            Int        @default(1)
+  matchOrder       Int        @default(1)
+  nextMatchId      String?
   nextLoserMatchId String?
-  isBye           Boolean    @default(false)
-  status          String     @default("PENDING") // PENDING, READY, COMPLETED
-
-  score1          Int        @default(0)
-  score2          Int        @default(0)
-
-  gameId          String?    @unique
-  game            Game?      @relation(fields: [gameId], references: [id])
-
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  isBye            Boolean    @default(false)
+  status           String     @default("PENDING")
+  score1           Int        @default(0)
+  score2           Int        @default(0)
+  gameId           String?    @unique
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  game             Game?      @relation(fields: [gameId], references: [id])
+  team1            Team?      @relation("BracketHomeTeam", fields: [team1Id], references: [id])
+  team2            Team?      @relation("BracketAwayTeam", fields: [team2Id], references: [id])
+  tournament       Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
-
