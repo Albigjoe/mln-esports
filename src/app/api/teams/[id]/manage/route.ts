@@ -76,12 +76,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'IGN and Game ID are required' }, { status: 400 });
     }
 
-    // Check if player already exists
+    // Check if player already exists by username
     const existingPlayer = await prisma.player.findUnique({
       where: { username: username.trim() }
     });
 
+    // Check if gameId is already taken by a DIFFERENT player
+    const existingGameIdPlayer = await prisma.player.findUnique({
+      where: { gameId: gameId.trim() }
+    });
+
     if (existingPlayer) {
+      if (existingGameIdPlayer && existingGameIdPlayer.id !== existingPlayer.id) {
+        return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
+      }
+
       // If player is already on another team, don't allow stealing them unless owner kicks them first
       if (existingPlayer.teamId && existingPlayer.teamId !== id) {
         return NextResponse.json({ error: 'Player is already registered on another team' }, { status: 400 });
@@ -102,6 +111,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       });
       return NextResponse.json({ success: true, player: updatedPlayer });
     } else {
+      if (existingGameIdPlayer) {
+        return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
+      }
+
       // Create new player record and link to team
       const newPlayer = await prisma.player.create({
         data: {
