@@ -19,7 +19,7 @@ const NIGERIAN_STATES = [
 ];
 
 const MLBB_RANKS = [
-  'Warrior','Elite','Master','Grandmaster','Epic','Legend','Mythic','Mythical Glory',
+  'Warrior','Elite','Master','Grandmaster','Epic','Legend','Mythic','Mythical Honor','Mythical Glory','Mythical Immortal'
 ];
 
 const PLAYER_ROLES = ['PLAYER','CAPTAIN','COACH','ANALYST','MANAGER'];

@@ -28,6 +28,8 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const playersPerPage = 20;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
@@ -135,6 +137,15 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
     p.gameId?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredPlayers.length / playersPerPage) || 1;
+  const startIndex = (currentPage - 1) * playersPerPage;
+  const currentPlayers = filteredPlayers.slice(startIndex, startIndex + playersPerPage);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-surface border border-border-color rounded-xl p-6">
@@ -235,7 +246,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
 
       <div className="bg-surface border border-border-color rounded-xl overflow-hidden flex flex-col">
         <div className="p-4 border-b border-border-color">
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by username, name or Game ID..." className="w-full max-w-sm bg-background border border-border-color rounded-lg px-3 py-2 text-white outline-none focus:border-mln-green text-sm" />
+          <input type="text" value={search} onChange={handleSearchChange} placeholder="Search by username, name or Game ID..." className="w-full max-w-sm bg-background border border-border-color rounded-lg px-3 py-2 text-white outline-none focus:border-mln-green text-sm" />
         </div>
         <div className="overflow-x-auto max-h-[600px]">
           <table className="w-full text-left text-sm text-gray-400">
@@ -250,7 +261,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
               </tr>
             </thead>
             <tbody className="divide-y divide-border-color/60">
-              {filteredPlayers.map(p => (
+              {currentPlayers.map(p => (
                 <tr key={p.id} className="hover:bg-background/50">
                   <td className="px-4 py-3">
                     {p.pictureUrl
@@ -287,6 +298,30 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="p-4 border-t border-border-color flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            Showing {filteredPlayers.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + playersPerPage, filteredPlayers.length)} of {filteredPlayers.length} Players
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="bg-background border border-border-color text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider disabled:opacity-40 hover:bg-surface transition-colors"
+            >
+              Prev
+            </button>
+            <span className="text-xs font-bold text-white px-2">Page {currentPage} of {totalPages}</span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="bg-background border border-border-color text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider disabled:opacity-40 hover:bg-surface transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>
