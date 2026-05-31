@@ -4,27 +4,10 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlayersDirectory({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const params = await searchParams;
-  const currentPage = Number(params?.page) || 1;
-  const playersPerPage = 20;
-
-  const totalPlayersCount = await prisma.player.count();
-  const totalPages = Math.ceil(totalPlayersCount / playersPerPage) || 1;
-  
-  // Ensure current page is within valid bounds
-  const validPage = Math.max(1, Math.min(currentPage, totalPages));
-  const skip = (validPage - 1) * playersPerPage;
-
+export default async function PlayersDirectory() {
   const players = await prisma.player.findMany({
     include: { team: true },
-    orderBy: { username: "asc" },
-    skip,
-    take: playersPerPage,
+    orderBy: { username: "asc" }
   });
 
   return (
@@ -41,7 +24,7 @@ export default async function PlayersDirectory({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {players.map(player => (
             <Link 
               key={player.id} 
@@ -94,42 +77,6 @@ export default async function PlayersDirectory({
             </div>
           )}
         </div>
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 pb-12">
-            {validPage > 1 ? (
-              <Link
-                href={`/players?page=${validPage - 1}`}
-                className="bg-surface border border-border-color text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-surface-hover hover:border-mln-green transition-colors"
-              >
-                Previous
-              </Link>
-            ) : (
-              <div className="bg-background border border-border-color/50 text-gray-600 px-6 py-3 rounded-xl font-black uppercase tracking-widest cursor-not-allowed">
-                Previous
-              </div>
-            )}
-            
-            <div className="text-sm font-bold text-gray-400 uppercase tracking-widest px-4">
-              Page {validPage} of {totalPages}
-            </div>
-            
-            {validPage < totalPages ? (
-              <Link
-                href={`/players?page=${validPage + 1}`}
-                className="bg-mln-green text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-mln-green-dark transition-colors shadow-lg shadow-mln-green/10"
-              >
-                Next
-              </Link>
-            ) : (
-              <div className="bg-background border border-border-color/50 text-gray-600 px-6 py-3 rounded-xl font-black uppercase tracking-widest cursor-not-allowed">
-                Next
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
     </main>
   );
