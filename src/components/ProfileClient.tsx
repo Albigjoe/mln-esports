@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import {
   User, Trophy, ShieldCheck, Settings, Star,
   Swords, MapPin, BadgeCheck, Clock, AlertCircle,
-  Edit3, Save, X, Camera, Trash2, Plus, LogOut, Shield
+  Edit3, Save, X, Camera, Trash2, Plus, LogOut, Shield,
+  Search, Check, ThumbsUp, ThumbsDown, Users
 } from 'lucide-react';
 
 const NIGERIAN_STATES = [
@@ -58,6 +60,10 @@ type Props = {
   adminRole: string;
   player: Player | null;
   picks?: any[];
+  freeAgents?: any[];
+  allTeams?: any[];
+  pendingRequests?: any[];
+  myRequests?: any[];
 };
 
 async function uploadFile(file: File, folder: string): Promise<string> {
@@ -70,7 +76,17 @@ async function uploadFile(file: File, folder: string): Promise<string> {
   return data.url;
 }
 
-export default function ProfileClient({ adminEmail, adminName, adminRole, player, picks }: Props) {
+export default function ProfileClient({
+  adminEmail,
+  adminName,
+  adminRole,
+  player,
+  picks,
+  freeAgents = [],
+  allTeams = [],
+  pendingRequests = [],
+  myRequests = []
+}: Props) {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<'details' | 'squad'>('details');
@@ -81,6 +97,161 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
   }, [player?.team]);
 
   const isOwner = team && team.ownerEmail === adminEmail;
+
+  // Active state lists sync
+  const [activePendingRequests, setActivePendingRequests] = useState<any[]>(pendingRequests);
+  const [activeMyRequests, setActiveMyRequests] = useState<any[]>(myRequests);
+
+  useEffect(() => {
+    setActivePendingRequests(pendingRequests);
+  }, [pendingRequests]);
+
+  useEffect(() => {
+    setActiveMyRequests(myRequests);
+  }, [myRequests]);
+
+  // Player photo upload state
+  const [updatingPhotoId, setUpdatingPhotoId] = useState<string | null>(null);
+
+  const handlePlayerPhotoFile = async (playerId: string, file: File) => {
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Invalid format. Only JPG, PNG, or WEBP accepted.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File too large. Maximum 2MB allowed.');
+      return;
+    }
+
+    setUpdatingPhotoId(playerId);
+    try {
+      const photoUrl = await uploadFile(file, 'players');
+
+      const res = await fetch(`/api/teams/${team.id}/manage`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, pictureUrl: photoUrl }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTeam((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            players: prev.players.map((pl: any) =>
+              pl.id === playerId ? { ...pl, pictureUrl: photoUrl } : pl
+            )
+          };
+        });
+        router.refresh();
+      } else {
+        alert(data.error || 'Failed to update player photo');
+      }
+    } catch (err) {
+      alert('Network error updating player photo');
+    }
+    setUpdatingPhotoId(null);
+  };
+
+  // Recruiting a player from free agents list directly
+  const [recruitingPlayerId, setRecruitingPlayerId] = useState<string | null>(null);
+  const [freeAgentQuery, setFreeAgentQuery] = useState('');
+
+  const handleRecruitPlayer = async (pAgent: any) => {
+    setRecruitingPlayerId(pAgent.id);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/manage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: pAgent.username,
+          gameId: pAgent.gameId,
+          realName: pAgent.realName || '',
+          role: pAgent.role || 'PLAYER',
+          rank: pAgent.rank || 'Mythic',
+          state: pAgent.state || 'Lagos',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTeam((prev: any) => {
+          if (!prev) return null;
+          const players = [...prev.players];
+          if (!players.some(p => p.id === data.player.id)) {
+            players.push(data.player);
+          }
+          return { ...prev, players };
+        });
+        router.refresh();
+        alert(`Successfully added ${pAgent.username} to your squad!`);
+      } else {
+        alert(data.error || 'Failed to recruit player');
+      }
+    } catch {
+      alert('Network error recruiting player');
+    }
+    setRecruitingPlayerId(null);
+  };
+
+  // Player applying to join a squad
+  const [applyingTeamId, setApplyingTeamId] = useState<string | null>(null);
+  const [squadSearchQuery, setSquadSearchQuery] = useState('');
+
+  const handleApplyToSquad = async (teamId: string) => {
+    setApplyingTeamId(teamId);
+    try {
+      const res = await fetch('/api/teams/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActiveMyRequests(prev => [data.request, ...prev]);
+        alert('Application submitted successfully! The team captain will review it.');
+        router.refresh();
+      } else {
+        alert(data.error || 'Failed to submit application.');
+      }
+    } catch {
+      alert('Network error submitting application.');
+    }
+    setApplyingTeamId(null);
+  };
+
+  // Captain resolving a join request
+  const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null);
+
+  const handleResolveJoinRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    if (action === 'accept' && !confirm('Are you sure you want to accept this player into your squad?')) return;
+
+    setResolvingRequestId(requestId);
+    try {
+      const res = await fetch('/api/teams/apply', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Remove from pending list
+        setActivePendingRequests(prev => prev.filter(r => r.id !== requestId));
+        if (action === 'accept') {
+          alert('Player successfully added to your squad!');
+          // Force refresh team details
+          router.refresh();
+        } else {
+          alert('Application declined.');
+        }
+      } else {
+        alert(data.error || 'Failed to resolve request.');
+      }
+    } catch {
+      alert('Network error resolving request.');
+    }
+    setResolvingRequestId(null);
+  };
 
   // Team editing state
   const [editingTeam, setEditingTeam] = useState(false);
@@ -314,7 +485,8 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
       } else {
         setMsg(data.error || 'Failed to save.'); setMsgType('err');
       }
-    } catch {
+    } catch (e: any) {
+      console.error('Error saving profile:', e);
       setMsg('Network error. Please try again.'); setMsgType('err');
     }
     setSaving(false);
@@ -365,12 +537,20 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
                 </div>
               </div>
               {!editing && (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="shrink-0 flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-3 py-2 rounded-lg transition-all uppercase tracking-wider"
-                >
-                  <Edit3 size={13} /> Edit
-                </button>
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end shrink-0">
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-3 py-2 rounded-lg transition-all uppercase tracking-wider"
+                  >
+                    <Edit3 size={13} /> Edit
+                  </button>
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs font-bold text-red-400 hover:text-white border border-red-500/20 hover:border-red-500/50 bg-red-500/5 hover:bg-red-500/10 px-3 py-2 rounded-lg transition-all uppercase tracking-wider"
+                  >
+                    <LogOut size={13} /> Logout
+                  </button>
+                </div>
               )}
             </div>
 
@@ -690,6 +870,147 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
                 );
               })()}
             </div>
+
+            {/* Explore Active Squads — only for free agents (no team) */}
+            {!team && (
+              <div className="bg-surface border border-border-color rounded-2xl p-6">
+                <h2 className="text-sm font-black text-white uppercase tracking-widest mb-2 flex items-center gap-2 border-l-4 border-mln-green pl-3">
+                  <Users size={16} className="text-mln-green" /> Explore Active Squads
+                </h2>
+                <p className="text-xs text-gray-500 mb-5 pl-5">
+                  You're currently a <span className="text-yellow-500 font-bold">Free Agent</span>. Browse the squads below and apply to join one. The squad captain will review your application.
+                </p>
+
+                {/* Squad Search */}
+                <div className="relative mb-4">
+                  <input
+                    type="text"
+                    value={squadSearchQuery}
+                    onChange={e => setSquadSearchQuery(e.target.value)}
+                    placeholder="Search squads by name..."
+                    className="w-full bg-background border border-border-color rounded-lg pl-9 pr-3 py-2.5 text-sm text-white outline-none focus:border-mln-green transition-colors placeholder-gray-600"
+                  />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                </div>
+
+                {/* Squad Directory */}
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                  {(() => {
+                    const q = squadSearchQuery.toLowerCase().trim();
+                    const filtered = allTeams.filter((t: any) =>
+                      t.name.toLowerCase().includes(q)
+                    );
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="bg-background border border-border-color rounded-xl p-8 text-center">
+                          <div className="text-3xl mb-2">🔍</div>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                            {q ? 'No squads match your search.' : 'No active squads available right now.'}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return filtered.map((sq: any) => {
+                      const hasPending = activeMyRequests.some(
+                        (r: any) => r.teamId === sq.id && r.status === 'PENDING'
+                      );
+                      const wasDeclined = activeMyRequests.some(
+                        (r: any) => r.teamId === sq.id && r.status === 'DECLINED'
+                      );
+
+                      return (
+                        <div
+                          key={sq.id}
+                          className="bg-background border border-border-color/60 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-mln-green/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {sq.logoUrl ? (
+                              <img
+                                src={sq.logoUrl}
+                                alt={sq.name}
+                                className="w-14 h-14 rounded-xl object-cover border border-border-color bg-surface shrink-0"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-xl bg-mln-green/10 border border-border-color flex items-center justify-center text-xl font-black text-mln-green uppercase shrink-0">
+                                {sq.name.substring(0, 2)}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-black text-white uppercase text-sm tracking-tight truncate">{sq.name}</div>
+                              <div className="text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
+                                {sq.players?.length || 0} Members
+                              </div>
+                              {sq.ownerEmail && (
+                                <div className="text-[9px] text-gray-600 mt-0.5 truncate">
+                                  Captain: {sq.ownerEmail}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 w-full sm:w-auto">
+                            {hasPending ? (
+                              <button
+                                disabled
+                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold uppercase tracking-wider text-[10px] px-4 py-2.5 rounded-xl cursor-not-allowed"
+                              >
+                                <Clock size={12} /> Applied (Pending)
+                              </button>
+                            ) : wasDeclined ? (
+                              <button
+                                onClick={() => handleApplyToSquad(sq.id)}
+                                disabled={applyingTeamId === sq.id}
+                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-background border border-border-color hover:border-mln-green/50 text-gray-400 hover:text-mln-green font-bold uppercase tracking-wider text-[10px] px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
+                              >
+                                {applyingTeamId === sq.id ? 'Applying...' : '↻ Re-Apply'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleApplyToSquad(sq.id)}
+                                disabled={applyingTeamId === sq.id}
+                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-mln-green/10 hover:bg-mln-green border border-mln-green/20 hover:border-transparent text-mln-green hover:text-black font-bold uppercase tracking-wider text-[10px] px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
+                              >
+                                <Shield size={12} />
+                                {applyingTeamId === sq.id ? 'Applying...' : 'Apply to Squad'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* Show player's sent applications summary */}
+                {activeMyRequests.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-border-color">
+                    <h3 className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Clock size={10} /> Your Applications ({activeMyRequests.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {activeMyRequests.map((req: any) => (
+                        <div key={req.id} className="bg-background border border-border-color/60 rounded-lg p-3 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-bold text-white uppercase truncate">{req.team?.name || 'Unknown Squad'}</span>
+                          </div>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                            req.status === 'PENDING'
+                              ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500'
+                              : req.status === 'ACCEPTED'
+                              ? 'bg-mln-green/10 border-mln-green/30 text-mln-green'
+                              : 'bg-red-500/10 border-red-500/30 text-red-400'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -812,6 +1133,63 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
               )}
             </div>
 
+            {/* Captain Requests Inbox */}
+            {isOwner && activePendingRequests.length > 0 && (
+              <div className="bg-surface border border-yellow-500/30 p-5 rounded-2xl space-y-4 shadow-[0_0_15px_rgba(234,179,8,0.05)]">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest border-l-4 border-yellow-500 pl-3 flex items-center gap-1.5 animate-pulse">
+                  📥 Pending Join Requests ({activePendingRequests.length})
+                </h3>
+                <p className="text-xs text-gray-400">The following players have applied to join your squad. Review their details and accept or decline their applications.</p>
+                
+                <div className="space-y-3">
+                  {activePendingRequests.map((req: any) => (
+                    <div key={req.id} className="bg-background border border-border-color p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        {req.player.pictureUrl ? (
+                          <img src={req.player.pictureUrl} alt="" className="w-12 h-12 rounded-xl object-cover bg-surface shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center font-black text-yellow-500 text-lg uppercase shrink-0">
+                            {req.player.username.substring(0, 2)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white uppercase text-sm">{req.player.username}</span>
+                            <span className="text-[8px] bg-yellow-500/20 text-yellow-500 font-bold px-1.5 py-0.5 rounded">PENDING</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
+                            {req.player.role || 'PLAYER'} • {req.player.rank || 'Mythic'} • {req.player.state || 'Lagos'}
+                          </div>
+                          {req.player.gameId && (
+                            <div className="text-[9px] text-mln-green font-bold tracking-widest mt-1">
+                              ID: {req.player.gameId}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleResolveJoinRequest(req.id, 'accept')}
+                          disabled={resolvingRequestId === req.id}
+                          className="flex-1 sm:flex-initial bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          <ThumbsUp size={12} /> Accept
+                        </button>
+                        <button
+                          onClick={() => handleResolveJoinRequest(req.id, 'decline')}
+                          disabled={resolvingRequestId === req.id}
+                          className="flex-1 sm:flex-initial bg-background border border-border-color hover:bg-red-500/10 text-red-400 hover:text-red-300 px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          <ThumbsDown size={12} /> Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Roster Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -838,6 +1216,75 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
                       {addPlayerError}
                     </div>
                   )}
+
+                  {/* SEARCH AND RECRUIT FREE AGENTS */}
+                  <div className="bg-background border border-border-color p-4 rounded-xl space-y-3">
+                    <h5 className="text-[10px] text-mln-green font-black uppercase tracking-widest flex items-center gap-1.5">
+                      <Search size={10} /> Search Free Agents (Players without Squads)
+                    </h5>
+                    
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={freeAgentQuery}
+                        onChange={e => setFreeAgentQuery(e.target.value)}
+                        placeholder="Search by IGN, Game ID, Rank..." 
+                        className="w-full bg-surface border border-border-color rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-mln-green"
+                      />
+                      <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    </div>
+
+                    {/* Results list */}
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {(() => {
+                        const query = freeAgentQuery.toLowerCase().trim();
+                        const filtered = freeAgents.filter((fa: any) => 
+                          fa.username.toLowerCase().includes(query) ||
+                          fa.gameId?.includes(query) ||
+                          fa.rank.toLowerCase().includes(query) ||
+                          fa.state.toLowerCase().includes(query)
+                        );
+                        
+                        const items = query ? filtered : freeAgents.slice(0, 3); // show top 3 suggestions when search is empty
+                        
+                        if (items.length === 0) {
+                          return <div className="text-[10px] text-gray-500 text-center py-2">No unlinked free agents found matching your query.</div>;
+                        }
+
+                        return items.map((fa: any) => (
+                          <div key={fa.id} className="bg-surface/50 border border-border-color/60 p-2.5 rounded-lg flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {fa.pictureUrl ? (
+                                <img src={fa.pictureUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-mln-green/10 flex items-center justify-center font-bold text-[10px] text-mln-green uppercase shrink-0">
+                                  {fa.username.substring(0, 2)}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="font-bold text-white truncate uppercase">{fa.username}</div>
+                                <div className="text-[8px] text-gray-500 uppercase font-black truncate mt-0.5">
+                                  {fa.rank} • {fa.state} {fa.gameId && `• ID: ${fa.gameId}`}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={recruitingPlayerId === fa.id}
+                              onClick={() => handleRecruitPlayer(fa)}
+                              className="bg-mln-green/10 hover:bg-mln-green border border-mln-green/20 hover:border-transparent text-mln-green hover:text-black font-bold uppercase tracking-wider text-[9px] px-2.5 py-1 rounded transition-colors disabled:opacity-50"
+                            >
+                              {recruitingPlayerId === fa.id ? 'Adding...' : 'Recruit'}
+                            </button>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="text-center py-1">
+                    <span className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">— OR ADD PLAYER MANUALLY —</span>
+                  </div>
 
                   <form onSubmit={handleAddPlayer} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -930,16 +1377,47 @@ export default function ProfileClient({ adminEmail, adminName, adminRole, player
                   return (
                     <div key={p.id} className="bg-surface border border-border-color/60 rounded-xl p-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        {p.pictureUrl ? (
-                          <img
-                            src={p.pictureUrl}
-                            alt={p.username}
-                            className="w-12 h-12 rounded-xl object-cover border border-border-color bg-background shrink-0"
-                          />
+                        {isOwner ? (
+                          <label className="cursor-pointer group relative block w-12 h-12 rounded-xl overflow-hidden border border-border-color bg-background shrink-0 select-none">
+                            {p.pictureUrl ? (
+                              <img
+                                src={p.pictureUrl}
+                                alt={p.username}
+                                className="w-full h-full object-cover group-hover:opacity-40 transition-opacity"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-mln-green/10 flex items-center justify-center text-lg font-black text-mln-green uppercase group-hover:opacity-40 transition-opacity">
+                                {p.username.substring(0, 2)}
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Camera size={14} className="text-mln-green" />
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              className="hidden"
+                              disabled={updatingPhotoId === p.id}
+                              onChange={e => e.target.files?.[0] && handlePlayerPhotoFile(p.id, e.target.files[0])}
+                            />
+                            {updatingPhotoId === p.id && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-[8px] text-mln-green font-bold uppercase animate-pulse">
+                                ...
+                              </div>
+                            )}
+                          </label>
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-mln-green/10 border border-border-color flex items-center justify-center text-lg font-black text-mln-green uppercase shrink-0">
-                            {p.username.substring(0, 2)}
-                          </div>
+                          p.pictureUrl ? (
+                            <img
+                              src={p.pictureUrl}
+                              alt={p.username}
+                              className="w-12 h-12 rounded-xl object-cover border border-border-color bg-background shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-mln-green/10 border border-border-color flex items-center justify-center text-lg font-black text-mln-green uppercase shrink-0">
+                              {p.username.substring(0, 2)}
+                            </div>
+                          )
                         )}
                         <div>
                           <div className="flex items-center gap-2">

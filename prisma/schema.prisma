@@ -35,6 +35,7 @@ model Team {
   awayGames   Game[]  @relation("AwayTeam")
   players     Player[]
   awards      Award[] @relation("TeamAwards")
+  joinRequests JoinRequest[] @relation("TeamJoinRequests")
 }
 
 model Game {
@@ -146,6 +147,7 @@ model Player {
   user        User?    @relation(fields: [userId], references: [id])
   awards      Award[]
   disputes    Dispute[]
+  joinRequests JoinRequest[] @relation("PlayerJoinRequests")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -238,6 +240,16 @@ model PasswordResetToken {
   email     String
   token     String   @unique
   expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model JoinRequest {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    Player   @relation("PlayerJoinRequests", fields: [playerId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team     @relation("TeamJoinRequests", fields: [teamId], references: [id], onDelete: Cascade)
+  status    String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
   createdAt DateTime @default(now())
 }
 

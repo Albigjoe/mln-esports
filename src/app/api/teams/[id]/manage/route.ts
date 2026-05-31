@@ -12,7 +12,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { name, logoUrl } = body;
+    const { name, logoUrl, playerId, pictureUrl } = body;
 
     const team = await prisma.team.findUnique({ where: { id } });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
@@ -20,6 +20,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     // Validate that the user is the owner
     if (team.ownerEmail !== session.user.email) {
       return NextResponse.json({ error: 'Unauthorized: Only the team owner can edit team details' }, { status: 403 });
+    }
+
+    // Support updating player photo directly
+    if (playerId && pictureUrl) {
+      const playerRecord = await prisma.player.findFirst({
+        where: { id: playerId, teamId: id }
+      });
+      if (!playerRecord) {
+        return NextResponse.json({ error: 'Player not found on this team' }, { status: 404 });
+      }
+
+      const updatedPlayer = await prisma.player.update({
+        where: { id: playerId },
+        data: { pictureUrl }
+      });
+
+      return NextResponse.json({ success: true, player: updatedPlayer });
     }
 
     const updated = await prisma.team.update({

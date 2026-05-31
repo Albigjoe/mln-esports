@@ -86,6 +86,43 @@ export default async function ProfilePage() {
     });
   }
 
+  // Fetch all free agents in the database
+  const freeAgents = await prisma.player.findMany({
+    where: { teamId: null },
+    orderBy: { username: 'asc' }
+  });
+
+  // Fetch all teams in the database for team discovery
+  const allTeams = await prisma.team.findMany({
+    include: {
+      players: {
+        orderBy: { username: 'asc' }
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  // Fetch join requests:
+  // 1. Pending requests sent *to* the captain's owned team
+  let pendingRequests: any[] = [];
+  if (ownedTeam) {
+    pendingRequests = await prisma.joinRequest.findMany({
+      where: { teamId: ownedTeam.id, status: 'PENDING' },
+      include: { player: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  // 2. Active join requests sent *by* the player
+  let myRequests: any[] = [];
+  if (player && player.id !== 'captain-placeholder') {
+    myRequests = await prisma.joinRequest.findMany({
+      where: { playerId: player.id },
+      include: { team: true },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   return (
     <ProfileClient
       adminEmail={session.user.email}
@@ -93,6 +130,10 @@ export default async function ProfilePage() {
       adminRole={(adminUser as any)?.role || 'staff'}
       player={player ? JSON.parse(JSON.stringify(player)) : null}
       picks={JSON.parse(JSON.stringify(picks))}
+      freeAgents={JSON.parse(JSON.stringify(freeAgents))}
+      allTeams={JSON.parse(JSON.stringify(allTeams))}
+      pendingRequests={JSON.parse(JSON.stringify(pendingRequests))}
+      myRequests={JSON.parse(JSON.stringify(myRequests))}
     />
   );
 }

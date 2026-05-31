@@ -60,24 +60,22 @@ export async function PUT(req: Request) {
   // We store admin identity in Player.realName as "admin:<email>" so we can look it up
   const adminTag = `admin:${session.user.email}`;
 
-  // Check if another player already has this username AND is linked to another user
+  // Check if another player already has this username
   const usernameConflict = await prisma.player.findFirst({
     where: {
       username: username.trim(),
-      NOT: { realName: adminTag },
-      realName: { startsWith: 'admin:' }
+      NOT: { realName: adminTag }
     },
   });
   if (usernameConflict) {
     return NextResponse.json({ error: 'That username is already taken by another player' }, { status: 400 });
   }
 
-  // Check if another player already has this gameId AND is linked to another user
+  // Check if another player already has this gameId
   const gameIdConflict = await prisma.player.findFirst({
     where: {
       gameId: gameId.trim(),
-      NOT: { realName: adminTag },
-      realName: { startsWith: 'admin:' }
+      NOT: { realName: adminTag }
     },
   });
   if (gameIdConflict) {
