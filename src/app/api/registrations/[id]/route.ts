@@ -86,14 +86,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           });
         }
 
-        // 4. Remove stale players from this team who are NOT on the new roster
-        //    (handles re-submissions where the leader swapped out players)
-        await tx.player.deleteMany({
-          where: {
-            teamId: team.id,
-            username: { notIn: newRosterUsernames }
-          }
-        });
+        // 4. (Removed) We no longer delete stale players. 
+        // Any new players in the submission are added to the team, and old players are kept.
+
 
         // 5. Finally, update registration status
         return await tx.teamRegistration.update({
