@@ -7,9 +7,10 @@ export const dynamic = "force-dynamic";
 export default async function PlayersDirectory({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const currentPage = Number(searchParams?.page) || 1;
+  const params = await searchParams;
+  const currentPage = Number(params?.page) || 1;
   const playersPerPage = 20;
 
   const totalPlayersCount = await prisma.player.count();
