@@ -23,17 +23,26 @@ export default function RegistrationsTab() {
     setLoading(false);
   };
 
+  const [actionMsg, setActionMsg] = useState('');
+
   const handleAction = async (id: string, status: string, reg: any) => {
     if (!confirm(`Are you sure you want to ${status} this registration?`)) return;
+    setActionMsg('');
     try {
       const res = await fetch(`/api/registrations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, teamName: reg.teamName, logoUrl: reg.logoUrl, lineupImageUrl: reg.lineupImageUrl, players: reg.players })
       });
-      if (res.ok) fetchRegistrations();
-    } catch (e) {
-      alert('Error updating registration');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMsg(`✅ ${reg.teamName} has been ${status === 'APPROVED' ? 'approved' : 'rejected'} successfully!`);
+        fetchRegistrations();
+      } else {
+        setActionMsg(`❌ Failed to ${status.toLowerCase()} ${reg.teamName}: ${data.error || 'Unknown error'}`);
+      }
+    } catch (e: any) {
+      setActionMsg(`❌ Network error while updating ${reg.teamName}: ${e.message}`);
     }
   };
 
@@ -64,6 +73,13 @@ export default function RegistrationsTab() {
         <span>Pending Registrations ({registrations.length})</span>
         <button onClick={fetchRegistrations} className="text-xs font-bold text-mln-green hover:underline uppercase tracking-widest">Refresh</button>
       </h2>
+
+      {actionMsg && (
+        <div className={`rounded-xl p-4 mb-4 font-bold text-sm border ${actionMsg.startsWith('✅') ? 'bg-mln-green/10 text-mln-green border-mln-green/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+          {actionMsg}
+          <button onClick={() => setActionMsg('')} className="ml-4 text-xs opacity-60 hover:opacity-100">✕ Dismiss</button>
+        </div>
+      )}
 
       {registrations.length === 0 ? (
         <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">

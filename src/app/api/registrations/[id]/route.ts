@@ -46,11 +46,30 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           });
         }
 
-        // 2. Upsert players under the team
+        // 2. Collect the new roster's usernames for stale-player cleanup later
+        const newRosterUsernames = players.map((p: any) => p.username);
+
+        // 3. Upsert players under the team, handling gameId conflicts gracefully
         for (const p of players) {
+          const gameIdValue = p.gameId || null;
+
+          // If this player has a gameId, check if a DIFFERENT player already owns it
+          if (gameIdValue) {
+            const conflictingPlayer = await tx.player.findUnique({
+              where: { gameId: gameIdValue }
+            });
+            // If a different player (by username) has this gameId, clear theirs first
+            if (conflictingPlayer && conflictingPlayer.username !== p.username) {
+              await tx.player.update({
+                where: { id: conflictingPlayer.id },
+                data: { gameId: null }
+              });
+            }
+          }
+
           const data = {
             username:   p.username,
-            gameId:     p.gameId     || null,
+            gameId:     gameIdValue,
             realName:   p.realName   || '',
             role:       p.role       || 'PLAYER',
             pictureUrl: p.pictureUrl || '',
@@ -66,7 +85,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           });
         }
 
-        // 3. Finally, update registration status
+        // 4. Remove stale players from this team who are NOT on the new roster
+        //    (handles re-submissions where the leader swapped out players)
+        await tx.player.deleteMany({
+          where: {
+            teamId: team.id,
+            username: { notIn: newRosterUsernames }
+          }
+        });
+
+        // 5. Finally, update registration status
         return await tx.teamRegistration.update({
           where: { id },
           data: { status }
