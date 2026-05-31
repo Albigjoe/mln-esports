@@ -154,6 +154,37 @@ export default function ProfileClient({
     setUpdatingPhotoId(null);
   };
 
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
+
+  const handleRoleChange = async (playerId: string, newRole: string) => {
+    setUpdatingRoleId(playerId);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/manage`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, role: newRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTeam((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            players: prev.players.map((pl: any) =>
+              pl.id === playerId ? { ...pl, role: newRole } : pl
+            )
+          };
+        });
+        router.refresh();
+      } else {
+        alert(data.error || 'Failed to update player role');
+      }
+    } catch (err) {
+      alert('Network error updating player role');
+    }
+    setUpdatingRoleId(null);
+  };
+
   // Recruiting a player from free agents list directly
   const [recruitingPlayerId, setRecruitingPlayerId] = useState<string | null>(null);
   const [freeAgentQuery, setFreeAgentQuery] = useState('');
@@ -1426,8 +1457,20 @@ export default function ProfileClient({
                               <span className="text-[8px] bg-mln-green/20 text-mln-green font-bold px-1.5 py-0.5 rounded">You</span>
                             )}
                           </div>
-                          <div className="text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
-                            {p.role} • {p.rank}
+                          <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
+                            {isOwner ? (
+                              <select 
+                                value={p.role} 
+                                disabled={updatingRoleId === p.id}
+                                onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                                className="bg-background border border-border-color rounded px-1 py-0.5 text-white outline-none focus:border-mln-green disabled:opacity-50"
+                              >
+                                {PLAYER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                              </select>
+                            ) : (
+                              <span>{p.role}</span>
+                            )}
+                            <span>• {p.rank}</span>
                           </div>
                           {p.gameId && (
                             <div className="text-[9px] text-mln-green font-bold tracking-widest mt-1">

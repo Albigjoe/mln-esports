@@ -16,19 +16,11 @@ async function uploadFile(file: File, folder: string): Promise<string> {
 export default function TeamsTab({ teams }: { teams: any[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', logoUrl: '' });
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState('');
-  const [logoError, setLogoError] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [form, setForm] = useState({ name: '', logoUrl: '', ownerEmail: '' });
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ name: '', logoUrl: '' });
+    setForm({ name: '', logoUrl: '', ownerEmail: '' });
     setLogoFile(null);
     setLogoPreview('');
     setLogoError('');
@@ -37,7 +29,7 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
 
   const handleEdit = (team: any) => {
     setEditingId(team.id);
-    setForm({ name: team.name, logoUrl: team.logoUrl || '' });
+    setForm({ name: team.name, logoUrl: team.logoUrl || '', ownerEmail: team.ownerEmail || '' });
     setLogoFile(null);
     setLogoPreview(team.logoUrl || '');
     setLogoError('');
@@ -81,7 +73,7 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, logoUrl })
+        body: JSON.stringify({ name: form.name, logoUrl, ownerEmail: form.ownerEmail || null })
       });
       if (res.ok) {
         setMsg('Team saved!');
@@ -192,6 +184,10 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Team Name *</label>
             <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full bg-background border border-border-color rounded-lg px-3 py-2 text-white outline-none focus:border-mln-green" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Owner Email</label>
+            <input type="email" placeholder="Optional" value={form.ownerEmail} onChange={e => setForm({ ...form, ownerEmail: e.target.value })} className="w-full bg-background border border-border-color rounded-lg px-3 py-2 text-white outline-none focus:border-mln-green" />
           </div>
         </div>
 

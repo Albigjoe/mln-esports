@@ -22,8 +22,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Unauthorized: Only the team owner can edit team details' }, { status: 403 });
     }
 
-    // Support updating player photo directly
-    if (playerId && pictureUrl) {
+    // Support updating player photo or role directly
+    if (playerId && (pictureUrl !== undefined || body.role !== undefined)) {
       const playerRecord = await prisma.player.findFirst({
         where: { id: playerId, teamId: id }
       });
@@ -31,9 +31,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         return NextResponse.json({ error: 'Player not found on this team' }, { status: 404 });
       }
 
+      const updateData: any = {};
+      if (pictureUrl !== undefined) updateData.pictureUrl = pictureUrl;
+      if (body.role !== undefined) updateData.role = body.role;
+
       const updatedPlayer = await prisma.player.update({
         where: { id: playerId },
-        data: { pictureUrl }
+        data: updateData
       });
 
       return NextResponse.json({ success: true, player: updatedPlayer });

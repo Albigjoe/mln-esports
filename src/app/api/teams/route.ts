@@ -21,12 +21,16 @@ export async function GET(req: NextRequest) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, logoUrl } = body;
+    const { name, logoUrl, ownerEmail } = body;
 
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
 
     const team = await prisma.team.create({
-      data: { name, logoUrl: logoUrl || null },
+      data: { 
+        name, 
+        logoUrl: logoUrl || null,
+        ownerEmail: ownerEmail || null
+      },
     });
 
     return NextResponse.json({ success: true, team });
@@ -86,6 +90,11 @@ export async function DELETE(request: Request) {
             { team2Id: { in: teamIds } }
           ]
         }
+      });
+
+      // 4.5 Delete Join Requests
+      await tx.joinRequest.deleteMany({
+        where: { teamId: { in: teamIds } }
       });
 
       // 5. Delete the teams
