@@ -138,6 +138,113 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
   const [picks1, setPicks1] = useState(Array(5).fill(null).map(emptyPick));
   const [picks2, setPicks2] = useState(Array(5).fill(null).map(emptyPick));
 
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState('');
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!team1Id || !team2Id) {
+      setOcrError('Please select Team 1 and Team 2 first before auto-filling!');
+      return;
+    }
+
+    setOcrLoading(true);
+    setOcrError('');
+    setMsg('Analyzing screenshot with Gemini AI...');
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = (reader.result as string).split(',')[1];
+        
+        const res = await fetch('/api/ocr/scoreboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: base64String,
+            mimeType: file.type
+          })
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
+        if (!data.data) throw new Error('No data returned from AI');
+
+        const { duration: ocrDuration, winner: ocrWinner, team1_picks, team2_picks, team1_bans, team2_bans } = data.data;
+
+        if (ocrDuration) setDuration(ocrDuration);
+        if (ocrWinner === 'team1' || ocrWinner === 'team2') setWinner(ocrWinner);
+
+        if (team1_bans && Array.isArray(team1_bans)) {
+          const newBans = [...bans1];
+          team1_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
+          setBans1(newBans);
+        }
+
+        if (team2_bans && Array.isArray(team2_bans)) {
+          const newBans = [...bans2];
+          team2_bans.forEach((b: string, i: number) => { if (i < 5) newBans[i] = b; });
+          setBans2(newBans);
+        }
+
+        let newPicks1 = [...picks1];
+        if (team1_picks && Array.isArray(team1_picks)) {
+          newPicks1 = newPicks1.map((p, i) => {
+            const op = team1_picks[i];
+            if (!op) return p;
+            return {
+              ...p,
+              hero: op.hero || p.hero,
+              playerUsername: op.playerUsername || p.playerUsername,
+              role: op.role || p.role,
+              kills: op.kills?.toString() || p.kills,
+              deaths: op.deaths?.toString() || p.deaths,
+              assists: op.assists?.toString() || p.assists,
+              gold: op.gold?.toString() || p.gold,
+              damage: op.damage?.toString() || p.damage
+            };
+          });
+        }
+
+        let newPicks2 = [...picks2];
+        if (team2_picks && Array.isArray(team2_picks)) {
+          newPicks2 = newPicks2.map((p, i) => {
+            const op = team2_picks[i];
+            if (!op) return p;
+            return {
+              ...p,
+              hero: op.hero || p.hero,
+              playerUsername: op.playerUsername || p.playerUsername,
+              role: op.role || p.role,
+              kills: op.kills?.toString() || p.kills,
+              deaths: op.deaths?.toString() || p.deaths,
+              assists: op.assists?.toString() || p.assists,
+              gold: op.gold?.toString() || p.gold,
+              damage: op.damage?.toString() || p.damage
+            };
+          });
+        }
+
+        const [finalP1, finalP2] = determineMVPs(newPicks1, newPicks2, ocrWinner || winner);
+        setPicks1(finalP1);
+        setPicks2(finalP2);
+        
+        setMsg('✓ Auto-filled successfully! Please review the data.');
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setOcrError(err.message);
+      setMsg('');
+    } finally {
+      setOcrLoading(false);
+      // Reset input value so same file can be uploaded again if needed
+      e.target.value = '';
+    }
+  };
+
   const recalculateTeamStats = (teamPicks: any[]) => {
     const totalKills = teamPicks.reduce((sum, p) => sum + (parseInt(p.kills) || 0), 0);
     return teamPicks.map(p => {
@@ -497,9 +604,28 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       {tab === 'add' && (
         <div className="space-y-6">
           <div className="bg-surface border border-mln-green/30 rounded-xl p-6 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
-            <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-3">How to Enter a Game</div>
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-xs text-mln-green font-bold uppercase tracking-[3px]">How to Enter a Game</div>
+              <div className="relative">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleScreenshotUpload} 
+                  className="hidden" 
+                  id="screenshot-upload"
+                  disabled={ocrLoading}
+                />
+                <label 
+                  htmlFor="screenshot-upload" 
+                  className={`cursor-pointer border border-mln-green text-mln-green px-4 py-2 rounded-lg font-bold uppercase tracking-wider text-xs transition-colors flex items-center gap-2 ${ocrLoading ? 'opacity-50 cursor-not-allowed bg-mln-green/10' : 'hover:bg-mln-green hover:text-black shadow-[0_0_10px_rgba(0,200,83,0.2)]'}`}
+                >
+                  {ocrLoading ? '⏳ Reading Image...' : '🤖 Auto-Fill via Screenshot'}
+                </label>
+                {ocrError && <div className="absolute right-0 top-full mt-2 w-64 bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded shadow-lg z-10">{ocrError}</div>}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[['01','Set week, game number, date and select both teams'],['02','Enter all 5 bans for each team'],['03','Fill in hero, username, role, K/D/A/Gold/DMG'],['04','Select winner and click Save']].map(([n,t]) => (
+              {[['01','Set week, game number, date and select both teams'],['02','Upload a screenshot or enter bans'],['03','Fill in hero, username, role, K/D/A/Gold/DMG'],['04','Select winner and click Save']].map(([n,t]) => (
                 <div key={n} className="bg-background border-l-2 border-mln-green rounded p-3">
                   <span className="text-mln-green text-xl font-black block mb-1">{n}</span>
                   <span className="text-gray-300 text-sm">{t}</span>
