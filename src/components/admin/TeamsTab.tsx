@@ -17,6 +17,14 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', logoUrl: '', ownerEmail: '' });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [logoError, setLogoError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const resetForm = () => {
     setEditingId(null);
