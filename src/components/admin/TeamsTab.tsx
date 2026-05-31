@@ -25,6 +25,9 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const resetForm = () => {
     setEditingId(null);
@@ -238,6 +241,17 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
         </div>
       </div>
 
+      {/* Search Input */}
+      <div className="mb-4">
+        <input 
+          type="text" 
+          placeholder="Search teams..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-white outline-none focus:border-mln-green"
+        />
+      </div>
+
       {/* Table view */}
       <div className="bg-surface border border-border-color rounded-xl overflow-hidden">
         <table className="w-full text-left text-sm text-gray-400">
@@ -259,14 +273,14 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/60">
-            {teams.length === 0 ? (
+            {filteredTeams.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                  No teams registered in the database.
+                  No teams found.
                 </td>
               </tr>
             ) : (
-              teams.map(t => {
+              filteredTeams.map(t => {
                 const isSelected = selectedIds.includes(t.id);
                 return (
                   <Fragment key={t.id}>

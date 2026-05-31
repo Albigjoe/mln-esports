@@ -17,12 +17,19 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, status, startDate, bannerUrl } = body;
+    const { name, status, startDate, bannerUrl, format, registrationStatus } = body;
 
     if (!name || !startDate) return NextResponse.json({ error: 'Name and start date are required' }, { status: 400 });
 
     const tournament = await prisma.tournament.create({
-      data: { name, status, startDate, bannerUrl: bannerUrl || null },
+      data: { 
+        name, 
+        status, 
+        startDate, 
+        bannerUrl: bannerUrl || null,
+        format: format || 'SINGLE_ELIMINATION',
+        registrationStatus: registrationStatus || 'OPEN'
+      },
     });
 
     return NextResponse.json({ success: true, tournament });

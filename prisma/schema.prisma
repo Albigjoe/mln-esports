@@ -11,6 +11,10 @@ datasource db {
 model Tournament {
   id          String   @id @default(cuid())
   name        String
+  format      String   @default("SINGLE_ELIMINATION")
+  registrationStatus String @default("OPEN")
+  pointsPerWin Int     @default(3)
+  pointsPerTie Int     @default(1)
   status      String   @default("upcoming")
   startDate   DateTime
   endDate     DateTime?
@@ -20,6 +24,8 @@ model Tournament {
   updatedAt   DateTime @updatedAt
 
   games       Game[]
+  participants TournamentParticipant[]
+  bracketMatches BracketMatch[]
 }
 
 model Team {
@@ -36,6 +42,9 @@ model Team {
   players     Player[]
   awards      Award[] @relation("TeamAwards")
   joinRequests JoinRequest[] @relation("TeamJoinRequests")
+  tournamentParticipants TournamentParticipant[] @relation("TeamParticipants")
+  bracketHomeGames BracketMatch[] @relation("BracketHomeTeam")
+  bracketAwayGames BracketMatch[] @relation("BracketAwayTeam")
 }
 
 model Game {
@@ -61,6 +70,7 @@ model Game {
   bans          Ban[]
   picks         Pick[]
   disputes      Dispute[]
+  bracketMatch  BracketMatch?
 }
 
 model Ban {
@@ -251,5 +261,56 @@ model JoinRequest {
   team      Team     @relation("TeamJoinRequests", fields: [teamId], references: [id], onDelete: Cascade)
   status    String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
   createdAt DateTime @default(now())
+}
+
+model TournamentParticipant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamId       String
+  team         Team       @relation("TeamParticipants", fields: [teamId], references: [id], onDelete: Cascade)
+  
+  seed         Int?
+  groupId      String?
+  points       Int        @default(0)
+  wins         Int        @default(0)
+  losses       Int        @default(0)
+  ties         Int        @default(0)
+  buchholz     Float      @default(0.0)
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([tournamentId, teamId])
+}
+
+model BracketMatch {
+  id              String   @id @default(cuid())
+  tournamentId    String
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  
+  team1Id         String?
+  team1           Team?      @relation("BracketHomeTeam", fields: [team1Id], references: [id])
+  team2Id         String?
+  team2           Team?      @relation("BracketAwayTeam", fields: [team2Id], references: [id])
+  
+  winnerId        String?
+  
+  stage           String     @default("KNOCKOUT")
+  round           Int        @default(1)
+  matchOrder      Int        @default(1)
+  nextMatchId     String?
+  nextLoserMatchId String?
+  isBye           Boolean    @default(false)
+  status          String     @default("PENDING") // PENDING, READY, COMPLETED
+
+  score1          Int        @default(0)
+  score2          Int        @default(0)
+
+  gameId          String?    @unique
+  game            Game?      @relation(fields: [gameId], references: [id])
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 

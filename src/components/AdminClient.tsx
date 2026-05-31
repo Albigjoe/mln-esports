@@ -558,7 +558,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       {tab === 'players' && <PlayersTab players={players} teams={teams} />}
 
       {/* TOURNAMENTS TAB */}
-      {tab === 'tournaments' && <TournamentsTab tournaments={tournaments} />}
+      {tab === 'tournaments' && <TournamentsTab tournaments={tournaments} teams={teams} />}
 
       {/* SETTINGS TAB */}
       {tab === 'settings' && <SettingsTab tournaments={tournaments} />}

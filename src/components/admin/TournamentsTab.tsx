@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, X, Upload } from 'lucide-react';
+import TournamentManager from './TournamentManager';
 
 async function uploadFile(file: File, folder: string): Promise<string> {
   const fd = new FormData();
@@ -13,14 +14,17 @@ async function uploadFile(file: File, folder: string): Promise<string> {
   return data.url;
 }
 
-export default function TournamentsTab({ tournaments }: { tournaments: any[] }) {
+export default function TournamentsTab({ tournaments, teams }: { tournaments: any[], teams: any[] }) {
   const router = useRouter();
+  const [selectedTournament, setSelectedTournament] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   
   const [name, setName] = useState('');
   const [status, setStatus] = useState('upcoming');
+  const [format, setFormat] = useState('SINGLE_ELIMINATION');
+  const [registrationStatus, setRegistrationStatus] = useState('OPEN');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [bannerUrl, setBannerUrl] = useState('');
 
@@ -32,6 +36,8 @@ export default function TournamentsTab({ tournaments }: { tournaments: any[] }) 
   const resetForm = () => {
     setName('');
     setStatus('upcoming');
+    setFormat('SINGLE_ELIMINATION');
+    setRegistrationStatus('OPEN');
     setStartDate(new Date().toISOString().split('T')[0]);
     setBannerUrl('');
     setBannerFile(null);
@@ -73,7 +79,7 @@ export default function TournamentsTab({ tournaments }: { tournaments: any[] }) 
       const res = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, status, startDate: new Date(startDate).toISOString(), bannerUrl: finalBannerUrl }),
+        body: JSON.stringify({ name, status, startDate: new Date(startDate).toISOString(), bannerUrl: finalBannerUrl, format, registrationStatus }),
       });
       const data = await res.json();
       if (data.success) {
@@ -94,6 +100,10 @@ export default function TournamentsTab({ tournaments }: { tournaments: any[] }) 
     });
     if ((await res.json()).success) { router.refresh(); }
   };
+
+  if (selectedTournament) {
+    return <TournamentManager t={selectedTournament} teams={teams} onBack={() => setSelectedTournament(null)} />;
+  }
 
   return (
     <div>
@@ -153,8 +163,26 @@ export default function TournamentsTab({ tournaments }: { tournaments: any[] }) 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Name</label><input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. AFL Season 2" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
-            <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Status</label><select value={status} onChange={e => setStatus(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="completed">Completed</option></select></div>
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Start Date</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
+            
+            <div>
+              <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Format</label>
+              <select value={format} onChange={e => setFormat(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none">
+                <option value="SINGLE_ELIMINATION">Single Elimination</option>
+                <option value="DOUBLE_ELIMINATION">Double Elimination</option>
+                <option value="ROUND_ROBIN">Round Robin (Groups)</option>
+                <option value="SWISS">Swiss Stage</option>
+                <option value="TWO_STAGE">Two-Stage (Groups &rarr; Knockout)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Tournament State</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="completed">Completed</option></select>
+            </div>
+            <div>
+              <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Registration</label>
+              <select value={registrationStatus} onChange={e => setRegistrationStatus(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none"><option value="OPEN">Open</option><option value="CLOSED">Closed</option></select>
+            </div>
           </div>
           <div className="flex gap-3 items-center">
             <button onClick={handleCreate} disabled={saving || uploading} className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50">
@@ -172,9 +200,17 @@ export default function TournamentsTab({ tournaments }: { tournaments: any[] }) 
           </thead>
           <tbody>
             {tournaments.map((t: any) => (
-              <tr key={t.id} className="border-b border-border-color hover:bg-surface-hover transition-colors">
-                <td className="px-6 py-4 font-bold text-white">{t.name}</td>
-                <td className="px-6 py-4"><span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === 'live' ? 'bg-red-500/20 text-red-400' : 'bg-gray-700 text-gray-300'}`}>{t.status}</span></td>
+              <tr key={t.id} className="border-b border-border-color hover:bg-surface-hover transition-colors cursor-pointer" onClick={() => setSelectedTournament(t)}>
+                <td className="px-6 py-4">
+                  <div className="font-bold text-white text-base">{t.name}</div>
+                  <div className="text-[10px] text-mln-green uppercase font-black tracking-widest mt-1">{t.format?.replace('_', ' ')}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.status === 'live' ? 'bg-red-500/20 text-red-400' : 'bg-gray-700 text-gray-300'}`}>{t.status}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.registrationStatus === 'OPEN' ? 'bg-mln-green/20 text-mln-green' : 'bg-orange-500/20 text-orange-400'}`}>Reg: {t.registrationStatus || 'OPEN'}</span>
+                  </div>
+                </td>
                 <td className="px-6 py-4">{t._count?.games || 0}</td>
                 <td className="px-6 py-4">
                   {t.bannerUrl ? (

@@ -65,13 +65,39 @@ export default function RegistrationsTab() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!confirm('⚠️ CRITICAL WARNING: Are you sure you want to delete ALL registration history? This will permanently wipe all pending and approved registration records. It will NOT delete actual teams or players already in the database.')) return;
+    try {
+      const res = await fetch('/api/registrations', { method: 'DELETE' });
+      if (res.ok) {
+        fetchRegistrations();
+        setActionMsg('✅ Registration history cleared successfully.');
+      } else {
+        const data = await res.json();
+        alert('Error: ' + (data.error || 'Failed to clear history'));
+      }
+    } catch (e) {
+      alert('Error clearing registration history');
+    }
+  };
+
   if (loading) return <div className="text-gray-400">Loading registrations...</div>;
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-black text-white uppercase tracking-wider mb-6 border-l-4 border-mln-green pl-3 flex justify-between items-center">
         <span>Pending Registrations ({registrations.length})</span>
-        <button onClick={fetchRegistrations} className="text-xs font-bold text-mln-green hover:underline uppercase tracking-widest">Refresh</button>
+        <div className="flex items-center gap-4">
+          <button onClick={fetchRegistrations} className="text-xs font-bold text-mln-green hover:underline uppercase tracking-widest">Refresh</button>
+          {registrations.length > 0 && (
+            <button 
+              onClick={handleClearHistory} 
+              className="text-xs font-bold text-red-400 border border-red-500/30 bg-red-500/10 px-3 py-1.5 rounded hover:bg-red-500/20 uppercase tracking-widest transition-colors"
+            >
+              Delete All History
+            </button>
+          )}
+        </div>
       </h2>
 
       {actionMsg && (
