@@ -253,61 +253,24 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       const dmgTaken = parseInt(p.damageTaken) || 0;
       
       if (k === 0 && d === 0 && a === 0 && gold === 0 && dmg === 0 && dmgTaken === 0) {
-        return { ...p, tfp: 0, mvpScore: 0 };
+        return { ...p, tfp: 0 };
       }
 
       const tfp = totalKills > 0 ? ((k + a) / totalKills) * 100 : 0;
       
-      const kdaRatio = d === 0 ? (k + a) * 1.2 : (k + a) / d;
-      const kdaWeight = Math.min(kdaRatio * 0.8, 6.0);
-      
-      const netPerf = (k * 0.5) + (a * 0.35) - (d * 0.6);
-      const goldWeight = Math.min((gold / 1000) * 0.35, 3.0);
-      const dmgWeight = Math.min((dmg / 10000) * 0.25, 3.0);
-
-      let dmgTakenWeight = 0;
-      if (['Roamer', 'Exp Lane', 'Jungle'].includes(p.role)) {
-        dmgTakenWeight = Math.min((dmgTaken / 10000) * 0.25, 3.0);
-      }
-      
-      let rating = 4.5 + kdaWeight + netPerf + goldWeight + dmgWeight + dmgTakenWeight;
-      const mvpScore = Math.max(3.0, Math.min(15.0, parseFloat(rating.toFixed(1))));
-      
+      // We no longer calculate mvpScore. We extract it directly from OCR (and admins can edit it).
       return {
         ...p,
-        tfp: parseFloat(tfp.toFixed(1)),
-        mvpScore
+        tfp: parseFloat(tfp.toFixed(1))
       };
     });
   };
 
   const determineMVPs = (p1: any[], p2: any[], winnerStr: string) => {
-    const newP1 = p1.map(p => ({ ...p, isMvp: false }));
-    const newP2 = p2.map(p => ({ ...p, isMvp: false }));
-    
-    if (winnerStr === 'team1') {
-      let maxIdx = 0;
-      let maxVal = -1;
-      newP1.forEach((p, idx) => {
-        if (p.mvpScore > maxVal) {
-          maxVal = p.mvpScore;
-          maxIdx = idx;
-        }
-      });
-      if (newP1[maxIdx]) newP1[maxIdx].isMvp = true;
-    } else if (winnerStr === 'team2') {
-      let maxIdx = 0;
-      let maxVal = -1;
-      newP2.forEach((p, idx) => {
-        if (p.mvpScore > maxVal) {
-          maxVal = p.mvpScore;
-          maxIdx = idx;
-        }
-      });
-      if (newP2[maxIdx]) newP2[maxIdx].isMvp = true;
-    }
-    
-    return [newP1, newP2];
+    // We no longer auto-assign MVP based on scores.
+    // MLBB already shows MVP/MVP Loss in screenshots, and the OCR extracts it.
+    // Staff can also manually toggle the MVP badge in the UI.
+    return [p1, p2];
   };
 
   const handlePickChange = (team: 'team1' | 'team2', i: number, field: string, value: any) => {
@@ -813,17 +776,20 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               </div>
               <div className="flex items-center gap-3 justify-between border border-border-color/60 bg-background/30 rounded px-2 py-1 select-none">
                 <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 uppercase font-bold">MLBB Rating</span>
-                  <span className="text-xs font-black text-white">{parseFloat(p.mvpScore) > 0 ? parseFloat(p.mvpScore).toFixed(1) : '—'}</span>
+                  <span className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">MLBB Rating</span>
+                  <input placeholder="Rating" inputMode="decimal" value={p.mvpScore} onChange={e => onChange(i,'mvpScore',e.target.value)} className="w-12 bg-transparent text-white text-xs font-black focus:outline-none border-b border-dashed border-gray-600 focus:border-mln-green placeholder:text-gray-600" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[8px] text-gray-500 uppercase font-bold">TFP</span>
                   <span className="text-xs font-black text-white">{parseFloat(p.tfp) > 0 ? `${parseFloat(p.tfp).toFixed(1)}%` : '—'}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${p.isMvp ? 'bg-mln-green text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
-                    {p.isMvp ? '★ MVP' : 'SVP'}
-                  </span>
+                  <button 
+                    onClick={() => onChange(i, 'isMvp', !p.isMvp)}
+                    className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider cursor-pointer transition-colors ${p.isMvp ? 'bg-mln-green text-black shadow-[0_0_10px_rgba(0,200,83,0.5)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'}`}
+                  >
+                    {p.isMvp ? '★ MVP' : 'Not MVP'}
+                  </button>
                 </div>
               </div>
             </div>

@@ -33,7 +33,9 @@ Return ONLY a valid JSON object (no markdown, no code fences) with this exact st
       "assists": 0,
       "gold": 0,
       "damage": 0,
-      "damageTaken": 0
+      "damageTaken": 0,
+      "mvpScore": 0.0,
+      "isMvp": false
     }
   ],
   "team2_picks": [
@@ -46,7 +48,9 @@ Return ONLY a valid JSON object (no markdown, no code fences) with this exact st
       "assists": 0,
       "gold": 0,
       "damage": 0,
-      "damageTaken": 0
+      "damageTaken": 0,
+      "mvpScore": 0.0,
+      "isMvp": false
     }
   ],
   "team1_bans": ["Hero1", "Hero2", "Hero3"],
@@ -56,6 +60,8 @@ Return ONLY a valid JSON object (no markdown, no code fences) with this exact st
 Important rules:
 - Extract exactly what you see. Do not guess or fabricate data.
 - Merge the data from all provided screenshots. (e.g. kda from one, damage/damageTaken from another).
+- For isMvp, set it to true if the player has an "MVP" or "MVP Loss" (or similar MVP-related) badge on their row.
+- For mvpScore, extract the exact numerical rating (e.g., 11.4, 8.2, 3.0) displayed on the scoreboard for the player.
 - If you cannot read a value clearly, use 0 for numbers or "" for strings.
 - Gold values should be the raw number (e.g. 12500, not "12.5K").
 - Damage and damageTaken values should be the raw number (e.g. 60500, not "60.5K").
