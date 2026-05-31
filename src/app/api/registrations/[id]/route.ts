@@ -51,7 +51,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
         // 3. Upsert players under the team, handling gameId conflicts gracefully
         for (const p of players) {
-          const gameIdValue = p.gameId || null;
+          const gameIdValue = p.gameId ? String(p.gameId).trim() : null;
+          const usernameValue = p.username ? String(p.username).trim() : `Player-${Math.random().toString(36).substring(7)}`;
 
           // If this player has a gameId, check if a DIFFERENT player already owns it
           if (gameIdValue) {
@@ -59,7 +60,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
               where: { gameId: gameIdValue }
             });
             // If a different player (by username) has this gameId, clear theirs first
-            if (conflictingPlayer && conflictingPlayer.username !== p.username) {
+            if (conflictingPlayer && conflictingPlayer.username !== usernameValue) {
               await tx.player.update({
                 where: { id: conflictingPlayer.id },
                 data: { gameId: null }
@@ -68,18 +69,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           }
 
           const data = {
-            username:   p.username,
+            username:   usernameValue,
             gameId:     gameIdValue,
-            realName:   p.realName   || '',
-            role:       p.role       || 'PLAYER',
-            pictureUrl: p.pictureUrl || '',
+            realName:   p.realName   ? String(p.realName) : '',
+            role:       p.role       ? String(p.role)     : 'PLAYER',
+            pictureUrl: p.pictureUrl ? String(p.pictureUrl) : '',
             teamId:     team.id,
-            state:      p.state      || 'Lagos',
-            rank:       p.rank       || 'Mythic',
+            state:      p.state      ? String(p.state)    : 'Lagos',
+            rank:       p.rank       ? String(p.rank)     : 'Mythic',
           };
 
           await tx.player.upsert({
-            where:  { username: p.username },
+            where:  { username: usernameValue },
             update: { ...data },
             create: { ...data },
           });
