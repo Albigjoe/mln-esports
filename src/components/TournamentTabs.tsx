@@ -602,7 +602,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               )}
             </div>
 
-            {tournament?.name?.toLowerCase().includes('afl') && (
+            {(tournament?.id === 'cmpbswve2000170oqkuet2sva' || tournament?.name?.toLowerCase().includes('afl')) && (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl mt-8 h-[600px] md:h-[800px] w-full">
                 <iframe src="https://challonge.com/i8rknz8z/module" width="100%" height="100%" frameBorder="0" scrolling="auto" allowTransparency={true}></iframe>
               </div>
