@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 export default function RegistrationsTab() {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchRegistrations();
@@ -22,6 +23,16 @@ export default function RegistrationsTab() {
     }
     setLoading(false);
   };
+
+  const filteredRegistrations = registrations.filter(reg => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return (
+      reg.teamName.toLowerCase().includes(lowerQuery) ||
+      reg.contactEmail.toLowerCase().includes(lowerQuery) ||
+      reg.players?.some((p: any) => p.username?.toLowerCase().includes(lowerQuery) || p.gameId?.toLowerCase().includes(lowerQuery))
+    );
+  });
 
   const [actionMsg, setActionMsg] = useState('');
 
@@ -86,7 +97,7 @@ export default function RegistrationsTab() {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-black text-white uppercase tracking-wider mb-6 border-l-4 border-mln-green pl-3 flex justify-between items-center">
-        <span>Pending Registrations ({registrations.length})</span>
+        <span>Pending Registrations ({filteredRegistrations.length})</span>
         <div className="flex items-center gap-4">
           <button onClick={fetchRegistrations} className="text-xs font-bold text-mln-green hover:underline uppercase tracking-widest">Refresh</button>
           {registrations.length > 0 && (
@@ -100,6 +111,16 @@ export default function RegistrationsTab() {
         </div>
       </h2>
 
+      <div className="mb-6">
+        <input 
+          type="text" 
+          placeholder="Search by team name, contact email, player IGN, or Game ID..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-surface border border-border-color rounded-xl px-4 py-3 text-white focus:outline-none focus:border-mln-green transition-colors text-sm"
+        />
+      </div>
+
       {actionMsg && (
         <div className={`rounded-xl p-4 mb-4 font-bold text-sm border ${actionMsg.startsWith('✅') ? 'bg-mln-green/10 text-mln-green border-mln-green/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
           {actionMsg}
@@ -107,12 +128,12 @@ export default function RegistrationsTab() {
         </div>
       )}
 
-      {registrations.length === 0 ? (
+      {filteredRegistrations.length === 0 ? (
         <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">
-          No team registrations found.
+          No team registrations found matching your search.
         </div>
       ) : (
-        registrations.map(reg => (
+        filteredRegistrations.map(reg => (
           <div key={reg.id} className="bg-surface border border-border-color rounded-xl p-6">
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 pb-4 border-b border-border-color">
               <div className="flex items-center gap-4 flex-wrap">
