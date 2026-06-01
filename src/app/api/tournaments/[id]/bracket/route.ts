@@ -42,8 +42,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!adminUser || adminUser.role !== 'ADMIN') {
+    const adminUser = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
+    if (!adminUser) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
@@ -158,8 +158,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!adminUser || adminUser.role !== 'ADMIN') {
+    const adminUser = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
+    if (!adminUser) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 

@@ -8,8 +8,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!adminUser || adminUser.role !== 'ADMIN') return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    const adminUser = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
+    if (!adminUser) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     const { id } = await params;
     const body = await request.json();
@@ -46,8 +46,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!adminUser || adminUser.role !== 'ADMIN') return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    const adminUser = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
+    if (!adminUser) return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     const { id } = await params;
 
