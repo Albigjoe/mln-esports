@@ -599,8 +599,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               
               if (showChallonge) {
                 return (
-                  <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl mt-4 h-[600px] md:h-[800px] w-full">
-                    <iframe src="https://challonge.com/i8rknz8z/module" width="100%" height="100%" frameBorder="0" scrolling="auto" allowTransparency={true}></iframe>
+                  <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl mt-4 min-h-[600px] h-[80vh] w-full">
+                    <iframe src="https://challonge.com/i8rknz8z/module?multiplier=1.0&match_width_multiplier=1.2&show_standings=1" width="100%" height="100%" frameBorder="0" scrolling="auto" allowTransparency={true}></iframe>
                   </div>
                 );
               }
