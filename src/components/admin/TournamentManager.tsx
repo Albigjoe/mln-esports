@@ -60,6 +60,15 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
     setGenerating(false);
   };
 
+  const handleUpdateSeed = async (teamId: string, seed: string) => {
+    await fetch(`/api/tournaments/${t.id}/participants`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teamId, seed })
+    });
+    loadData();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
@@ -77,18 +86,33 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
           </h4>
           <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
             {teams.map(team => {
-              const isEnrolled = participants.find(p => p.teamId === team.id);
+              const enrolled = participants.find(p => p.teamId === team.id);
               return (
                 <div key={team.id} className="flex items-center justify-between p-3 bg-background border border-border-color rounded-lg">
                   <div className="font-bold text-white uppercase text-sm">{team.name}</div>
-                  <button 
-                    onClick={() => toggleTeam(team.id)}
-                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                      isEnrolled ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40' : 'bg-mln-green/20 text-mln-green hover:bg-mln-green/40'
-                    }`}
-                  >
-                    {isEnrolled ? 'Remove' : 'Enroll'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {enrolled && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">Seed</span>
+                        <input 
+                          type="number" 
+                          min="1"
+                          placeholder="-"
+                          value={enrolled.seed || ''}
+                          onChange={(e) => handleUpdateSeed(team.id, e.target.value)}
+                          className="w-12 bg-surface border border-border-color rounded px-1.5 py-1 text-center text-xs font-bold text-white outline-none focus:border-mln-green"
+                        />
+                      </div>
+                    )}
+                    <button 
+                      onClick={() => toggleTeam(team.id)}
+                      className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        enrolled ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40' : 'bg-mln-green/20 text-mln-green hover:bg-mln-green/40'
+                      }`}
+                    >
+                      {enrolled ? 'Remove' : 'Enroll'}
+                    </button>
+                  </div>
                 </div>
               );
             })}

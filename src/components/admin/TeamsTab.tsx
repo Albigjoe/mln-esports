@@ -54,8 +54,8 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
       setLogoError('Invalid format. Only JPG, PNG, or WEBP accepted.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setLogoError('File too large. Maximum 2MB allowed.');
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError('File too large. Maximum 5MB allowed.');
       return;
     }
     const img = new Image();
@@ -180,7 +180,7 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
                 onChange={e => e.target.files?.[0] && handleLogoFile(e.target.files[0])}
               />
             </label>
-            <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Logo<br/>Max 2MB</p>
+            <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Logo<br/>Max 5MB</p>
           </div>
 
           <div className="flex-1">
@@ -189,7 +189,7 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
                 {logoError}
               </div>
             )}
-            <p className="text-[10px] text-gray-500">Click the box to upload a team logo.<br/>JPG, PNG, or WEBP · 1:1 square ratio recommended · Max 2MB.</p>
+            <p className="text-[10px] text-gray-500">Click the box to upload a team logo.<br/>JPG, PNG, or WEBP · 1:1 square ratio recommended · Max 5MB.</p>
           </div>
         </div>
 
@@ -253,9 +253,10 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
       </div>
 
       {/* Table view */}
-      <div className="bg-surface border border-border-color rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-400">
-          <thead className="bg-background text-xs uppercase text-white border-b border-border-color">
+      <div className="bg-surface border border-border-color rounded-xl overflow-hidden flex flex-col">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-400">
+            <thead className="bg-background text-xs uppercase text-white border-b border-border-color sticky top-0">
             <tr>
               <th className="px-4 py-3 w-12">
                 <button onClick={toggleSelectAll} className="text-gray-500 hover:text-white transition-colors">
@@ -365,7 +366,8 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
               })
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

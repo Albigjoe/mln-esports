@@ -119,8 +119,8 @@ export default function ProfileClient({
       alert('Invalid format. Only JPG, PNG, or WEBP accepted.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File too large. Maximum 2MB allowed.');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Maximum 5MB allowed.');
       return;
     }
 
@@ -315,8 +315,8 @@ export default function ProfileClient({
       setTeamLogoError('Invalid format. Only JPG, PNG, or WEBP accepted.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setTeamLogoError('File too large. Maximum 2MB allowed.');
+    if (file.size > 5 * 1024 * 1024) {
+      setTeamLogoError('File too large. Maximum 5MB allowed.');
       return;
     }
     const img = new Image();
@@ -471,8 +471,8 @@ export default function ProfileClient({
       setPicError('Invalid format. Only JPG, PNG, or WEBP accepted.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setPicError('File too large. Maximum 2MB allowed.');
+    if (file.size > 5 * 1024 * 1024) {
+      setPicError('File too large. Maximum 5MB allowed.');
       return;
     }
     const img = new Image();
@@ -642,7 +642,7 @@ export default function ProfileClient({
                       {picError}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-gray-500 leading-snug">Click thumbnail to upload a profile picture. JPG/PNG/WEBP up to 2MB. Square ratio recommended.</p>
+                    <p className="text-[10px] text-gray-500 leading-snug">Click thumbnail to upload a profile picture. JPG/PNG/WEBP up to 5MB. Square ratio recommended.</p>
                   )}
                 </div>
               </div>

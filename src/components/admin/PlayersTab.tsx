@@ -65,8 +65,8 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
       setPicError('Invalid format. Only JPG, PNG, or WEBP accepted.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setPicError('File too large. Maximum 2MB allowed.');
+    if (file.size > 5 * 1024 * 1024) {
+      setPicError('File too large. Maximum 5MB allowed.');
       return;
     }
     const img = new Image();
@@ -178,7 +178,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
                 onChange={e => e.target.files?.[0] && handlePicFile(e.target.files[0])}
               />
             </label>
-            <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Photo<br/>Max 2MB</p>
+            <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Photo<br/>Max 5MB</p>
           </div>
 
           <div className="flex-1">
@@ -187,7 +187,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
                 {picError}
               </div>
             )}
-            <p className="text-[10px] text-gray-500 mt-1">Click the box to upload a player photo.<br/>JPG, PNG, or WEBP · 1:1 ratio recommended · Max 2MB.</p>
+            <p className="text-[10px] text-gray-500 mt-1">Click the box to upload a player photo.<br/>JPG, PNG, or WEBP · 1:1 ratio recommended · Max 5MB.</p>
           </div>
         </div>
 

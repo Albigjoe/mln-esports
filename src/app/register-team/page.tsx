@@ -122,7 +122,7 @@ export default function RegisterTeamPage() {
     }
     
     // Check size (2MB max)
-    const maxSize = 2 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       setLogoError('File too large. Maximum file size allowed is 2MB.');
       setLogoFile(null);
@@ -172,7 +172,7 @@ export default function RegisterTeamPage() {
     }
 
     // Check size (2MB max)
-    const maxSize = 2 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       updatePlayer({
         pictureError: 'File too large. Maximum file size allowed is 2MB.',
@@ -421,7 +421,7 @@ export default function RegisterTeamPage() {
                     </div>
                     <div>
                       <p className="text-white text-sm font-bold">{logoPreview ? 'Change Logo' : 'Upload Squad Logo'}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">JPG, PNG, or WEBP — max 2MB (recommended: 1:1 ratio, 200x200px)</p>
+                      <p className="text-gray-500 text-xs mt-0.5">JPG, PNG, or WEBP — Max 5MB (recommended: 1:1 ratio, 200x200px)</p>
                     </div>
                     <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={e => e.target.files?.[0] && handleLogoFile(e.target.files[0])} />
                   </label>
@@ -597,7 +597,7 @@ export default function RegisterTeamPage() {
                             onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
                           />
                         </label>
-                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">Max 2MB</span>
+                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">Max 5MB</span>
                       </div>
 
                       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

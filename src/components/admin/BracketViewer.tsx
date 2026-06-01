@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import GroupViewer from './GroupViewer';
 
 interface MatchDetails {
   id: string;
@@ -15,6 +16,7 @@ interface MatchDetails {
   round: number;
   matchOrder: number;
   isBye: boolean;
+  stage: string;
 }
 
 export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated }: { matches: any[], isAdmin?: boolean, onMatchUpdated?: () => void }) {
@@ -23,6 +25,18 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
   const [score2, setScore2] = useState(0);
   const [winnerId, setWinnerId] = useState<string>('');
   const [updating, setUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('');
+
+  // Find all distinct stages in matches (e.g. WINNERS, LOSERS, GROUP_1)
+  const stages = Array.from(new Set(matches.map(m => m.stage || 'WINNERS')));
+  const isGroupStage = stages.some(s => s.startsWith('GROUP'));
+
+  React.useEffect(() => {
+    if (stages.length > 0 && !activeTab) {
+      if (isGroupStage) setActiveTab('GROUPS');
+      else setActiveTab('WINNERS');
+    }
+  }, [matches]);
 
   if (!matches || matches.length === 0) {
     return (
@@ -32,9 +46,14 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
     );
   }
 
-  // Group matches by round
+  // Filter matches for current view
+  const activeMatches = isGroupStage && activeTab === 'GROUPS' 
+    ? matches.filter(m => m.stage.startsWith('GROUP'))
+    : matches.filter(m => (m.stage || 'WINNERS') === activeTab);
+
+  // Group active matches by round for Knockout rendering
   const roundsMap = new Map<number, any[]>();
-  matches.forEach(m => {
+  activeMatches.forEach(m => {
     if (!roundsMap.has(m.round)) {
       roundsMap.set(m.round, []);
     }
@@ -81,13 +100,99 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
     setUpdating(false);
   };
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [lines, setLines] = useState<{x1: number, y1: number, x2: number, y2: number, key: string}[]>([]);
+
+  React.useEffect(() => {
+    const updateLines = () => {
+      if (!containerRef.current) return;
+      if (isGroupStage && activeTab === 'GROUPS') {
+        setLines([]);
+        return;
+      }
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newLines: any[] = [];
+      
+      activeMatches.forEach(m => {
+        if (m.nextMatchId) {
+          const el1 = document.getElementById(`match-${m.id}`);
+          const el2 = document.getElementById(`match-${m.nextMatchId}`);
+          if (el1 && el2) {
+            const r1 = el1.getBoundingClientRect();
+            const r2 = el2.getBoundingClientRect();
+            
+            // Ensure calculating relative to scrolled container
+            const x1 = r1.right - containerRect.left + containerRef.current.scrollLeft;
+            const y1 = r1.top + r1.height / 2 - containerRect.top + containerRef.current.scrollTop;
+            
+            const x2 = r2.left - containerRect.left + containerRef.current.scrollLeft;
+            const y2 = r2.top + r2.height / 2 - containerRect.top + containerRef.current.scrollTop;
+            
+            newLines.push({ x1, y1, x2, y2, key: m.id });
+          }
+        }
+      });
+      setLines(newLines);
+    };
+
+    updateLines();
+    window.addEventListener('resize', updateLines);
+    const timeout = setTimeout(updateLines, 50);
+    return () => {
+      window.removeEventListener('resize', updateLines);
+      clearTimeout(timeout);
+    };
+  }, [activeMatches, roundsMap, activeTab]);
+
   return (
     <>
-      <div className="flex gap-12 overflow-x-auto py-8 px-4 bracket-container min-w-full">
+      {/* TABS */}
+      {stages.length > 1 || isGroupStage ? (
+        <div className="flex gap-4 mb-6 border-b border-border-color pb-2">
+          {isGroupStage && (
+            <button 
+              onClick={() => setActiveTab('GROUPS')}
+              className={`text-sm font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors ${activeTab === 'GROUPS' ? 'bg-mln-green text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              Group Stage
+            </button>
+          )}
+          {stages.filter(s => !s.startsWith('GROUP')).map(stage => (
+            <button 
+              key={stage}
+              onClick={() => setActiveTab(stage)}
+              className={`text-sm font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors ${activeTab === stage ? 'bg-mln-green text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              {stage.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isGroupStage && activeTab === 'GROUPS' ? (
+        <GroupViewer matches={activeMatches} onMatchClick={handleMatchClick} />
+      ) : (
+        <div ref={containerRef} className="flex gap-12 overflow-auto py-8 px-4 bracket-container min-w-full relative">
+          <svg className="absolute top-0 left-0 pointer-events-none w-full h-full min-w-max min-h-max" style={{ zIndex: 0, overflow: 'visible' }}>
+            {lines.map(l => {
+              const midX = (l.x1 + l.x2) / 2;
+              return (
+                <path 
+                  key={l.key}
+                  d={`M ${l.x1} ${l.y1} L ${midX} ${l.y1} L ${midX} ${l.y2} L ${l.x2} ${l.y2}`}
+                  fill="none"
+                  stroke="#2a2e33"
+                  strokeWidth="2"
+                />
+              );
+            })}
+          </svg>
+
         {rounds.map(roundNumber => {
           const roundMatches = roundsMap.get(roundNumber)!.sort((a, b) => a.matchOrder - b.matchOrder);
           return (
-            <div key={`round-${roundNumber}`} className="flex flex-col justify-around gap-6 relative min-w-[250px]">
+            <div key={`round-${roundNumber}`} className="flex flex-col justify-around gap-6 relative min-w-[250px] z-10">
               {/* Round Header */}
               <div className="absolute -top-8 left-0 right-0 text-center text-xs font-black text-mln-green uppercase tracking-widest">
                 {roundNumber === rounds.length ? 'Final' : `Round ${roundNumber}`}
@@ -97,16 +202,12 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
                 const clickable = isAdmin && !m.isBye && (m.team1Id || m.team2Id);
                 return (
                   <div 
+                    id={`match-${m.id}`}
                     key={m.id} 
                     onClick={() => handleMatchClick(m)}
                     className={`bg-background border ${clickable ? 'border-mln-green hover:border-mln-green hover:shadow-mln-green/20 cursor-pointer' : 'border-border-color'} rounded-lg overflow-hidden flex flex-col relative w-full shadow-lg shadow-black/20 transition-all`}
                   >
                     
-                    {/* Connectors (CSS pseudo-elements would be better, but we do basic borders for now) */}
-                    {roundNumber < rounds.length && (
-                      <div className="absolute -right-6 top-1/2 w-6 border-t border-border-color border-2" />
-                    )}
-
                     {/* Top Team */}
                     <div className={`flex items-center justify-between p-2 border-b border-border-color ${m.winnerId === m.team1Id ? 'bg-mln-green/10' : ''}`}>
                       <div className="flex items-center gap-2">
@@ -144,6 +245,7 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
           );
         })}
       </div>
+      )}
 
       {/* MATCH EDIT MODAL */}
       {selectedMatch && (

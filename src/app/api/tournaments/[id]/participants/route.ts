@@ -54,3 +54,28 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { teamId, seed } = body;
+
+    if (!teamId) return NextResponse.json({ error: 'Team ID required' }, { status: 400 });
+
+    const participant = await prisma.tournamentParticipant.updateMany({
+      where: {
+        tournamentId: id,
+        teamId,
+      },
+      data: {
+        seed: seed ? parseInt(seed) : null,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
