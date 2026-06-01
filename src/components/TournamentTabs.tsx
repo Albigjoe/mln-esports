@@ -594,19 +594,27 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Tournament Brackets & Fixtures</h3>
             </div>
 
-            <div className="bg-surface border border-border-color rounded-2xl overflow-x-auto shadow-2xl p-6 min-h-[400px]">
-              {bracketMatches.length === 0 ? (
-                <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
-              ) : (
-                <BracketViewer matches={bracketMatches} isAdmin={false} />
-              )}
-            </div>
+            {(() => {
+              const showChallonge = tournament?.id === 'cmpbswve2000170oqkuet2sva' || tournament?.name?.toLowerCase().includes('afl');
+              
+              if (showChallonge) {
+                return (
+                  <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl mt-4 h-[600px] md:h-[800px] w-full">
+                    <iframe src="https://challonge.com/i8rknz8z/module" width="100%" height="100%" frameBorder="0" scrolling="auto" allowTransparency={true}></iframe>
+                  </div>
+                );
+              }
 
-            {(tournament?.id === 'cmpbswve2000170oqkuet2sva' || tournament?.name?.toLowerCase().includes('afl')) && (
-              <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl mt-8 h-[600px] md:h-[800px] w-full">
-                <iframe src="https://challonge.com/i8rknz8z/module" width="100%" height="100%" frameBorder="0" scrolling="auto" allowTransparency={true}></iframe>
-              </div>
-            )}
+              return (
+                <div className="bg-surface border border-border-color rounded-2xl overflow-x-auto shadow-2xl p-6 min-h-[400px]">
+                  {bracketMatches.length === 0 ? (
+                    <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
+                  ) : (
+                    <BracketViewer matches={bracketMatches} isAdmin={false} />
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
