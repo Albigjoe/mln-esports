@@ -123,11 +123,13 @@ export default function BracketViewer({ matches, isAdmin = false, onMatchUpdated
             const r2 = el2.getBoundingClientRect();
             
             // Ensure calculating relative to scrolled container
-            const x1 = r1.right - containerRect.left + containerRef.current.scrollLeft;
-            const y1 = r1.top + r1.height / 2 - containerRect.top + containerRef.current.scrollTop;
+            const scrollLeft = containerRef.current?.scrollLeft || 0;
+            const scrollTop = containerRef.current?.scrollTop || 0;
+            const x1 = r1.right - containerRect.left + scrollLeft;
+            const y1 = r1.top + r1.height / 2 - containerRect.top + scrollTop;
             
-            const x2 = r2.left - containerRect.left + containerRef.current.scrollLeft;
-            const y2 = r2.top + r2.height / 2 - containerRect.top + containerRef.current.scrollTop;
+            const x2 = r2.left - containerRect.left + scrollLeft;
+            const y2 = r2.top + r2.height / 2 - containerRect.top + scrollTop;
             
             newLines.push({ x1, y1, x2, y2, key: m.id });
           }
