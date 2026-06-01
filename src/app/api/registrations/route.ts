@@ -9,7 +9,8 @@ export async function GET(req: Request) {
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const registrations = await prisma.teamRegistration.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: { tournament: true }
     });
 
     return NextResponse.json({ data: registrations });

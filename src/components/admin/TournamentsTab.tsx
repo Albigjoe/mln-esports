@@ -27,10 +27,16 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
   const [registrationStatus, setRegistrationStatus] = useState('OPEN');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [bannerUrl, setBannerUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState('');
   const [bannerError, setBannerError] = useState('');
+  
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [logoError, setLogoError] = useState('');
+  
   const [uploading, setUploading] = useState(false);
 
   const resetForm = () => {
@@ -43,6 +49,10 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
     setBannerFile(null);
     setBannerPreview('');
     setBannerError('');
+    setLogoUrl('');
+    setLogoFile(null);
+    setLogoPreview('');
+    setLogoError('');
     setMsg('');
   };
 
@@ -65,21 +75,43 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
     };
   };
 
+  const handleLogoFile = (file: File) => {
+    setLogoError('');
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setLogoError('Invalid format. Only JPG, PNG, or WEBP accepted.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('File too large. Maximum 2MB allowed.');
+      return;
+    }
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      setLogoFile(file);
+      setLogoPreview(img.src);
+    };
+  };
+
   const handleCreate = async () => {
     if (!name || !startDate) { setMsg('Name and start date required'); return; }
     setSaving(true); setMsg('');
     try {
       let finalBannerUrl = bannerUrl;
-      if (bannerFile) {
+      let finalLogoUrl = logoUrl;
+      
+      if (bannerFile || logoFile) {
         setUploading(true);
-        finalBannerUrl = await uploadFile(bannerFile, 'tournaments');
+        if (bannerFile) finalBannerUrl = await uploadFile(bannerFile, 'tournaments');
+        if (logoFile) finalLogoUrl = await uploadFile(logoFile, 'tournaments');
         setUploading(false);
       }
 
       const res = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, status, startDate: new Date(startDate).toISOString(), bannerUrl: finalBannerUrl, format, registrationStatus }),
+        body: JSON.stringify({ name, status, startDate: new Date(startDate).toISOString(), bannerUrl: finalBannerUrl, logoUrl: finalLogoUrl, format, registrationStatus }),
       });
       const data = await res.json();
       if (data.success) {
@@ -121,43 +153,85 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
         <div className="bg-surface border border-mln-green/30 rounded-xl p-6 mb-6 shadow-[0_0_20px_rgba(0,200,83,0.1)]">
           <div className="text-xs text-mln-green font-bold uppercase tracking-[3px] mb-4">Create Tournament</div>
 
-          {/* Tournament Banner Upload */}
-          <div className="flex items-start gap-5 mb-5">
-            <div className="flex-shrink-0">
-              <label className="cursor-pointer group block">
-                <div className="w-36 h-20 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-background overflow-hidden flex items-center justify-center transition-colors relative">
-                  {bannerPreview ? (
-                    <img src={bannerPreview} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Upload size={22} className="text-gray-600 group-hover:text-mln-green transition-colors" />
-                  )}
-                  {bannerPreview && (
-                    <button
-                      type="button"
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); setBannerFile(null); setBannerPreview(''); setBannerUrl(''); }}
-                      className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  className="hidden"
-                  onChange={e => e.target.files?.[0] && handleBannerFile(e.target.files[0])}
-                />
-              </label>
-              <p className="text-[9px] text-gray-500 font-bold uppercase text-center mt-1">Banner (Max 2MB)</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            {/* Tournament Banner Upload */}
+            <div className="flex items-start gap-4 bg-background border border-border-color p-4 rounded-xl">
+              <div className="flex-shrink-0">
+                <label className="cursor-pointer group block">
+                  <div className="w-24 h-14 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors relative">
+                    {bannerPreview ? (
+                      <img src={bannerPreview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Upload size={18} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                    )}
+                    {bannerPreview && (
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setBannerFile(null); setBannerPreview(''); setBannerUrl(''); }}
+                        className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => e.target.files?.[0] && handleBannerFile(e.target.files[0])}
+                  />
+                </label>
+              </div>
+
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 text-mln-green">Banner</p>
+                {bannerError && (
+                  <div className="text-[9px] font-bold px-2 py-1 rounded-lg mb-1 bg-red-400/10 text-red-400 border border-red-400/20">
+                    {bannerError}
+                  </div>
+                )}
+                <p className="text-[9px] text-gray-500 leading-tight">16:9 widescreen recommended.<br/>Max 2MB.</p>
+              </div>
             </div>
 
-            <div className="flex-1">
-              {bannerError && (
-                <div className="text-[10px] font-bold px-3 py-2 rounded-lg mb-3 bg-red-400/10 text-red-400 border border-red-400/20">
-                  {bannerError}
-                </div>
-              )}
-              <p className="text-[10px] text-gray-500">Click the box to upload a tournament banner.<br/>JPG, PNG, or WEBP · 16:9 widescreen recommended · Max 2MB.</p>
+            {/* Tournament Logo Upload */}
+            <div className="flex items-start gap-4 bg-background border border-border-color p-4 rounded-xl">
+              <div className="flex-shrink-0">
+                <label className="cursor-pointer group block">
+                  <div className="w-14 h-14 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors relative">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="" className="w-full h-full object-contain" />
+                    ) : (
+                      <Upload size={18} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                    )}
+                    {logoPreview && (
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setLogoFile(null); setLogoPreview(''); setLogoUrl(''); }}
+                        className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => e.target.files?.[0] && handleLogoFile(e.target.files[0])}
+                  />
+                </label>
+              </div>
+
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 text-mln-green">Logo</p>
+                {logoError && (
+                  <div className="text-[9px] font-bold px-2 py-1 rounded-lg mb-1 bg-red-400/10 text-red-400 border border-red-400/20">
+                    {logoError}
+                  </div>
+                )}
+                <p className="text-[9px] text-gray-500 leading-tight">1:1 square recommended.<br/>Max 2MB.</p>
+              </div>
             </div>
           </div>
 

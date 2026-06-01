@@ -23,6 +23,7 @@ model Tournament {
   bracketMatches     BracketMatch[]
   games              Game[]
   participants       TournamentParticipant[]
+  teamRegistrations  TeamRegistration[]
 }
 
 model Team {
@@ -232,6 +233,8 @@ model TeamRegistration {
   status         String   @default("PENDING")
   createdAt      DateTime @default(now())
   lineupImageUrl String?
+  tournamentId   String?
+  tournament     Tournament? @relation(fields: [tournamentId], references: [id])
 }
 
 model PasswordResetToken {

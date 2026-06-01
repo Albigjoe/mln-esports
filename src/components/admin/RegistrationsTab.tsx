@@ -152,7 +152,12 @@ export default function RegistrationsTab() {
                 )}
                 <div>
                   <h3 className="text-2xl font-black text-white uppercase">{reg.teamName}</h3>
-                  <div className="text-sm text-gray-400 mt-1">Contact: {reg.contactEmail}</div>
+                  {reg.tournament && (
+                    <div className="text-xs font-bold bg-mln-green/10 text-mln-green border border-mln-green/30 px-2 py-1 rounded inline-block mt-2 uppercase tracking-widest">
+                      Target: {reg.tournament.name}
+                    </div>
+                  )}
+                  <div className="text-sm text-gray-400 mt-2">Contact: {reg.contactEmail}</div>
                   <div className="text-xs font-bold mt-1">
                     Status: <span className={reg.status === 'PENDING' ? 'text-yellow-400' : reg.status === 'APPROVED' ? 'text-mln-green' : 'text-red-400'}>{reg.status}</span>
                   </div>

@@ -37,7 +37,7 @@ export default function RegisterTeamPage() {
 
   // Tournament state
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [selectedTournaments, setSelectedTournaments] = useState<string[]>([]);
+  const [selectedTournament, setSelectedTournamentId] = useState<string>('');
 
   // Contact & meta
   const [contactEmail, setContactEmail] = useState('');
@@ -208,14 +208,14 @@ export default function RegisterTeamPage() {
   };
 
   const toggleTournament = (id: string) => {
-    setSelectedTournaments(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+    setSelectedTournamentId(prev => prev === id ? '' : id);
   };
 
   const submitRegistration = async () => {
     const teamName = isNewTeam ? teamQuery.trim() : selectedTeam?.name || teamQuery.trim();
     if (!teamName) return setMsg('Please enter or select a squad name.');
     if (!contactEmail) return setMsg('Contact email is required.');
-    if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament you are registering for.');
+    if (!selectedTournament) return setMsg('Please select a tournament you are registering for.');
     for (let i = 0; i < players.length; i++) {
       if (!players[i].username) return setMsg(`Player ${i + 1} is missing an In-Game Username.`);
       if (!players[i].gameId) return setMsg(`Player ${i + 1} is missing a Game ID. This is required to link their stats.`);
@@ -253,7 +253,7 @@ export default function RegisterTeamPage() {
           lineupImageUrl,
           contactEmail,
           players: processedPlayers,
-          tournamentIds: selectedTournaments,
+          tournamentId: selectedTournament === 'NONE' ? null : selectedTournament,
           isExistingTeam: !isNewTeam && !!selectedTeam,
           existingTeamId: selectedTeam?.id || null,
         })
@@ -493,7 +493,7 @@ export default function RegisterTeamPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {tournaments.map(t => {
-                    const selected = selectedTournaments.includes(t.id);
+                    const selected = selectedTournament === t.id;
                     const date = new Date(t.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' });
                     return (
                       <button
@@ -503,8 +503,8 @@ export default function RegisterTeamPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? 'bg-mln-green border-mln-green' : 'border-gray-600'}`}>
-                              {selected && <Check size={12} className="text-black" />}
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? 'bg-mln-green border-mln-green' : 'border-gray-600'}`}>
+                              {selected && <div className="w-2 h-2 rounded-full bg-black" />}
                             </div>
                             <div>
                               <p className="text-white font-black text-sm">{t.name}</p>
@@ -524,19 +524,13 @@ export default function RegisterTeamPage() {
               {/* No Tournament Option */}
               <div className="mt-4">
                 <button
-                  onClick={() => {
-                    if (selectedTournaments.includes('NONE')) {
-                      setSelectedTournaments(selectedTournaments.filter(id => id !== 'NONE'));
-                    } else {
-                      setSelectedTournaments(['NONE']);
-                    }
-                  }}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedTournaments.includes('NONE') ? 'border-mln-green bg-mln-green/10 shadow-[0_0_20px_rgba(0,200,83,0.1)]' : 'border-border-color bg-background hover:border-gray-600'}`}
+                  onClick={() => toggleTournament('NONE')}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedTournament === 'NONE' ? 'border-mln-green bg-mln-green/10 shadow-[0_0_20px_rgba(0,200,83,0.1)]' : 'border-border-color bg-background hover:border-gray-600'}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedTournaments.includes('NONE') ? 'bg-mln-green border-mln-green' : 'border-gray-600'}`}>
-                        {selectedTournaments.includes('NONE') && <Check size={12} className="text-black" />}
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedTournament === 'NONE' ? 'bg-mln-green border-mln-green' : 'border-gray-600'}`}>
+                        {selectedTournament === 'NONE' && <div className="w-2 h-2 rounded-full bg-black" />}
                       </div>
                       <div>
                         <p className="text-white font-black text-sm">Squad Registration Only</p>
@@ -550,9 +544,9 @@ export default function RegisterTeamPage() {
                 </button>
               </div>
 
-              {selectedTournaments.length > 0 && !selectedTournaments.includes('NONE') && (
+              {selectedTournament && selectedTournament !== 'NONE' && (
                 <div className="flex items-center gap-2 text-xs text-mln-green font-bold mt-4">
-                  <Check size={12} /> {selectedTournaments.length} tournament{selectedTournaments.length > 1 ? 's' : ''} selected
+                  <Check size={12} /> Tournament selected
                 </div>
               )}
 
@@ -560,7 +554,7 @@ export default function RegisterTeamPage() {
 
               <button
                 onClick={() => {
-                  if (selectedTournaments.length === 0) return setMsg('Please select at least one tournament or "Squad Registration Only".');
+                  if (!selectedTournament) return setMsg('Please select a tournament or "Squad Registration Only".');
                   setMsg('');
                   setStep(3);
                 }}

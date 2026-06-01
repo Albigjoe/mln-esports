@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import BracketViewer from './BracketViewer';
 
 export default function TournamentManager({ t, teams, onBack }: { t: any, teams: any[], onBack: () => void }) {
   const router = useRouter();
   const [participants, setParticipants] = useState<any[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   // Fetch participants for this tournament
   const loadData = async () => {
@@ -15,6 +18,13 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
       const data = await res.json();
       setParticipants(data.participants || []);
     }
+
+    const bRes = await fetch(`/api/tournaments/${t.id}/bracket`);
+    if (bRes.ok) {
+      const bData = await bRes.json();
+      setMatches(bData.matches || []);
+    }
+    
     setLoading(false);
   };
 
@@ -36,8 +46,22 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
     loadData();
   };
 
+  const handleGenerateBracket = async () => {
+    if (!confirm('Are you sure? This will delete the current bracket and regenerate it based on currently enrolled teams.')) return;
+    setGenerating(true);
+    const res = await fetch(`/api/tournaments/${t.id}/bracket`, { method: 'POST' });
+    if (res.ok) {
+      alert('Bracket generated successfully!');
+      loadData();
+    } else {
+      const data = await res.json();
+      alert(`Error: ${data.error}`);
+    }
+    setGenerating(false);
+  };
+
   return (
-    <div>
+    <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
         <button onClick={onBack} className="text-gray-400 hover:text-white">&larr; Back</button>
         <h3 className="text-xl font-bold text-white uppercase tracking-wider">
@@ -83,10 +107,22 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
               This will overwrite any existing pending brackets for this tournament.
             </p>
           </div>
-          <button className="w-full bg-mln-green hover:bg-mln-green-dark text-black font-black uppercase tracking-widest py-3 rounded-lg transition-colors">
-            Generate Bracket
+          <button 
+            onClick={handleGenerateBracket}
+            disabled={generating || participants.length < 2}
+            className={`w-full font-black uppercase tracking-widest py-3 rounded-lg transition-colors ${generating || participants.length < 2 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-mln-green hover:bg-mln-green-dark text-black'}`}
+          >
+            {generating ? 'Generating...' : 'Generate Bracket'}
           </button>
         </div>
+      </div>
+
+      {/* BRACKET VIEWER */}
+      <div className="bg-surface border border-border-color rounded-xl p-6 overflow-x-auto">
+        <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
+          Current Bracket
+        </h4>
+        <BracketViewer matches={matches} />
       </div>
     </div>
   );
