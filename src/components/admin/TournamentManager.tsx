@@ -122,7 +122,7 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
         <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
           Current Bracket
         </h4>
-        <BracketViewer matches={matches} />
+        <BracketViewer matches={matches} isAdmin={true} onMatchUpdated={loadData} />
       </div>
     </div>
   );

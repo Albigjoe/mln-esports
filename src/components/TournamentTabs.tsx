@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { getHeroImage, getPlayerImage } from '@/lib/utils';
 import Link from 'next/link';
+import BracketViewer from '@/components/admin/BracketViewer';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 
@@ -242,7 +243,7 @@ function isCompleted(s: any) {
   return false;
 }
 
-export default function TournamentTabs({ tournament, games, teams, players = [] }: any) {
+export default function TournamentTabs({ tournament, games, teams, players = [], bracketMatches = [] }: any) {
   const [activeTab, setActiveTab] = useState('overview');
   const [roleFilter, setRoleFilter] = useState('all');
   const [sortField, setSortField] = useState('avgScore');
@@ -689,22 +690,14 @@ export default function TournamentTabs({ tournament, games, teams, players = [] 
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Tournament Brackets & Fixtures</h3>
-              <a href="https://challonge.com/i8rknz8z" target="_blank" rel="noopener noreferrer" className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors inline-block text-center">
-                Open Challonge Directly
-              </a>
             </div>
 
-            <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-2xl p-2 min-h-[600px] flex flex-col relative">
-              {/* Premium Challonge Iframe Embedding */}
-              <iframe
-                src="https://challonge.com/i8rknz8z/module?theme=1&multiplier=1&match_width_multiplier=1&show_final_results=1&show_standings=1"
-                width="100%"
-                height="650"
-                frameBorder="0"
-                scrolling="auto"
-                className="w-full rounded-xl bg-background"
-                style={{ border: 'none' }}
-              />
+            <div className="bg-surface border border-border-color rounded-2xl overflow-x-auto shadow-2xl p-6 min-h-[400px]">
+              {bracketMatches.length === 0 ? (
+                <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
+              ) : (
+                <BracketViewer matches={bracketMatches} isAdmin={false} />
+              )}
             </div>
           </div>
         )}

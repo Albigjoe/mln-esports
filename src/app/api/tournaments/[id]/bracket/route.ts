@@ -13,9 +13,9 @@ function shuffleArray(array: any[]) {
   return newArr;
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const matches = await prisma.bracketMatch.findMany({
       where: { tournamentId: id },
       include: {
@@ -34,14 +34,18 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // 1. Fetch participants
     const participants = await prisma.tournamentParticipant.findMany({
@@ -183,6 +187,53 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ success: true, message: 'Bracket generated successfully' });
   } catch (error: any) {
     console.error('Bracket Generation Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    const adminUser = await prisma.user.findUnique({ where: { email: session.user.email } });
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+    const { matchId, score1, score2, winnerId, status } = body;
+
+    if (!matchId) return NextResponse.json({ error: 'Match ID required' }, { status: 400 });
+
+    const match = await prisma.bracketMatch.findUnique({ where: { id: matchId } });
+    if (!match) return NextResponse.json({ error: 'Match not found' }, { status: 404 });
+
+    // Update match
+    const updatedMatch = await prisma.bracketMatch.update({
+      where: { id: matchId },
+      data: { score1, score2, winnerId, status }
+    });
+
+    // Advance winner if completed and nextMatchId exists
+    if (status === 'COMPLETED' && winnerId && match.nextMatchId) {
+      const nextMatch = await prisma.bracketMatch.findUnique({ where: { id: match.nextMatchId } });
+      if (nextMatch) {
+        // Determine slot based on matchOrder parity (odd feeds team1, even feeds team2)
+        const isTeam1 = match.matchOrder % 2 !== 0;
+        await prisma.bracketMatch.update({
+          where: { id: nextMatch.id },
+          data: {
+            ...(isTeam1 ? { team1Id: winnerId } : { team2Id: winnerId })
+          }
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, match: updatedMatch });
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -23,6 +23,18 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
   const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } });
   const players = await prisma.player.findMany();
 
+  const bracketMatches = await prisma.bracketMatch.findMany({
+    where: { tournamentId: id },
+    include: {
+      team1: { select: { id: true, name: true, logoUrl: true } },
+      team2: { select: { id: true, name: true, logoUrl: true } }
+    },
+    orderBy: [
+      { round: 'asc' },
+      { matchOrder: 'asc' }
+    ]
+  });
+
   return (
     <div className="w-full">
       {/* Dynamic Custom Banner */}
@@ -76,7 +88,7 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} players={players} />
+        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} players={players} bracketMatches={bracketMatches} />
       </div>
     </div>
   );
