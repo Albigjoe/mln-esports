@@ -6,105 +6,7 @@ import BracketViewer from '@/components/admin/BracketViewer';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 
-const ARCHETYPES: Record<string, string[]> = {
-  roamer_damage: ['Chou', 'Jawhead', 'Natalia', 'Saber', 'Benedetta', 'Ruby', 'Silvanna', 'Joy', 'Phoveus', 'Martis', 'Ling', 'Guinevere', 'Akai', 'Karina', 'Zilong', 'Alpha'],
-  roamer_support: ['Atlas', 'Franco', 'Khufra', 'Tigreal', 'Lolita', 'Johnson', 'Hylos', 'Grock', 'Belerick', 'Minotaur', 'Baxia', 'Chip', 'Carmilla', 'Angela', 'Mathilda', 'Floryn', 'Rafaela', 'Diggie', 'Faramis', 'Kaja', 'Kalea', 'Edith', 'Alice', 'Hilda', 'Uranus', 'Fredrinn'],
-  jungle_carry: ['Lancelot', 'Fanny', 'Hayabusa', 'Gusion', 'Ling', 'Harith', 'Roger', 'Karrie', 'Wanwan', 'Karina', 'Aamon', 'Nolan', 'Joy', 'Benedetta', 'Hanzo', 'Saber', 'Yi Sun-shin', 'Zilong', 'Alucard', 'Aldous', 'Julian', 'Paquito', 'Chou', 'Khaleed', 'Natalia', 'Helcurt', 'Selena', 'Granger', 'Brody', 'Beatrix', 'Lesley', 'Claude', 'Clint', 'Irithel', 'Ixia', 'Moskov', 'Popol and Kupa'],
-  jungle_tank: ['Barats', 'Fredrinn', 'Hilda', 'Freya', 'Gatotkaca', 'Bane', 'Thamuz', 'Badang', 'Masha', 'Ruby', 'Terizla', 'Dyrroth'],
-  mid_damage: ['Pharsa', 'Xavier', 'Yve', 'Vale', 'Valir', 'Odette', 'Lylia', 'Lunox', 'Eudora', 'Aurora', 'Cyclops', 'Gord', 'Novaria', "Chang'e", 'Kimmy', 'Vexana', 'Harith', 'Natan', 'Melissa'],
-  mid_utility: ['Zhuxin', 'Zetian', 'Kagura', 'Luo Yi', 'Diggie', 'Faramis', 'Cecilion', 'Valentina', 'Nana', 'Alice', 'Marcel'],
-  mid_burst: ['Harley', 'Kadita', 'Selena', 'Julian', 'Aamon', 'Guinevere', 'Joy', 'Lylia'],
-  exp_damage: ['Terizla', 'Thamuz', 'X.Borg', 'Dyrroth', 'Yu Zhong', 'Paquito', 'Guinevere', 'Khaleed', 'Martis', 'Aulus', 'Aldous', 'Cici', 'Arlott', 'Lukas', 'Lapu-Lapu', 'Alpha', 'Sun', 'Yin', 'Badang', 'Leomord'],
-  exp_tank: ['Uranus', 'Esmeralda', 'Fredrinn', 'Belerick', 'Hilda', 'Barats', 'Ruby', 'Silvanna', 'Masha', 'Freya', 'Roger', 'Bane', 'Gatotkaca', 'Grock']
-};
-
-function getArch(hero: string, role: string) {
-  if (!hero || !role) return 'default';
-  const h = hero.toLowerCase();
-  const chk = (arr: string[]) => arr.some(x => x.toLowerCase() === h);
-  if (role === 'Roamer') return chk(ARCHETYPES.roamer_damage) ? 'roamer_damage' : 'roamer_support';
-  if (role === 'Jungle') return chk(ARCHETYPES.jungle_carry) ? 'jungle_carry' : 'jungle_tank';
-  if (role === 'Gold Lane') return 'gold';
-  if (role === 'Exp Lane') return chk(ARCHETYPES.exp_damage) ? 'exp_damage' : 'exp_tank';
-  if (role === 'Mid Lane') {
-    if (chk(ARCHETYPES.mid_damage)) return 'mid_damage';
-    if (chk(ARCHETYPES.mid_utility)) return 'mid_utility';
-    return 'mid_burst';
-  }
-  return 'default';
-}
-
-function archLabel(arch: string) {
-  const m: Record<string, string> = {
-    'roamer_support': 'Tank/Support Roamer',
-    'roamer_damage': 'Damage Roamer',
-    'jungle_carry': 'Carry Jungler',
-    'jungle_tank': 'Tank Jungler',
-    'gold': 'Gold Laner',
-    'exp_damage': 'Damage Fighter',
-    'exp_tank': 'Tank Fighter',
-    'mid_damage': 'Damage Mage',
-    'mid_utility': 'Utility Mage',
-    'mid_burst': 'Burst Mage',
-    'default': 'Player'
-  };
-  return m[arch] || arch;
-}
-
-function calcScore(pk: any, teamKills: number, won: boolean) {
-  const k = pk.kills || 0, d = pk.deaths || 0, a = pk.assists || 0;
-  const gold = pk.gold || 0, dmg = pk.damage || 0;
-  const kp = teamKills > 0 ? Math.round((k + a) / teamKills * 100) : 0;
-  const arch = getArch(pk.hero, pk.role);
-  const kda = +(d > 0 ? (k + a) / d : k + a).toFixed(2);
-  let score = 0, headline = 'KDA', headVal: any = kda;
-
-  switch (arch) {
-    case 'roamer_support':
-      score = (a * 3) + (k * 0.5) - (d * 2);
-      headline = 'KP%'; headVal = kp + '%'; break;
-    case 'roamer_damage':
-      score = (k * 2) + (a * 1.5) - (d * 2) + (dmg / 5000);
-      headline = 'KP%'; headVal = kp + '%'; break;
-    case 'jungle_carry':
-      score = (k * 2.5) + (a * 0.8) - (d * 1.5) + (gold / 1500) + (dmg / 4000);
-      headline = 'Kills'; headVal = k; break;
-    case 'jungle_tank':
-      score = (k * 1) + (a * 2) - (d * 1.5) + (dmg / 7000);
-      headline = 'KP%'; headVal = kp + '%'; break;
-    case 'gold':
-      score = (k * 1.5) + (a * 0.5) - (d * 1) + (gold / 1000) + (dmg / 5000);
-      headline = 'DMG'; headVal = dmg > 0 ? (dmg / 1000).toFixed(0) + 'K' : '-'; break;
-    case 'exp_damage':
-      score = (k * 1.5) + (a * 1) - (d * 0.6) + (dmg / 4500);
-      headline = 'KDA'; headVal = kda; break;
-    case 'exp_tank':
-      score = (k * 1) + (a * 1.5) - (d * 0.5) + (dmg / 8000);
-      headline = 'KP%'; headVal = kp + '%'; break;
-    case 'mid_damage':
-      score = (k * 1.5) + (a * 1) - (d * 1.2) + (dmg / 3500);
-      headline = 'DMG'; headVal = dmg > 0 ? (dmg / 1000).toFixed(0) + 'K' : '-'; break;
-    case 'mid_utility':
-      score = (k * 1) + (a * 2) - (d * 1.2) + (dmg / 7000);
-      headline = 'KP%'; headVal = kp + '%'; break;
-    case 'mid_burst':
-      score = (k * 2) + (a * 1.2) - (d * 1.5) + (dmg / 5000);
-      headline = 'KDA'; headVal = kda; break;
-    default:
-      score = kda; headline = 'KDA'; headVal = kda;
-  }
-  
-  // Win Bonus
-  if (won) {
-    score += 5; // Flat +5 points for winning the game
-  } else {
-    score *= 0.5; // Halve the score if they lost the game
-  }
-
-  return { score: Math.round(score * 10) / 10, kp, arch, headline, headVal, kda };
-}
-
-function scoreClr(v: number) { return v >= 15 ? 'text-mln-green' : v >= 8 ? 'text-white' : 'text-red-400'; }
+function scoreClr(v: number) { return v >= 8.5 ? 'text-mln-green' : v >= 6.0 ? 'text-white' : 'text-red-400'; }
 function kpClr(v: number) { return v >= 70 ? 'text-mln-green' : v >= 50 ? 'text-white' : 'text-gray-500'; }
 function kdaClr(v: number) { return v >= 5 ? 'text-mln-green' : v >= 3 ? 'text-white' : 'text-red-400'; }
 function wrClr(v: number) { return v >= 60 ? 'text-mln-green' : v <= 40 ? 'text-red-400' : 'text-white'; }
@@ -148,10 +50,10 @@ function playerStats(games: any[]) {
         if (!p[key].role) p[key].role = pk.role;
       }
       
-      const won = pk.team === g.winner;
-      const cs = calcScore(pk, teamKills, won);
-      p[key].score += cs.score;
-      p[key].kpTotal += cs.kp;
+      const k = pk.kills || 0, d = pk.deaths || 0, a = pk.assists || 0;
+      const kp = teamKills > 0 ? Math.round((k + a) / teamKills * 100) : 0;
+      p[key].score += pk.mvpScore || 0;
+      p[key].kpTotal += kp;
     });
   });
   
@@ -169,7 +71,7 @@ function playerStats(games: any[]) {
       avgScore: +(s.score / gamesCount).toFixed(1),
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
-      arch: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
+      role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
     };
   });
 }
@@ -372,7 +274,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                         <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.avgScore}</div>
                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Avg Score</div>
                         <div className="text-[10px] text-gray-400 mt-2">{mvp.avgKP}% KP · {mvp.g} GP</div>
-                        <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{archLabel(mvp.arch)}</span>
+                        <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{mvp.role}</span>
                       </div>
                     )}
                   </div>
@@ -459,7 +361,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                         <th className="px-3 md:px-6 py-4 text-center font-bold">Rank</th>
                         <th className="px-3 md:px-6 py-4 cursor-pointer hover:text-mln-green" onClick={() => toggleSort('player')}>Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-4 py-4 hidden sm:table-cell">Team</th>
-                        <th className="px-4 py-4 hidden md:table-cell">Archetype</th>
+                        <th className="px-4 py-4 hidden md:table-cell">Role</th>
                         <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('g')}>GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgScore')}>Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('avgKP')}>KP% {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}</th>
@@ -509,7 +411,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                               })()}
                             </td>
                             <td className="px-4 py-4 hidden md:table-cell">
-                              <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{archLabel(p.arch)}</span>
+                              <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{p.role}</span>
                             </td>
                             <td className="px-2 md:px-6 py-4 text-center font-mono text-xs md:text-sm">{p.g}</td>
                             <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
