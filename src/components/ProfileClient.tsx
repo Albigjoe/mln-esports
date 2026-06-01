@@ -1097,13 +1097,13 @@ export default function ProfileClient({
                     <button
                       onClick={handleSaveTeam}
                       disabled={savingTeam}
-                      className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-colors disabled:opacity-50"
+                      className="bg-mln-green hover:bg-mln-green-dark text-black px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-colors disabled:opacity-50 cursor-pointer relative z-10"
                     >
                       {savingTeam ? 'Saving...' : 'Save Changes'}
                     </button>
                     <button
                       onClick={() => { setEditingTeam(false); setTeamLogoError(''); setTeamLogoPreview(team?.logoUrl || ''); }}
-                      className="bg-background border border-border-color text-white px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-colors"
+                      className="bg-background border border-border-color text-white px-6 py-2 rounded-xl font-bold uppercase text-xs tracking-wider transition-colors cursor-pointer relative z-10"
                     >
                       Cancel
                     </button>
@@ -1147,7 +1147,7 @@ export default function ProfileClient({
                     {isOwner ? (
                       <button
                         onClick={() => { setTeamForm({ name: team.name, logoUrl: team.logoUrl || '' }); setEditingTeam(true); }}
-                        className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-4 py-2.5 rounded-xl transition-all uppercase tracking-wider"
+                        className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-4 py-2.5 rounded-xl transition-all uppercase tracking-wider cursor-pointer relative z-10"
                       >
                         <Edit3 size={13} /> Edit Squad
                       </button>
