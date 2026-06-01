@@ -571,7 +571,7 @@ export default function ProfileClient({
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end shrink-0">
                   <button
                     onClick={() => setEditing(true)}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-3 py-2 rounded-lg transition-all uppercase tracking-wider"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-mln-green border border-border-color hover:border-mln-green/50 px-3 py-2 rounded-lg transition-all uppercase tracking-wider cursor-pointer relative z-10"
                   >
                     <Edit3 size={13} /> Edit
                   </button>
