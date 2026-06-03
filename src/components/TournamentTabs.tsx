@@ -12,8 +12,9 @@ function kdaClr(v: number) { return v >= 5 ? 'text-mln-green' : v >= 3 ? 'text-w
 function wrClr(v: number) { return v >= 60 ? 'text-mln-green' : v <= 40 ? 'text-red-400' : 'text-white'; }
 function ratingClr(v: number) { return v >= 27 ? 'text-mln-green' : v >= 18 ? 'text-white' : 'text-red-400'; }
 
-function playerStats(games: any[]) {
+function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = []) {
   const p: Record<string, any> = {};
+  
   games.forEach(g => {
     const tk1 = (g.picks || []).filter((pk: any) => pk.team === 'team1').reduce((s: number, pk: any) => s + (pk.kills || 0), 0);
     const tk2 = (g.picks || []).filter((pk: any) => pk.team === 'team2').reduce((s: number, pk: any) => s + (pk.kills || 0), 0);
@@ -30,7 +31,7 @@ function playerStats(games: any[]) {
           team: tn || '',
           role: pk.role || '',
           hero: pk.hero || '',
-          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, heroes: {}, roles: {}
+          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, teamKills: 0, heroes: {}, roles: {}
         };
       }
       p[key].g++;
@@ -40,6 +41,7 @@ function playerStats(games: any[]) {
       p[key].gold += pk.gold || 0;
       p[key].dmg += pk.damage || 0;
       p[key].dmgTaken += pk.damageTaken || 0;
+      p[key].teamKills += teamKills;
       
       if (pk.team === g.winner) p[key].w++;
       
@@ -58,19 +60,43 @@ function playerStats(games: any[]) {
       p[key].kpTotal += kp;
     });
   });
+
+  // Map team IDs to team names to match registered players to their teams
+  const teamIdMap = new Map<string, string>();
+  teamsList.forEach((t: any) => {
+    teamIdMap.set(t.id, t.name);
+  });
+
+  // Include registered players who haven't played yet
+  playersList.forEach((pl: any) => {
+    if (!pl.username) return;
+    const tn = pl.teamId ? (teamIdMap.get(pl.teamId) || '') : '';
+    if (!tn) return;
+    const key = pl.username.toLowerCase() + '|' + tn;
+    if (!p[key]) {
+      p[key] = {
+        player: pl.username,
+        team: tn,
+        role: pl.role || 'PLAYER',
+        hero: '',
+        g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, teamKills: 0, heroes: {}, roles: {}
+      };
+    }
+  });
   
   return Object.values(p).map((s: any) => {
     const gamesCount = Math.max(s.g, 1);
+    const hasPlayed = s.g > 0;
     return {
       ...s,
-      kda: +(s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a).toFixed(2),
-      avgK: +(s.k / gamesCount).toFixed(1),
-      avgD: +(s.d / gamesCount).toFixed(1),
-      avgA: +(s.a / gamesCount).toFixed(1),
+      kda: hasPlayed ? (s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) : null,
+      avgK: hasPlayed ? s.k / gamesCount : null,
+      avgD: hasPlayed ? s.d / gamesCount : null,
+      avgA: hasPlayed ? s.a / gamesCount : null,
+      avgKP: (hasPlayed && s.teamKills > 0) ? ((s.k + s.a) / s.teamKills * 100) : null,
       avgGold: Math.round(s.gold / gamesCount),
       avgDmg: Math.round(s.dmg / gamesCount),
       avgDmgTaken: Math.round(s.dmgTaken / gamesCount),
-      avgKP: Math.round(s.kpTotal / gamesCount),
       avgScore: +(s.score / gamesCount).toFixed(1),
       aflRating: +(
         ((s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) * 2.0) +
@@ -83,7 +109,7 @@ function playerStats(games: any[]) {
       ).toFixed(1),
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
-      role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
+      role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || s.role || 'PLAYER',
     };
   });
 }
@@ -160,20 +186,25 @@ function isCompleted(s: any) {
 export default function TournamentTabs({ tournament, games, teams, players = [], bracketMatches = [] }: any) {
   const [activeTab, setActiveTab] = useState('overview');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [sortField, setSortField] = useState('avgScore');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState('player');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const seriesList = groupGamesIntoSeries(games);
-  const ps = playerStats(games);
+  const ps = playerStats(games, players, teams);
   const filteredPlayers = roleFilter === 'all' ? ps : ps.filter((p: any) => p.role === roleFilter);
   const sortedPlayers = [...filteredPlayers].sort((a: any, b: any) => {
-    const v1 = a[sortField];
-    const v2 = b[sortField];
-    if (sortDir === 'desc') {
-      return v2 - v1;
-    } else {
-      return v1 - v2;
+    let v1 = a[sortField];
+    let v2 = b[sortField];
+    const isDesc = sortDir === 'desc';
+
+    if (v1 === null || v1 === undefined) return 1;
+    if (v2 === null || v2 === undefined) return -1;
+
+    if (typeof v1 === 'string' && typeof v2 === 'string') {
+      return isDesc ? v2.localeCompare(v1) : v1.localeCompare(v2);
     }
+
+    return isDesc ? Number(v2) - Number(v1) : Number(v1) - Number(v2);
   });
 
   const toggleSort = (field: string) => {
@@ -351,7 +382,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
         {activeTab === 'leaderboard' && (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Aggregated Player Performance</h3>
+              <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Players Statistics</h3>
               <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
                 {['all', ...ROLES].map(r => (
                   <button key={r} onClick={() => setRoleFilter(r)}
@@ -365,73 +396,138 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             {sortedPlayers.length === 0 ? (
               <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No players found. Enter games with stats to see them here!</div>
             ) : (
-              <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
+              <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[900px]">
-                    <thead className="bg-background text-[11px] uppercase text-white border-b border-border-color">
+                  <table className="w-full text-left text-sm text-neutral-800 min-w-[1100px] border-collapse">
+                    <thead>
                       <tr>
-                        <th className="px-3 py-4 text-center font-bold">Rank</th>
-                        <th className="px-3 py-4 cursor-pointer hover:text-mln-green" onClick={() => toggleSort('player')}>Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4">Team</th>
-                        <th className="px-3 py-4">Role</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('g')}>GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('aflRating')}>AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgScore')}>MLBB Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgKP')}>KP% {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('kda')}>KDA {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center">Avg K/D/A</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgDmg')}>Avg DMG {sortField === 'avgDmg' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgGold')}>Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('wr')}>Win Rate {sortField === 'wr' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-3 py-4">Top Hero</th>
+                        <th 
+                          onClick={() => toggleSort('player')}
+                          className={`px-4 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-left ${
+                            sortField === 'player' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('team')}
+                          className={`px-4 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-left ${
+                            sortField === 'team' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Team {sortField === 'team' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('k')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'k' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Total Kills {sortField === 'k' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('avgK')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'avgK' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Avg Kills {sortField === 'avgK' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('d')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'd' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Total Deaths {sortField === 'd' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('avgD')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'avgD' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Avg Deaths {sortField === 'avgD' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('a')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'a' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Total Assists {sortField === 'a' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('avgA')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'avgA' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Avg Assists {sortField === 'avgA' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('kda')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'kda' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          KDA Ratio {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('avgKP')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'avgKP' ? 'bg-[#FFC800] text-black font-black' : 'bg-black text-white hover:bg-neutral-900'
+                          }`}
+                        >
+                          Kill Participation {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-color/60">
-                      {sortedPlayers.map((p: any, i: number) => {
-                        const rankBadge = (rank: number) => {
-                          if (rank === 1) return <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded text-xs font-black">#1</span>;
-                          if (rank === 2) return <span className="bg-slate-300/10 text-slate-300 border border-slate-300/30 px-2 py-0.5 rounded text-xs font-black">#2</span>;
-                          if (rank === 3) return <span className="bg-amber-600/10 text-amber-500 border border-amber-600/30 px-2 py-0.5 rounded text-xs font-black">#3</span>;
-                          return <span className="text-gray-500 font-mono text-xs font-bold">#{rank}</span>;
-                        };
+                    <tbody className="divide-y divide-neutral-200">
+                      {sortedPlayers.map((p: any) => {
+                        const hasPlayed = p.g > 0;
                         return (
-                          <tr key={p.player + '|' + p.team} className="hover:bg-surface-hover/40 transition-colors">
-                            <td className="px-3 py-4 text-center">
-                              {rankBadge(i + 1)}
-                            </td>
-                            <td className="px-3 py-4 flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-md border border-border-color overflow-hidden shrink-0">
-                                <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                          <tr key={p.player + '|' + p.team} className="odd:bg-white even:bg-[#F9FAFB] hover:bg-neutral-100/80 transition-colors">
+                            <td className="px-4 py-3.5 text-left font-black text-neutral-900">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-md border border-neutral-300 overflow-hidden shrink-0">
+                                  <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                                </div>
+                                <Link href={`/players/${p.player}`} className="hover:underline transition-all">{p.player}</Link>
                               </div>
-                              <Link href={`/players/${p.player}`} className="font-black text-white text-xs hover:text-mln-green transition-colors whitespace-nowrap">{p.player}</Link>
                             </td>
-                            <td className="px-3 py-4 text-gray-300 font-semibold text-xs">
+                            <td className="px-4 py-3.5 text-left text-neutral-600 font-bold">
                               {(() => {
                                 const teamId = teams.find((t: any) => t.name.toLowerCase() === p.team.toLowerCase())?.id;
                                 return teamId ? (
-                                  <Link href={`/teams/${teamId}`} className="hover:text-mln-green transition-colors whitespace-nowrap">{p.team}</Link>
+                                  <Link href={`/teams/${teamId}`} className="hover:underline transition-all">{p.team}</Link>
                                 ) : p.team;
                               })()}
                             </td>
-                            <td className="px-3 py-4">
-                              <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase whitespace-nowrap">{p.role}</span>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.k : '-'}
                             </td>
-                            <td className="px-3 py-4 text-center font-mono text-xs">{p.g}</td>
-                            <td className={`px-3 py-4 text-center font-mono font-black text-sm ${ratingClr(p.aflRating)}`}>{p.aflRating}</td>
-                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
-                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${kpClr(p.avgKP)}`}>{p.avgKP}%</td>
-                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${kdaClr(p.kda)}`}>{p.kda}</td>
-                            <td className="px-3 py-4 text-center font-mono text-xs">
-                              <span className="text-mln-green font-bold">{p.avgK}</span>
-                              <span className="text-gray-600 mx-0.5">/</span>
-                              <span className="text-red-400 font-bold">{p.avgD}</span>
-                              <span className="text-gray-600 mx-0.5">/</span>
-                              <span className="text-cyan-400 font-bold">{p.avgA}</span>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.avgK.toFixed(2) : '-'}
                             </td>
-                            <td className="px-3 py-4 text-center font-mono text-yellow-400 font-bold text-xs">{p.avgDmg > 0 ? (p.avgDmg / 1000).toFixed(0) + 'K' : '-'}</td>
-                            <td className="px-3 py-4 text-center font-mono text-gray-300 text-xs">{p.avgGold > 0 ? p.avgGold.toLocaleString() : '-'}</td>
-                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${wrClr(p.wr)}`}>{p.wr}%</td>
-                            <td className="px-3 py-4 font-semibold text-white text-xs whitespace-nowrap">{p.top}</td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.d : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.avgD.toFixed(2) : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.a : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.avgA.toFixed(2) : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed ? p.kda.toFixed(2) : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-neutral-800">
+                              {hasPlayed && p.avgKP !== null ? p.avgKP.toFixed(2) + '%' : '-'}
+                            </td>
                           </tr>
                         );
                       })}
