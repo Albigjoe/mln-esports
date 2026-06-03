@@ -504,7 +504,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                   <div className="flex flex-wrap gap-1.5 mb-3">
                                     {t1Bans.map((b: any) => (
                                       <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
-                                        <img src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
+                                        <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
                                         <span className="scale-90">{b.hero}</span>
                                       </div>
                                     ))}
@@ -513,7 +513,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                   <div className="flex flex-wrap gap-1.5">
                                     {t1Picks.map((p: any) => (
                                       <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
-                                        <img src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
+                                        <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
                                         <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
                                       </div>
                                     ))}
@@ -525,7 +525,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                   <div className="flex flex-wrap gap-1.5 mb-3">
                                     {t2Bans.map((b: any) => (
                                       <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
-                                        <img src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
+                                        <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
                                         <span className="scale-90">{b.hero}</span>
                                       </div>
                                     ))}
@@ -534,7 +534,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                   <div className="flex flex-wrap gap-1.5">
                                     {t2Picks.map((p: any) => (
                                       <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
-                                        <img src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
+                                        <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
                                         <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
                                       </div>
                                     ))}
@@ -706,7 +706,7 @@ function HeroStatsTable({ games }: { games: any[] }) {
               return (
                 <tr key={h.hero} className="hover:bg-surface-hover/30 transition-colors">
                   <td className="px-3 md:px-6 py-4 flex items-center gap-3">
-                    <img src={getHeroImage(h.hero)} alt={h.hero} className="w-8 h-8 rounded-full border border-border-color object-cover hidden sm:block" />
+                    <img referrerPolicy="no-referrer" src={getHeroImage(h.hero)} alt={h.hero} className="w-8 h-8 rounded-full border border-border-color object-cover hidden sm:block" />
                     <span className="font-black text-white text-sm md:text-base">{h.hero}</span>
                   </td>
                   <td className="px-2 md:px-6 py-4 text-center text-mln-green font-bold font-mono text-sm md:text-base">{h.picks}</td>

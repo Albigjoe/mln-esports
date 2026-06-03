@@ -32,6 +32,7 @@ export default function HeroImage({ heroName, className }: { heroName: string; c
       {/* External image — fades in on load */}
       {!imgError && (
         <img
+          referrerPolicy="no-referrer"
           src={imgSrc}
           alt={heroName}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
