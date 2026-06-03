@@ -93,7 +93,7 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
       avgK: hasPlayed ? s.k / gamesCount : null,
       avgD: hasPlayed ? s.d / gamesCount : null,
       avgA: hasPlayed ? s.a / gamesCount : null,
-      avgKP: (hasPlayed && s.teamKills > 0) ? ((s.k + s.a) / s.teamKills * 100) : null,
+      avgKP: (hasPlayed && s.teamKills > 0) ? Math.round((s.k + s.a) / s.teamKills * 100) : null,
       avgGold: Math.round(s.gold / gamesCount),
       avgDmg: Math.round(s.dmg / gamesCount),
       avgDmgTaken: Math.round(s.dmgTaken / gamesCount),
@@ -316,7 +316,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       <div className="mt-4 pt-4 border-t border-border-color/60">
                         <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.avgScore}</div>
                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Avg Score</div>
-                        <div className="text-[10px] text-gray-400 mt-2">{mvp.avgKP}% KP · {mvp.g} GP</div>
+                        <div className="text-[10px] text-gray-400 mt-2">{Math.round(mvp.avgKP || 0)}% KP · {mvp.g} GP</div>
                         <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{mvp.role}</span>
                       </div>
                     )}
@@ -479,14 +479,13 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'avgGold' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Avg Gold (Gold Lane) {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}
+                          Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-color/60">
                       {sortedPlayers.map((p: any) => {
                         const hasPlayed = p.g > 0;
-                        const isGoldLaner = p.role?.toLowerCase() === 'gold lane';
                         return (
                           <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
                             <td className="px-4 py-3.5 text-left font-black text-white">
@@ -519,10 +518,10 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                               {hasPlayed ? p.kda.toFixed(2) : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed && p.avgKP !== null ? p.avgKP.toFixed(2) + '%' : '-'}
+                              {hasPlayed && p.avgKP !== null ? p.avgKP + '%' : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed && isGoldLaner ? p.avgGold.toLocaleString() : '-'}
+                              {hasPlayed ? p.avgGold.toLocaleString() : '-'}
                             </td>
                           </tr>
                         );
