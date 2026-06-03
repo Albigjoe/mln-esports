@@ -505,7 +505,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                       <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-2 border-b border-red-500/20 pb-1">Bans &middot; {g.team1.name}</div>
                                       <div className="flex flex-wrap gap-2">
                                         {t1Bans.map((b: any) => (
-                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-full overflow-hidden shadow-sm">
+                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-md overflow-hidden shadow-sm">
                                             <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
                                             <span className="scale-95 font-medium truncate max-w-[100px]">{b.hero}</span>
                                           </div>
@@ -518,7 +518,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                       <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-2 border-b border-mln-green/20 pb-1">Picks &middot; {g.team1.name}</div>
                                       <div className="flex flex-wrap gap-2">
                                         {t1Picks.map((p: any) => (
-                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-full overflow-hidden shadow-sm">
+                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-md overflow-hidden shadow-sm">
                                             <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
                                             <span className="scale-95 font-medium truncate max-w-[150px]">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
                                           </div>
@@ -534,7 +534,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                       <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-2 border-b border-red-500/20 pb-1">Bans &middot; {g.team2.name}</div>
                                       <div className="flex flex-wrap gap-2">
                                         {t2Bans.map((b: any) => (
-                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-full overflow-hidden shadow-sm">
+                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-md overflow-hidden shadow-sm">
                                             <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
                                             <span className="scale-95 font-medium truncate max-w-[100px]">{b.hero}</span>
                                           </div>
@@ -547,7 +547,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                       <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-2 border-b border-mln-green/20 pb-1">Picks &middot; {g.team2.name}</div>
                                       <div className="flex flex-wrap gap-2">
                                         {t2Picks.map((p: any) => (
-                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-full overflow-hidden shadow-sm">
+                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-md overflow-hidden shadow-sm">
                                             <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
                                             <span className="scale-95 font-medium truncate max-w-[150px]">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
                                           </div>
