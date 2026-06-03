@@ -589,29 +589,38 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
 
         {/* BRACKET TAB */}
         {activeTab === 'bracket' && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Tournament Brackets & Fixtures</h3>
-            </div>
-
+          <div className="w-full">
             {(() => {
               const showChallonge = tournament?.id === 'cmpbswve2000170oqkuet2sva' || tournament?.name?.toLowerCase().includes('afl');
               
               if (showChallonge) {
                 return (
-                  <div className="bg-surface border border-border-color rounded-2xl overflow-auto shadow-2xl mt-4 min-h-[600px] h-[80vh] w-full relative">
-                    <iframe src="https://challonge.com/i8rknz8z/module?multiplier=1.0&match_width_multiplier=1.2&show_standings=1&theme=1" width="100%" height="1200" frameBorder="0" scrolling="auto" allowTransparency={true} style={{ minHeight: '1000px' }}></iframe>
+                  <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-surface border border-border-color h-[700px] md:h-[900px] relative mt-2">
+                    <iframe 
+                      src={`https://challonge.com/${tournament?.challongeId || 'i8rknz8z'}/module?multiplier=1.0&match_width_multiplier=1.0&show_standings=1&theme=1`} 
+                      width="100%" 
+                      height="100%" 
+                      frameBorder="0" 
+                      scrolling="auto" 
+                      allowTransparency={true} 
+                      className="absolute inset-0 w-full h-full"
+                    ></iframe>
                   </div>
                 );
               }
 
               return (
-                <div className="bg-surface border border-border-color rounded-2xl overflow-x-auto shadow-2xl p-6 min-h-[400px]">
-                  {bracketMatches.length === 0 ? (
-                    <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
-                  ) : (
-                    <BracketViewer matches={bracketMatches} isAdmin={false} />
-                  )}
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h3 className="text-xl font-black text-white uppercase tracking-wider border-l-4 border-mln-green pl-3">Tournament Brackets & Fixtures</h3>
+                  </div>
+                  <div className="bg-surface border border-border-color rounded-2xl overflow-x-auto shadow-2xl p-6 min-h-[400px]">
+                    {bracketMatches.length === 0 ? (
+                      <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
+                    ) : (
+                      <BracketViewer matches={bracketMatches} isAdmin={false} />
+                    )}
+                  </div>
                 </div>
               );
             })()}
