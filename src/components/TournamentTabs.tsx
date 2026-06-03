@@ -482,63 +482,79 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                         return (
                           <div key={g.id} className="bg-background/40 border border-border-color/80 rounded-lg overflow-hidden">
                             {/* Game Header */}
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-background border-b border-border-color text-xs">
-                              <div className="flex gap-3 items-center">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 bg-background border-b border-border-color text-xs gap-3">
+                              <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
                                 <span className="text-yellow-400 font-bold uppercase tracking-wider font-mono">Game {g.gameNumber}</span>
                                 <span className="text-gray-500 font-mono">Duration: {g.duration || 'N/A'}</span>
                                 {g.date && <span className="text-gray-500 font-mono">{g.date}</span>}
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full sm:w-auto justify-between sm:justify-end">
                                 <span className="text-gray-400">Winner: <strong className="text-mln-green uppercase font-mono">{g.winner === 'team1' ? g.team1.name : g.winner === 'team2' ? g.team2.name : 'TBD'}</strong></span>
-                                <Link href={`/matches/${g.id}`} className="text-xs text-mln-green hover:underline uppercase font-bold tracking-wider font-mono">
-                                  Scoreboard →
+                                <Link href={`/matches/${g.id}`} className="text-xs bg-mln-green/10 text-mln-green px-3 py-1.5 rounded-md hover:bg-mln-green hover:text-black transition-all uppercase font-bold tracking-wider font-mono text-center">
+                                  Scoreboard &rarr;
                                 </Link>
                               </div>
                             </div>
 
                             {/* Picks & Bans Mini View */}
                             {(t1Bans.length > 0 || t2Bans.length > 0 || t1Picks.length > 0 || t2Picks.length > 0) && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 text-xs">
-                                <div>
-                                  <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1.5">Bans · {g.team1.name}</div>
-                                  <div className="flex flex-wrap gap-1.5 mb-3">
-                                    {t1Bans.map((b: any) => (
-                                      <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
-                                        <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
-                                        <span className="scale-90">{b.hero}</span>
+                              <div className="flex flex-col md:grid md:grid-cols-2 gap-6 p-5 text-xs">
+                                <div className="space-y-3">
+                                  {t1Bans.length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-2 border-b border-red-500/20 pb-1">Bans &middot; {g.team1.name}</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {t1Bans.map((b: any) => (
+                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-full overflow-hidden shadow-sm">
+                                            <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
+                                            <span className="scale-95 font-medium truncate max-w-[100px]">{b.hero}</span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                  <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-1.5">Picks · {g.team1.name}</div>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {t1Picks.map((p: any) => (
-                                      <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
-                                        <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
-                                        <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                    </div>
+                                  )}
+                                  {t1Picks.length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-2 border-b border-mln-green/20 pb-1">Picks &middot; {g.team1.name}</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {t1Picks.map((p: any) => (
+                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-full overflow-hidden shadow-sm">
+                                            <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
+                                            <span className="scale-95 font-medium truncate max-w-[150px]">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
 
-                                <div>
-                                  <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1.5">Bans · {g.team2.name}</div>
-                                  <div className="flex flex-wrap gap-1.5 mb-3">
-                                    {t2Bans.map((b: any) => (
-                                      <div key={b.id} className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 pr-2 rounded-full overflow-hidden">
-                                        <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-5 h-5 object-cover" />
-                                        <span className="scale-90">{b.hero}</span>
+                                <div className="space-y-3">
+                                  {t2Bans.length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-2 border-b border-red-500/20 pb-1">Bans &middot; {g.team2.name}</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {t2Bans.map((b: any) => (
+                                          <div key={b.id} className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 text-red-400 pr-3 rounded-full overflow-hidden shadow-sm">
+                                            <img referrerPolicy="no-referrer" src={getHeroImage(b.hero)} alt={b.hero} className="w-6 h-6 object-cover" />
+                                            <span className="scale-95 font-medium truncate max-w-[100px]">{b.hero}</span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                  <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-1.5">Picks · {g.team2.name}</div>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {t2Picks.map((p: any) => (
-                                      <div key={p.id} className="flex items-center gap-1 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-2 rounded-full overflow-hidden">
-                                        <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-5 h-5 object-cover" />
-                                        <span className="scale-90">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                    </div>
+                                  )}
+                                  {t2Picks.length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-mln-green font-bold uppercase tracking-widest mb-2 border-b border-mln-green/20 pb-1">Picks &middot; {g.team2.name}</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {t2Picks.map((p: any) => (
+                                          <div key={p.id} className="flex items-center gap-1.5 bg-mln-green/10 border border-mln-green/30 text-mln-green pr-3 rounded-full overflow-hidden shadow-sm">
+                                            <img referrerPolicy="no-referrer" src={getHeroImage(p.hero)} alt={p.hero} className="w-6 h-6 object-cover" />
+                                            <span className="scale-95 font-medium truncate max-w-[150px]">{p.hero}{p.playerUsername ? ` (${p.playerUsername})` : ''}</span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
