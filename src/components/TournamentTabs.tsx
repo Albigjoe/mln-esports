@@ -367,23 +367,23 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[900px]">
                     <thead className="bg-background text-[11px] uppercase text-white border-b border-border-color">
                       <tr>
-                        <th className="px-3 md:px-6 py-4 text-center font-bold">Rank</th>
-                        <th className="px-3 md:px-6 py-4 cursor-pointer hover:text-mln-green" onClick={() => toggleSort('player')}>Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 hidden sm:table-cell">Team</th>
-                        <th className="px-4 py-4 hidden md:table-cell">Role</th>
-                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('g')}>GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('aflRating')}>AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('avgScore')}>MLBB Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('avgKP')}>KP% {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('kda')}>KDA {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 text-center hidden md:table-cell">Avg K/D/A</th>
-                        <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden md:table-cell" onClick={() => toggleSort('avgDmg')}>Avg DMG {sortField === 'avgDmg' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden lg:table-cell" onClick={() => toggleSort('avgGold')}>Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('wr')}>Win Rate {sortField === 'wr' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-4 py-4 hidden sm:table-cell">Top Hero</th>
+                        <th className="px-3 py-4 text-center font-bold">Rank</th>
+                        <th className="px-3 py-4 cursor-pointer hover:text-mln-green" onClick={() => toggleSort('player')}>Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4">Team</th>
+                        <th className="px-3 py-4">Role</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('g')}>GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('aflRating')}>AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgScore')}>MLBB Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgKP')}>KP% {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('kda')}>KDA {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center">Avg K/D/A</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgDmg')}>Avg DMG {sortField === 'avgDmg' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgGold')}>Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('wr')}>Win Rate {sortField === 'wr' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-3 py-4">Top Hero</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-color/60">
@@ -396,52 +396,42 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                         };
                         return (
                           <tr key={p.player + '|' + p.team} className="hover:bg-surface-hover/40 transition-colors">
-                            <td className="px-3 md:px-6 py-4 text-center">
+                            <td className="px-3 py-4 text-center">
                               {rankBadge(i + 1)}
                             </td>
-                            <td className="px-3 md:px-6 py-4 flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full border border-border-color overflow-hidden shrink-0 hidden md:block">
+                            <td className="px-3 py-4 flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-md border border-border-color overflow-hidden shrink-0">
                                 <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
                               </div>
-                              <div>
-                                <Link href={`/players/${p.player}`} className="font-black text-white text-sm md:text-base hover:text-mln-green transition-colors">{p.player}</Link>
-                                {(() => {
-                                  const teamId = teams.find((t: any) => t.name.toLowerCase() === p.team.toLowerCase())?.id;
-                                  return teamId ? (
-                                    <Link href={`/teams/${teamId}`} className="block sm:hidden text-[10px] text-gray-500 hover:text-mln-green font-bold mt-0.5">{p.team}</Link>
-                                  ) : (
-                                    <div className="block sm:hidden text-[10px] text-gray-500 font-bold mt-0.5">{p.team}</div>
-                                  );
-                                })()}
-                              </div>
+                              <Link href={`/players/${p.player}`} className="font-black text-white text-xs hover:text-mln-green transition-colors whitespace-nowrap">{p.player}</Link>
                             </td>
-                            <td className="px-4 py-4 text-gray-300 font-semibold hidden sm:table-cell">
+                            <td className="px-3 py-4 text-gray-300 font-semibold text-xs">
                               {(() => {
                                 const teamId = teams.find((t: any) => t.name.toLowerCase() === p.team.toLowerCase())?.id;
                                 return teamId ? (
-                                  <Link href={`/teams/${teamId}`} className="hover:text-mln-green transition-colors">{p.team}</Link>
+                                  <Link href={`/teams/${teamId}`} className="hover:text-mln-green transition-colors whitespace-nowrap">{p.team}</Link>
                                 ) : p.team;
                               })()}
                             </td>
-                            <td className="px-4 py-4 hidden md:table-cell">
-                              <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{p.role}</span>
+                            <td className="px-3 py-4">
+                              <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase whitespace-nowrap">{p.role}</span>
                             </td>
-                            <td className="px-2 md:px-6 py-4 text-center font-mono text-xs md:text-sm">{p.g}</td>
-                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${ratingClr(p.aflRating)}`}>{p.aflRating}</td>
-                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-bold hidden sm:table-cell ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
-                            <td className={`px-4 py-4 text-center font-mono font-bold hidden sm:table-cell ${kpClr(p.avgKP)}`}>{p.avgKP}%</td>
-                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-bold text-xs md:text-sm ${kdaClr(p.kda)}`}>{p.kda}</td>
-                            <td className="px-4 py-4 text-center font-mono text-xs hidden md:table-cell">
+                            <td className="px-3 py-4 text-center font-mono text-xs">{p.g}</td>
+                            <td className={`px-3 py-4 text-center font-mono font-black text-sm ${ratingClr(p.aflRating)}`}>{p.aflRating}</td>
+                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
+                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${kpClr(p.avgKP)}`}>{p.avgKP}%</td>
+                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${kdaClr(p.kda)}`}>{p.kda}</td>
+                            <td className="px-3 py-4 text-center font-mono text-xs">
                               <span className="text-mln-green font-bold">{p.avgK}</span>
                               <span className="text-gray-600 mx-0.5">/</span>
                               <span className="text-red-400 font-bold">{p.avgD}</span>
                               <span className="text-gray-600 mx-0.5">/</span>
                               <span className="text-cyan-400 font-bold">{p.avgA}</span>
                             </td>
-                            <td className="px-4 py-4 text-center font-mono text-yellow-400 font-bold hidden md:table-cell">{p.avgDmg > 0 ? (p.avgDmg / 1000).toFixed(0) + 'K' : '-'}</td>
-                            <td className="px-4 py-4 text-center font-mono text-gray-300 hidden lg:table-cell">{p.avgGold > 0 ? p.avgGold.toLocaleString() : '-'}</td>
-                            <td className={`px-4 py-4 text-center font-mono font-bold hidden sm:table-cell ${wrClr(p.wr)}`}>{p.wr}%</td>
-                            <td className="px-4 py-4 font-semibold text-white hidden sm:table-cell">{p.top}</td>
+                            <td className="px-3 py-4 text-center font-mono text-yellow-400 font-bold text-xs">{p.avgDmg > 0 ? (p.avgDmg / 1000).toFixed(0) + 'K' : '-'}</td>
+                            <td className="px-3 py-4 text-center font-mono text-gray-300 text-xs">{p.avgGold > 0 ? p.avgGold.toLocaleString() : '-'}</td>
+                            <td className={`px-3 py-4 text-center font-mono font-bold text-xs ${wrClr(p.wr)}`}>{p.wr}%</td>
+                            <td className="px-3 py-4 font-semibold text-white text-xs whitespace-nowrap">{p.top}</td>
                           </tr>
                         );
                       })}
