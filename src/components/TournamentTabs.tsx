@@ -271,8 +271,6 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                   <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{teams.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Teams</div></div>
                   <div className="w-px bg-border-color hidden md:block"></div>
                   <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{ps.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Active Players</div></div>
-                  <div className="w-px bg-border-color hidden md:block"></div>
-                  <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono text-xl md:text-2xl pt-2">{leadingTeam()}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Leader</div></div>
                 </div>
               </div>
             </div>
@@ -321,56 +319,56 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               </div>
             </div>
 
-            {/* Recent Match Series Log */}
-            <div>
-              <h3 className="text-xl font-black text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">Recent Match Series Log</h3>
-              {seriesList.length === 0 ? (
-                <div className="bg-surface border border-border-color rounded-xl p-8 text-center text-gray-500">No match series recorded yet.</div>
-              ) : (
-                <div className="space-y-4">
-                  {seriesList.slice(0, 5).map((s: any) => {
-                    const isComp = isCompleted(s);
-                    return (
-                      <div key={s.id} className="bg-surface border border-border-color hover:border-mln-green/30 transition-colors rounded-xl overflow-hidden p-6 flex flex-col items-center gap-4">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
-                          <div className="flex-1 text-center md:text-right">
-                            <Link href={`/teams/${s.team1Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${isComp && s.score1 > s.score2 ? 'text-mln-green' : 'text-white'}`}>{s.team1.name}</Link>
-                            {isComp && s.score1 > s.score2 && <span className="ml-0 md:ml-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
-                          </div>
-                          
-                          <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-xs bg-surface-hover border border-border-color/60 px-3 py-1 rounded-full text-yellow-400 font-bold font-mono">Week {s.week} · BO{s.boFormat}</span>
-                            <div className="text-3xl font-black text-white font-mono mt-2 tracking-widest">{s.score1} : {s.score2}</div>
-                            <span className="text-gray-500 text-[10px] mt-1 font-bold font-mono uppercase tracking-wider">{isComp ? 'Completed' : 'In Progress'}</span>
-                          </div>
+            {/* Top Player Rankings */}
+            {(() => {
+              const activePlayers = ps.filter((p: any) => p.g > 0);
+              const topKills = [...activePlayers].sort((a, b) => (b.avgK || 0) - (a.avgK || 0)).slice(0, 5);
+              const topAssists = [...activePlayers].sort((a, b) => (b.avgA || 0) - (a.avgA || 0)).slice(0, 5);
+              const topKDA = [...activePlayers].sort((a, b) => (b.kda || 0) - (a.kda || 0)).slice(0, 5);
 
-                          <div className="flex-1 text-center md:text-left">
-                            {isComp && s.score2 > s.score1 && <span className="mr-0 md:mr-3 mt-2 md:mt-0 inline-block text-[10px] bg-mln-green text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">WINNER</span>}
-                            <Link href={`/teams/${s.team2Id}`} className={`font-black text-xl block md:inline hover:text-mln-green transition-colors ${isComp && s.score2 > s.score1 ? 'text-mln-green' : 'text-white'}`}>{s.team2.name}</Link>
+              const RankingRow = ({ title, list, statKey, statLabel }: { title: string; list: any[]; statKey: string; statLabel: string }) => (
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-wider mb-6 text-center">{title}</h3>
+                  {list.length === 0 ? (
+                    <div className="text-center text-gray-500 text-sm">No data yet</div>
+                  ) : (
+                    <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
+                      {list.map((p: any, i: number) => {
+                        const teamObj = teams.find((t: any) => t.name.toLowerCase() === p.team?.toLowerCase());
+                        return (
+                          <div key={p.player + i} className="flex flex-col items-center text-center w-[100px] md:w-[120px]">
+                            <div className="relative mb-2">
+                              {teamObj?.logoUrl && (
+                                <img src={teamObj.logoUrl} alt={teamObj.name} className="absolute -top-1 -right-1 w-5 h-5 rounded-full border border-border-color bg-background z-10 object-cover" />
+                              )}
+                              <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-2 overflow-hidden ${
+                                i === 0 ? 'border-mln-green shadow-[0_0_15px_rgba(0,200,83,0.4)]' : 'border-border-color'
+                              }`}>
+                                <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                              </div>
+                            </div>
+                            <Link href={`/players/${p.player}`} className="text-white font-black text-xs md:text-sm hover:text-mln-green transition-colors line-clamp-1">{p.player}</Link>
+                            <div className={`text-lg md:text-xl font-black font-mono mt-1 ${i === 0 ? 'text-mln-green' : 'text-gray-300'}`}>
+                              {typeof p[statKey] === 'number' ? p[statKey].toFixed(2) : p[statKey]}
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Series individual games */}
-                        <div className="w-full border-t border-border-color/60 pt-4 mt-2">
-                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 font-mono">Games in Series:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {s.games.map((g: any) => (
-                              <Link href={`/matches/${g.id}`} key={g.id} className="bg-background border border-border-color hover:border-mln-green/30 text-xs px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all">
-                                <span className="text-mln-green font-bold">Game {g.gameNumber}</span>
-                                <span className="text-gray-500 font-medium">({g.duration || 'N/A'})</span>
-                                <span className="text-[10px] bg-surface px-1.5 py-0.5 rounded text-gray-400 font-bold uppercase">
-                                  {g.winner === 'team1' ? 'Winner: ' + g.team1.name : g.winner === 'team2' ? 'Winner: ' + g.team2.name : 'TBD'}
-                                </span>
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+
+              return (
+                <div className="space-y-10">
+                  <RankingRow title="Kills Ranking" list={topKills} statKey="avgK" statLabel="Avg Kills" />
+                  <div className="border-t border-border-color/40"></div>
+                  <RankingRow title="Assists Ranking" list={topAssists} statKey="avgA" statLabel="Avg Assists" />
+                  <div className="border-t border-border-color/40"></div>
+                  <RankingRow title="KDA Ranking" list={topKDA} statKey="kda" statLabel="KDA Ratio" />
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -414,12 +412,12 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
-                          onClick={() => toggleSort('k')}
+                          onClick={() => toggleSort('aflRating')}
                           className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
-                            sortField === 'k' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                            sortField === 'aflRating' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Total Kills {sortField === 'k' && (sortDir === 'desc' ? '↓' : '↑')}
+                          AFL Score {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgK')}
@@ -495,8 +493,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
                               {hasPlayed ? p.g : '-'}
                             </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.k : '-'}
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
+                              {hasPlayed ? p.aflRating : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.avgK.toFixed(2) : '-'}
