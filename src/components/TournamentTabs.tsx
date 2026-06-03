@@ -731,7 +731,7 @@ function HeroStatsTable({ games }: { games: any[] }) {
               return (
                 <tr key={h.hero} className="hover:bg-surface-hover/30 transition-colors">
                   <td className="px-3 md:px-6 py-4 flex items-center gap-3">
-                    <img referrerPolicy="no-referrer" src={getHeroImage(h.hero)} alt={h.hero} className="w-8 h-8 rounded-full border border-border-color object-cover hidden sm:block" />
+                    <img referrerPolicy="no-referrer" src={getHeroImage(h.hero)} alt={h.hero} className="w-8 h-8 rounded-md border border-border-color object-cover hidden sm:block" />
                     <span className="font-black text-white text-sm md:text-base">{h.hero}</span>
                   </td>
                   <td className="px-2 md:px-6 py-4 text-center text-mln-green font-bold font-mono text-sm md:text-base">{h.picks}</td>
