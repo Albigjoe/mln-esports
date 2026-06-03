@@ -97,12 +97,11 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
       avgGold: Math.round(s.gold / gamesCount),
       aflRating: hasPlayed ? +(
         ((s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) * 2.0) +
-        ((s.teamKills > 0 ? (s.k + s.a) / s.teamKills * 100 : 0) * 0.08) +
+        ((s.teamKills > 0 ? (s.k + s.a) / s.teamKills * 100 : 0) * 0.06) +
         ((s.gold / gamesCount) / 2000) +
-        ((s.w / gamesCount) * 1.5) +
-        (s.g * 0.3) +
-        (s.d === 0 ? 2.0 : 0)
-      ).toFixed(1) : 0,
+        ((s.w / gamesCount) * 2.5) +
+        ((s.d === 0 && s.g >= 5) ? 2.0 : 0.0)
+      ).toFixed(2) : 0,
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
       role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || s.role || 'PLAYER',
@@ -212,10 +211,46 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
     }
   };
 
-  // Best Player per Role for Overview
+  // Best Player per Role for Overview (Eligibility: GP >= 5)
+  const ROLE_DISPLAY_MAP: Record<string, string> = {
+    'Roamer': 'Roam',
+    'Gold Lane': 'Gold',
+    'Jungle': 'Jungle',
+    'Exp Lane': 'EXP',
+    'Mid Lane': 'Mid'
+  };
+
   const bestPlayers = ROLES.map(role => {
-    const list = ps.filter((p: any) => p.role === role && p.g > 0);
-    const sorted = [...list].sort((a, b) => b.aflRating - a.aflRating);
+    const list = ps.filter((p: any) => p.role === role && p.g >= 5);
+    const sorted = [...list].sort((a, b) => {
+      // Tiebreaker order:
+      // 1. Win Rate
+      // 2. KDA
+      // 3. KP%
+      // 4. GP
+      if (b.aflRating !== a.aflRating) {
+        return b.aflRating - a.aflRating;
+      }
+      const wrA = a.g > 0 ? a.w / a.g : 0;
+      const wrB = b.g > 0 ? b.w / b.g : 0;
+      if (wrB !== wrA) {
+        return wrB - wrA;
+      }
+      const kdaA = a.kda || 0;
+      const kdaB = b.kda || 0;
+      if (kdaB !== kdaA) {
+        return kdaB - kdaA;
+      }
+      const kpA = a.avgKP || 0;
+      const kpB = b.avgKP || 0;
+      if (kpB !== kpA) {
+        return kpB - kpA;
+      }
+      if (b.g !== a.g) {
+        return b.g - a.g;
+      }
+      return 0;
+    });
     return { role, mvp: sorted[0] || null };
   });
 
@@ -282,7 +317,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                 {bestPlayers.map(({ role, mvp }) => (
                   <div key={role} className="bg-surface border border-border-color rounded-xl p-4 text-center hover:border-mln-green/40 transition-colors flex flex-col justify-between min-h-[220px]">
                     <div>
-                      <div className="text-[10px] text-mln-green font-bold uppercase tracking-[2px] mb-2">{role}</div>
+                      <div className="text-[10px] text-mln-green font-bold uppercase tracking-[2px] mb-2">{ROLE_DISPLAY_MAP[role] || role}</div>
                       {mvp ? (
                         <>
                           <div className="flex items-center gap-3">
@@ -412,12 +447,12 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
-                          onClick={() => toggleSort('aflRating')}
+                          onClick={() => toggleSort('k')}
                           className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
-                            sortField === 'aflRating' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                            sortField === 'k' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          AFL Score {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}
+                          Total Kills {sortField === 'k' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgK')}
@@ -465,7 +500,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'avgKP' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Kill Participation {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}
+                          Kill Participation % {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgGold')}
@@ -474,6 +509,14 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           }`}
                         >
                           Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('aflRating')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'aflRating' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                          }`}
+                        >
+                          AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                       </tr>
                     </thead>
@@ -493,8 +536,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
                               {hasPlayed ? p.g : '-'}
                             </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
-                              {hasPlayed ? p.aflRating : '-'}
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                              {hasPlayed ? p.k : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.avgK.toFixed(2) : '-'}
@@ -516,6 +559,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.avgGold.toLocaleString() : '-'}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
+                              {hasPlayed ? p.aflRating : '-'}
                             </td>
                           </tr>
                         );
