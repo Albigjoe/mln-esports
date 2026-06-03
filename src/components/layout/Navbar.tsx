@@ -40,7 +40,7 @@ export default function Navbar() {
             <img
               src="/mln-logo.gif"
               alt="MLN Logo"
-              className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-mln-green object-cover shadow-[0_0_10px_rgba(0,200,83,0.3)]"
+              className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg border-2 border-mln-green object-cover shadow-[0_0_10px_rgba(0,200,83,0.3)]"
             />
             <div className="flex flex-col">
               <span className="font-black text-lg sm:text-2xl tracking-widest text-white uppercase leading-tight">MLN</span>
