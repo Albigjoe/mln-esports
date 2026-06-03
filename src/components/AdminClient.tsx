@@ -536,7 +536,7 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
           <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-4 border-l-4 border-mln-green pl-3">All Individual Game Entries</h3>
           <div className="bg-background border border-border-color rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-400">
+            <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
               <thead className="bg-surface text-xs uppercase text-white">
                 <tr><th className="px-4 py-3 whitespace-nowrap">Week</th><th className="px-4 py-3 whitespace-nowrap">Game #</th><th className="px-4 py-3 whitespace-nowrap">Team 1</th><th className="px-4 py-3 text-center whitespace-nowrap">VS</th><th className="px-4 py-3 whitespace-nowrap">Team 2</th><th className="px-4 py-3 whitespace-nowrap">Winner</th><th className="px-4 py-3 text-right whitespace-nowrap">Actions</th></tr>
               </thead>

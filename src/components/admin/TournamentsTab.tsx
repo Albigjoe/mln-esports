@@ -268,7 +268,7 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
       )}
 
       <div className="bg-background border border-border-color rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-400">
+        <table className="w-full text-left text-sm text-gray-400 min-w-[800px]">
           <thead className="bg-surface text-xs uppercase text-white">
             <tr><th className="px-6 py-4">Name</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Games</th><th className="px-6 py-4">Banner</th></tr>
           </thead>

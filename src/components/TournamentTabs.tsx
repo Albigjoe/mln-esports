@@ -355,7 +355,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
                     <thead className="bg-background text-[11px] uppercase text-white border-b border-border-color">
                       <tr>
                         <th className="px-3 md:px-6 py-4 text-center font-bold">Rank</th>

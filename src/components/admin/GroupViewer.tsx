@@ -51,7 +51,7 @@ export default function GroupViewer({ matches, onMatchClick }: { matches: any[],
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Standings */}
               <div>
-                <table className="w-full text-left text-sm text-gray-400">
+                <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
                   <thead className="bg-surface text-xs uppercase text-white border-b border-border-color">
                     <tr>
                       <th className="p-3">Rank</th>

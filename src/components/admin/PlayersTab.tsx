@@ -249,7 +249,7 @@ export default function PlayersTab({ players, teams }: { players: any[], teams: 
           <input type="text" value={search} onChange={handleSearchChange} placeholder="Search by username, name or Game ID..." className="w-full max-w-sm bg-background border border-border-color rounded-lg px-3 py-2 text-white outline-none focus:border-mln-green text-sm" />
         </div>
         <div className="overflow-x-auto max-h-[600px]">
-          <table className="w-full text-left text-sm text-gray-400">
+          <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
             <thead className="bg-background text-xs uppercase text-white border-b border-border-color sticky top-0">
               <tr>
                 <th className="px-4 py-3">Pic</th>

@@ -255,7 +255,7 @@ export default function TeamsTab({ teams }: { teams: any[] }) {
       {/* Table view */}
       <div className="bg-surface border border-border-color rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-400">
+          <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
             <thead className="bg-background text-xs uppercase text-white border-b border-border-color sticky top-0">
             <tr>
               <th className="px-4 py-3 w-12">

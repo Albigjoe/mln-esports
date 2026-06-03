@@ -205,7 +205,7 @@ export default function NewsTab({ posts }: { posts: any[] }) {
       )}
 
       <div className="bg-background border border-border-color rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-400">
+        <table className="w-full text-left text-sm text-gray-400 min-w-[600px]">
           <thead className="bg-surface text-xs uppercase text-white">
             <tr>
               <th className="px-6 py-4">Title</th>
