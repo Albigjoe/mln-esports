@@ -2,8 +2,13 @@ import heroImages from './hero_images.json';
 
 export function getHeroImage(heroName: string) {
   if (!heroName) return '';
-  // Use the official mobile legends web CDN
   const slug = heroName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  
+  // Use the local mapping first because the official CDN blocks direct hotlinking (403 Forbidden)
+  const mappedImage = (heroImages as Record<string, string>)[slug];
+  if (mappedImage) return mappedImage;
+
+  // Fallback to official mobile legends web CDN
   return `https://akmweb.youngjoygame.com/web/svnres/img/mlbb/homepage/hp_hero/hero_${slug}.png`;
 }
 
