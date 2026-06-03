@@ -740,9 +740,9 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
       <div className="text-xs text-cyan-400 font-bold uppercase tracking-[3px] mb-3">{label}</div>
       <div className="space-y-3">
         {picks.map((p, i) => (
-          <div key={i} className="bg-background/50 rounded-xl p-3 space-y-2">
-            {/* Row 1: Hero, Username, Role, MVP, Calculated Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+          <div key={i} className="bg-background/50 rounded-xl p-4 space-y-3">
+            {/* Row 1: Hero, Username, Role, MVP Toggle */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Hero</label>
                 <input list="hero-list" placeholder="Hero" value={p.hero} onChange={e => onChange(i,'hero',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -774,27 +774,19 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
                   }).map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              <div className="flex items-center gap-2 md:gap-3 justify-between border border-border-color/60 bg-background/30 rounded px-2 py-1 select-none">
-                <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">Rating</span>
-                  <input placeholder="0.0" inputMode="decimal" value={p.mvpScore} onChange={e => onChange(i,'mvpScore',e.target.value)} className="w-8 md:w-12 bg-transparent text-white text-xs font-black focus:outline-none border-b border-dashed border-gray-600 focus:border-mln-green placeholder:text-gray-600" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 uppercase font-bold">TFP</span>
-                  <span className="text-xs font-black text-white">{parseFloat(p.tfp) > 0 ? `${parseFloat(p.tfp).toFixed(1)}%` : '—'}</span>
-                </div>
-                <div className="flex items-center">
-                  <button 
-                    onClick={() => onChange(i, 'isMvp', !p.isMvp)}
-                    className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider cursor-pointer transition-colors ${p.isMvp ? 'bg-mln-green text-black shadow-[0_0_10px_rgba(0,200,83,0.5)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'}`}
-                  >
-                    {p.isMvp ? '★ MVP' : 'Not MVP'}
-                  </button>
-                </div>
+              <div className="flex items-center justify-between border border-border-color/60 bg-background/30 rounded px-3 py-2 select-none h-[34px]">
+                <span className="text-[9px] text-gray-500 uppercase font-bold">Game MVP</span>
+                <button 
+                  onClick={() => onChange(i, 'isMvp', !p.isMvp)}
+                  className={`px-3 py-1 rounded text-[9px] font-black uppercase tracking-wider cursor-pointer transition-colors ${p.isMvp ? 'bg-mln-green text-black shadow-[0_0_10px_rgba(0,200,83,0.5)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'}`}
+                >
+                  {p.isMvp ? '★ MVP' : 'Not MVP'}
+                </button>
               </div>
             </div>
-            {/* Row 2: KDA + Gold + Damage */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            
+            {/* Row 2: Kills, Deaths, Assists, Gold */}
+            <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
                 <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => onChange(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -810,25 +802,6 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
                 <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => onChange(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage</label>
-                <input placeholder="DMG" inputMode="numeric" value={p.damage} onChange={e => onChange(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">DMG Taken</label>
-                <input placeholder="DMG Taken" inputMode="numeric" value={p.damageTaken} onChange={e => onChange(i,'damageTaken',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-            </div>
-            {/* Row 3: Milestones */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Savages</label>
-                <input placeholder="0" inputMode="numeric" value={p.savages} onChange={e => onChange(i,'savages',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
-              </div>
-              <div>
-                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Maniacs</label>
-                <input placeholder="0" inputMode="numeric" value={p.maniacs} onChange={e => onChange(i,'maniacs',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
           </div>
