@@ -10,6 +10,7 @@ function scoreClr(v: number) { return v >= 8.5 ? 'text-mln-green' : v >= 6.0 ? '
 function kpClr(v: number) { return v >= 70 ? 'text-mln-green' : v >= 50 ? 'text-white' : 'text-gray-500'; }
 function kdaClr(v: number) { return v >= 5 ? 'text-mln-green' : v >= 3 ? 'text-white' : 'text-red-400'; }
 function wrClr(v: number) { return v >= 60 ? 'text-mln-green' : v <= 40 ? 'text-red-400' : 'text-white'; }
+function ratingClr(v: number) { return v >= 27 ? 'text-mln-green' : v >= 18 ? 'text-white' : 'text-red-400'; }
 
 function playerStats(games: any[]) {
   const p: Record<string, any> = {};
@@ -29,7 +30,7 @@ function playerStats(games: any[]) {
           team: tn || '',
           role: pk.role || '',
           hero: pk.hero || '',
-          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, w: 0, score: 0, kpTotal: 0, heroes: {}, roles: {}
+          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, heroes: {}, roles: {}
         };
       }
       p[key].g++;
@@ -38,6 +39,7 @@ function playerStats(games: any[]) {
       p[key].a += pk.assists || 0;
       p[key].gold += pk.gold || 0;
       p[key].dmg += pk.damage || 0;
+      p[key].dmgTaken += pk.damageTaken || 0;
       
       if (pk.team === g.winner) p[key].w++;
       
@@ -67,8 +69,18 @@ function playerStats(games: any[]) {
       avgA: +(s.a / gamesCount).toFixed(1),
       avgGold: Math.round(s.gold / gamesCount),
       avgDmg: Math.round(s.dmg / gamesCount),
+      avgDmgTaken: Math.round(s.dmgTaken / gamesCount),
       avgKP: Math.round(s.kpTotal / gamesCount),
       avgScore: +(s.score / gamesCount).toFixed(1),
+      aflRating: +(
+        ((s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) * 2.0) +
+        ((s.kpTotal / gamesCount) * 0.08) +
+        ((s.dmg / gamesCount) / 5000) +
+        ((s.dmgTaken / gamesCount) / 5000) +
+        ((s.gold / gamesCount) / 2000) +
+        ((s.w / gamesCount) * 1.5) +
+        (s.d === 0 ? 2.0 : 0)
+      ).toFixed(1),
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
       role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'Unknown',
@@ -363,7 +375,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                         <th className="px-4 py-4 hidden sm:table-cell">Team</th>
                         <th className="px-4 py-4 hidden md:table-cell">Role</th>
                         <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('g')}>GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}</th>
-                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('avgScore')}>Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('aflRating')}>AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}</th>
+                        <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('avgScore')}>MLBB Score {sortField === 'avgScore' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-4 py-4 text-center cursor-pointer hover:text-mln-green hidden sm:table-cell" onClick={() => toggleSort('avgKP')}>KP% {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-2 md:px-6 py-4 text-center cursor-pointer hover:text-mln-green" onClick={() => toggleSort('kda')}>KDA {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}</th>
                         <th className="px-4 py-4 text-center hidden md:table-cell">Avg K/D/A</th>
@@ -414,7 +427,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                               <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap">{p.role}</span>
                             </td>
                             <td className="px-2 md:px-6 py-4 text-center font-mono text-xs md:text-sm">{p.g}</td>
-                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
+                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-black text-sm md:text-base ${ratingClr(p.aflRating)}`}>{p.aflRating}</td>
+                            <td className={`px-2 md:px-6 py-4 text-center font-mono font-bold hidden sm:table-cell ${scoreClr(p.avgScore)}`}>{p.avgScore}</td>
                             <td className={`px-4 py-4 text-center font-mono font-bold hidden sm:table-cell ${kpClr(p.avgKP)}`}>{p.avgKP}%</td>
                             <td className={`px-2 md:px-6 py-4 text-center font-mono font-bold text-xs md:text-sm ${kdaClr(p.kda)}`}>{p.kda}</td>
                             <td className="px-4 py-4 text-center font-mono text-xs hidden md:table-cell">
