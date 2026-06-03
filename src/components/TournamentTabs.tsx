@@ -95,18 +95,14 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
       avgA: hasPlayed ? s.a / gamesCount : null,
       avgKP: (hasPlayed && s.teamKills > 0) ? Math.round((s.k + s.a) / s.teamKills * 100) : null,
       avgGold: Math.round(s.gold / gamesCount),
-      avgDmg: Math.round(s.dmg / gamesCount),
-      avgDmgTaken: Math.round(s.dmgTaken / gamesCount),
-      avgScore: +(s.score / gamesCount).toFixed(1),
-      aflRating: +(
+      aflRating: hasPlayed ? +(
         ((s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) * 2.0) +
-        ((s.kpTotal / gamesCount) * 0.08) +
-        ((s.dmg / gamesCount) / 5000) +
-        ((s.dmgTaken / gamesCount) / 5000) +
+        ((s.teamKills > 0 ? (s.k + s.a) / s.teamKills * 100 : 0) * 0.08) +
         ((s.gold / gamesCount) / 2000) +
         ((s.w / gamesCount) * 1.5) +
+        (s.g * 0.3) +
         (s.d === 0 ? 2.0 : 0)
-      ).toFixed(1),
+      ).toFixed(1) : 0,
       wr: Math.round(s.w / gamesCount * 100),
       top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
       role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || s.role || 'PLAYER',
@@ -218,8 +214,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
 
   // Best Player per Role for Overview
   const bestPlayers = ROLES.map(role => {
-    const list = ps.filter((p: any) => p.role === role);
-    const sorted = [...list].sort((a, b) => b.avgScore - a.avgScore);
+    const list = ps.filter((p: any) => p.role === role && p.g > 0);
+    const sorted = [...list].sort((a, b) => b.aflRating - a.aflRating);
     return { role, mvp: sorted[0] || null };
   });
 
@@ -314,9 +310,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                     </div>
                     {mvp && (
                       <div className="mt-4 pt-4 border-t border-border-color/60">
-                        <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.avgScore}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Avg Score</div>
-                        <div className="text-[10px] text-gray-400 mt-2">{Math.round(mvp.avgKP || 0)}% KP · {mvp.g} GP</div>
+                        <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.aflRating}</div>
+                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">AFL Rating</div>
+                        <div className="text-[10px] text-gray-400 mt-2">{mvp.kda?.toFixed(1) || 0} KDA · {mvp.avgKP || 0}% KP · {mvp.g} GP</div>
                         <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{mvp.role}</span>
                       </div>
                     )}
@@ -398,7 +394,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[1100px] border-collapse">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[1000px] border-collapse">
                     <thead>
                       <tr>
                         <th 
@@ -408,6 +404,14 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           }`}
                         >
                           Player {sortField === 'player' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('g')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'g' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                          }`}
+                        >
+                          GP {sortField === 'g' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('k')}
@@ -424,14 +428,6 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           }`}
                         >
                           Avg Kills {sortField === 'avgK' && (sortDir === 'desc' ? '↓' : '↑')}
-                        </th>
-                        <th 
-                          onClick={() => toggleSort('d')}
-                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
-                            sortField === 'd' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
-                          }`}
-                        >
-                          Total Deaths {sortField === 'd' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgD')}
@@ -496,14 +492,14 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                 <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
                               </div>
                             </td>
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
+                              {hasPlayed ? p.g : '-'}
+                            </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.k : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.avgK.toFixed(2) : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.d : '-'}
                             </td>
                             <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                               {hasPlayed ? p.avgD.toFixed(2) : '-'}
