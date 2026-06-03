@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MLN | Esports & Tournaments",
   description: "The premier destination for Mobile Legends: Bang Bang tournaments and esports in Nigeria.",
+  referrer: "no-referrer",
 };
 
 export const viewport: Viewport = {
