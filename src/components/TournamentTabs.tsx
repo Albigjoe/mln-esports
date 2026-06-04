@@ -773,9 +773,6 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                                 </div>
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
                                   <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
-                                  {!p.eligible && hasPlayed && (
-                                    <span className="text-red-400/80 font-bold uppercase text-[9px] tracking-wider bg-red-400/10 border border-red-500/20 px-2 py-0.5 rounded shrink-0">Not Eligible</span>
-                                  )}
                                 </div>
                               </div>
                             </td>
