@@ -383,7 +383,7 @@ function isCompleted(s: any) {
   return false;
 }
 
-export default function TournamentTabs({ tournament, games, teams, players = [], bracketMatches = [] }: any) {
+export default function TournamentTabs({ tournament, games, teams, players = [], bracketMatches = [], participants = [] }: any) {
   const [activeTab, setActiveTab] = useState('overview');
   const [roleFilter, setRoleFilter] = useState('all');
   const [sortField, setSortField] = useState('aflRating');
@@ -1018,7 +1018,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                     {bracketMatches.length === 0 ? (
                       <div className="text-center text-gray-500 py-12">Bracket has not been generated for this tournament yet.</div>
                     ) : (
-                      <BracketViewer matches={bracketMatches} isAdmin={false} />
+                      <BracketViewer matches={bracketMatches} isAdmin={false} participants={participants} />
                     )}
                   </div>
                 </div>

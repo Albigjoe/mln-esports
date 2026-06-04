@@ -35,6 +35,11 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
     ]
   });
 
+  const participants = await prisma.tournamentParticipant.findMany({
+    where: { tournamentId: id },
+    select: { teamId: true, seed: true, wins: true, losses: true, points: true }
+  });
+
   return (
     <div className="w-full">
       {/* Dynamic Custom Banner */}
@@ -88,7 +93,7 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} players={players} bracketMatches={bracketMatches} />
+        <TournamentTabs tournament={tournament} games={tournament.games} teams={teams} players={players} bracketMatches={bracketMatches} participants={participants} />
       </div>
     </div>
   );
