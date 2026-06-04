@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 
+import { getHeroImage } from '@/lib/utils';
+
 // Generate a stable hue color from a hero's name
 function heroColor(name: string): string {
   let hash = 0;
@@ -16,9 +18,7 @@ export default function HeroImage({ heroName, className }: { heroName: string; c
   const [imgError, setImgError] = useState(false);
   const hue = heroColor(heroName);
 
-  // Use the official mobile legends web CDN
-  const slug = heroName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-  const imgSrc = `https://akmweb.youngjoygame.com/web/svnres/img/mlbb/homepage/hp_hero/hero_${slug}.png`;
+  const imgSrc = getHeroImage(heroName);
 
   return (
     <div className={`relative shrink-0 overflow-hidden border border-white/10 ${className || 'w-8 h-8 rounded-full'}`}>

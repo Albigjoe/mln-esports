@@ -17,23 +17,11 @@ type HeroStat = {
   maniacs: number;
 };
 
-type SortKey = 'hero' | 'picks' | 'bans' | 'pickRate' | 'banRate' | 'presence' | 'winRate' | 'kda' | 'savages';
+type SortKey = 'hero' | 'picks' | 'pickRate' | 'bans' | 'banRate' | 'wins' | 'winRate';
 type SortDir = 'asc' | 'desc';
 
-const tierColor = (presence: number) => {
-  if (presence >= 80) return 'text-mln-green border-mln-green bg-mln-green/10';
-  if (presence >= 50) return 'text-white border-border-color bg-surface';
-  return 'text-gray-400 border-border-color bg-background';
-};
-const tierLabel = (presence: number) => {
-  if (presence >= 80) return 'S';
-  if (presence >= 50) return 'A';
-  if (presence >= 25) return 'B';
-  return 'C';
-};
-
-export default function HeroesTable({ heroStats }: { heroStats: HeroStat[] }) {
-  const [sortKey, setSortKey] = useState<SortKey>('presence');
+export default function HeroesTable({ heroStats, totalGames }: { heroStats: HeroStat[]; totalGames: number }) {
+  const [sortKey, setSortKey] = useState<SortKey>('picks');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const handleSort = (key: SortKey) => {
@@ -68,71 +56,75 @@ export default function HeroesTable({ heroStats }: { heroStats: HeroStat[] }) {
     </th>
   );
 
+  const total = Math.max(totalGames, 1);
+
   return (
-    <div className="bg-surface border border-border-color rounded-xl overflow-hidden">
+    <div className="bg-surface border border-border-color rounded-xl overflow-hidden shadow-2xl">
       <div className="p-5 border-b border-border-color flex items-center justify-between">
-        <h2 className="text-sm font-black text-white uppercase tracking-widest">Full Hero Statistics</h2>
+        <h2 className="text-sm font-black text-white uppercase tracking-widest">Heroes Statistics</h2>
         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Click any column to sort</span>
       </div>
       <div className="overflow-x-auto w-full">
-        <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="bg-background text-[10px] uppercase text-gray-400 font-bold tracking-widest">
+        <table className="w-full min-w-[900px] text-left text-sm border-collapse">
+          <thead className="bg-background text-[10px] uppercase text-gray-400 font-bold tracking-widest border-b border-border-color">
             <tr>
-              <th className="px-4 py-4 w-12">Tier</th>
-              <SortTh col="hero" label="Hero" />
-              <SortTh col="picks" label="Picks" className="text-center" />
-              <SortTh col="bans" label="Bans" className="text-center" />
-              <SortTh col="pickRate" label="Pick%" className="text-center" />
-              <SortTh col="banRate" label="Ban%" className="text-center" />
-              <SortTh col="presence" label="Presence%" className="text-center" />
-              <SortTh col="winRate" label="Win%" className="text-center" />
-              <SortTh col="kda" label="KDA" className="text-center" />
-              <SortTh col="savages" label="Savages" className="text-center" />
+              <SortTh col="hero" label="Hero" className="pl-6" />
+              <SortTh col="picks" label="Pick" className="text-center" />
+              <SortTh col="pickRate" label="Pick Rate" className="text-center" />
+              <SortTh col="bans" label="Ban" className="text-center" />
+              <SortTh col="banRate" label="Ban Rate" className="text-center" />
+              <SortTh col="wins" label="Win" className="text-center" />
+              <SortTh col="winRate" label="Win Rate" className="text-center" />
+              <th className="px-4 py-4 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((h) => (
-              <tr key={h.hero} className="border-b border-border-color hover:bg-surface-hover transition-colors">
-                <td className="px-4 py-3">
-                  <span className={`w-7 h-7 rounded border flex items-center justify-center text-[11px] font-black ${tierColor(h.presence)}`}>
-                    {tierLabel(h.presence)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <HeroImage heroName={h.hero} />
-                    <span className="font-bold text-white whitespace-nowrap">{h.hero}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-center font-mono font-bold text-white">{h.picks}</td>
-                <td className="px-4 py-3 text-center font-mono text-gray-400">{h.bans}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className="font-mono text-mln-green font-bold">{h.pickRate}%</span>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className="font-mono text-gray-400">{h.banRate}%</span>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <div className="flex items-center gap-2 justify-center">
-                    <div className="w-16 h-1.5 bg-background rounded-full overflow-hidden">
-                      <div className="h-full bg-mln-green rounded-full" style={{ width: `${Math.min(h.presence, 100)}%` }} />
+            {sorted.map((h) => {
+              const pickRateVal = (h.picks / total) * 100;
+              const banRateVal = (h.bans / total) * 100;
+              const mb = banRateVal >= 40 && h.bans >= 2;
+              const mp = pickRateVal >= 30 && h.picks >= 2 && h.winRate >= 60;
+
+              return (
+                <tr key={h.hero} className="border-b border-border-color/60 hover:bg-surface-hover transition-colors">
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      <HeroImage heroName={h.hero} className="w-9 h-9 rounded-full border border-border-color" />
+                      <span className="font-bold text-white whitespace-nowrap">{h.hero}</span>
                     </div>
-                    <span className="font-mono font-bold text-white text-xs whitespace-nowrap">{h.presence}%</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`font-mono font-bold text-sm ${h.winRate >= 60 ? 'text-mln-green' : h.winRate <= 40 ? 'text-gray-500' : 'text-white'}`}>
-                    {h.picks > 0 ? `${h.winRate}%` : '—'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-center font-mono text-white">{h.picks > 0 ? h.kda : '—'}</td>
-                <td className="px-4 py-3 text-center">
-                  {h.savages > 0 ? (
-                    <span className="text-mln-green font-black text-xs">⚡ {h.savages}</span>
-                  ) : <span className="text-gray-600">—</span>}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-4 py-3 text-center font-mono font-bold text-white">{h.picks}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="font-mono text-mln-green font-bold">{h.pickRate.toFixed(2)}%</span>
+                  </td>
+                  <td className="px-4 py-3 text-center font-mono text-gray-400">{h.bans}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="font-mono text-gray-400">{h.banRate.toFixed(2)}%</span>
+                  </td>
+                  <td className="px-4 py-3 text-center font-mono text-white">{h.wins}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`font-mono font-bold text-sm ${h.winRate >= 60 ? 'text-mln-green' : h.winRate <= 40 ? 'text-red-400' : 'text-white'}`}>
+                      {h.picks > 0 ? `${h.winRate.toFixed(2)}%` : '0.00%'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {mb && (
+                        <span className="inline-block bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                          Must Ban
+                        </span>
+                      )}
+                      {mp && (
+                        <span className="inline-block bg-mln-green/10 border border-mln-green/30 text-mln-green text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                          Must Pick
+                        </span>
+                      )}
+                      {!mb && !mp && <span className="text-gray-600 font-mono text-xs">—</span>}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

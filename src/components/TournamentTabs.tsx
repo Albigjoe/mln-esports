@@ -1113,8 +1113,10 @@ function HeroStatsTable({ games }: { games: any[] }) {
           </thead>
           <tbody className="divide-y divide-border-color/60">
             {sortedHeroes.map(h => {
-              const mb = h.bans >= 3;
-              const mp = h.picks >= 3 && h.wr >= 60;
+              const banRate = (h.bans / validGamesCount) * 100;
+              const pickRate = (h.picks / validGamesCount) * 100;
+              const mb = banRate >= 40 && h.bans >= 2;
+              const mp = pickRate >= 30 && h.picks >= 2 && h.wr >= 60;
               return (
                 <tr key={h.hero} className="hover:bg-surface-hover/30 transition-colors">
                   <td className="px-3 md:px-6 py-4 flex items-center gap-3">
