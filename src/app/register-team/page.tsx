@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, Upload, X, Check, ChevronDown, Plus, Minus, Trophy, Users, Camera } from 'lucide-react';
+import { Search, Upload, X, Check, ChevronDown, Plus, Minus, Trophy, Users, Camera, RefreshCw } from 'lucide-react';
 
 const ROLES = ['Roamer', 'Gold Lane', 'Jungle', 'Exp Lane', 'Mid Lane'];
 const RANKS = ['Epic', 'Legend', 'Mythic', 'Mythical Honor', 'Mythical Glory', 'Mythical Immortal'];
@@ -18,6 +18,10 @@ async function uploadFile(file: File, folder: string): Promise<string> {
   if (!res.ok) throw new Error(data.error || 'Upload failed');
   return data.url;
 }
+
+const blankPlayer = () => ({
+  username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: '', isExisting: false
+});
 
 export default function RegisterTeamPage() {
   const [step, setStep] = useState(1);
@@ -45,12 +49,11 @@ export default function RegisterTeamPage() {
 
   // Players
   const [players, setPlayers] = useState(
-    Array.from({ length: 5 }, () => ({
-      username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: ''
-    }))
+    Array.from({ length: 5 }, blankPlayer)
   );
 
   const [loading, setLoading] = useState(false);
+  const [rosterLoading, setRosterLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -81,13 +84,44 @@ export default function RegisterTeamPage() {
     debounceRef.current = setTimeout(() => fetchTeamSuggestions(val), 300);
   };
 
-  const selectExistingTeam = (team: TeamSuggestion) => {
+  const selectExistingTeam = async (team: TeamSuggestion) => {
     setSelectedTeam(team);
     setTeamQuery(team.name);
     setIsNewTeam(false);
     setShowSuggestions(false);
     setLogoPreview(team.logoUrl || '');
     setLogoError('');
+
+    // Auto-load their roster from the database
+    setRosterLoading(true);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/roster`);
+      const data = await res.json();
+      if (data.players && data.players.length > 0) {
+        const loaded = data.players.map((p: any) => ({
+          username: p.username || '',
+          gameId: p.gameId || '',
+          realName: p.realName || '',
+          role: p.role || '',
+          rank: p.rank || 'Mythic',
+          state: p.state || '',
+          pictureUrl: p.pictureUrl || '',
+          pictureFile: null,
+          picturePreview: p.pictureUrl || '',
+          pictureError: '',
+          isExisting: true,
+        }));
+        // Pad to at least 5
+        while (loaded.length < 5) loaded.push(blankPlayer());
+        setPlayers(loaded);
+      } else {
+        // No players on record yet — start blank
+        setPlayers(Array.from({ length: 5 }, blankPlayer));
+      }
+    } catch {
+      setPlayers(Array.from({ length: 5 }, blankPlayer));
+    }
+    setRosterLoading(false);
   };
 
   const selectNewTeam = () => {
@@ -95,6 +129,7 @@ export default function RegisterTeamPage() {
     setIsNewTeam(true);
     setShowSuggestions(false);
     setLogoError('');
+    setPlayers(Array.from({ length: 5 }, blankPlayer));
   };
 
   // Close suggestions on outside click
@@ -199,12 +234,17 @@ export default function RegisterTeamPage() {
   };
 
   const addPlayer = () => {
-    setPlayers(prev => [...prev, { username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null, picturePreview: '', pictureError: '' }]);
+    setPlayers(prev => [...prev, blankPlayer()]);
   };
 
   const removePlayer = (index: number) => {
     if (players.length <= 5) return;
     setPlayers(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Replace a player slot with a blank (swap out)
+  const swapPlayer = (index: number) => {
+    setPlayers(prev => prev.map((p, i) => i === index ? blankPlayer() : p));
   };
 
   const toggleTournament = (id: string) => {
@@ -573,11 +613,37 @@ export default function RegisterTeamPage() {
                 <button onClick={() => setStep(2)} className="text-gray-400 text-xs font-bold uppercase hover:text-white transition-colors">← Back</button>
               </div>
 
+              {/* Roster pre-load banner */}
+              {selectedTeam && !rosterLoading && players.some(p => p.isExisting) && (
+                <div className="mb-6 flex items-start gap-3 bg-mln-green/10 border border-mln-green/30 rounded-xl p-4">
+                  <RefreshCw size={16} className="text-mln-green mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-mln-green font-black text-sm">Roster loaded from database</p>
+                    <p className="text-gray-400 text-xs mt-0.5">This is your current roster on file. Keep the same lineup, or click <span className="text-white font-bold">Swap Out</span> to replace a player with someone new.</p>
+                  </div>
+                </div>
+              )}
+              {rosterLoading && (
+                <div className="mb-6 flex items-center gap-3 bg-surface border border-border-color rounded-xl p-4">
+                  <svg className="animate-spin w-4 h-4 text-mln-green" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  <p className="text-gray-400 text-sm font-bold">Loading existing roster...</p>
+                </div>
+              )}
+
               <div className="space-y-6">
                 {players.map((p, i) => (
-                  <div key={i} className="bg-background border border-border-color rounded-xl p-4 sm:p-5 relative">
-                    <div className="absolute top-0 right-0 bg-surface border-l border-b border-border-color text-gray-400 text-[10px] font-black px-3 py-1 rounded-bl-xl rounded-tr-xl tracking-widest">
-                      {i === 0 ? 'CAPTAIN' : `PLAYER ${i + 1}`}
+                  <div key={i} className={`bg-background border rounded-xl p-4 sm:p-5 relative transition-colors ${
+                    p.isExisting ? 'border-mln-green/30' : 'border-border-color'
+                  }`}>
+                    <div className="absolute top-0 right-0 flex items-center">
+                      {p.isExisting && (
+                        <span className="bg-mln-green/20 text-mln-green text-[9px] font-black px-2 py-1 border-b border-l border-mln-green/30 rounded-bl-lg tracking-widest">
+                          ON FILE
+                        </span>
+                      )}
+                      <div className="bg-surface border-l border-b border-border-color text-gray-400 text-[10px] font-black px-3 py-1 rounded-bl-xl rounded-tr-xl tracking-widest">
+                        {i === 0 ? 'CAPTAIN' : `PLAYER ${i + 1}`}
+                      </div>
                     </div>
 
                     <div className="flex items-start gap-4 mt-2 mb-4">
@@ -668,13 +734,23 @@ export default function RegisterTeamPage() {
                       </div>
                     </div>
 
-                    {i >= 5 && (
-                      <div className="mt-4 text-right">
-                        <button onClick={() => removePlayer(i)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase flex items-center gap-1 ml-auto transition-colors">
-                          <Minus size={12} /> Remove Player
+                    <div className="mt-4 flex justify-end gap-3">
+                      {/* Swap out an existing player */}
+                      {p.isExisting && (
+                        <button
+                          onClick={() => swapPlayer(i)}
+                          className="text-yellow-400 hover:text-yellow-300 text-xs font-bold uppercase flex items-center gap-1 transition-colors"
+                        >
+                          <RefreshCw size={12} /> Swap Out
                         </button>
-                      </div>
-                    )}
+                      )}
+                      {/* Remove extra players (beyond 5) */}
+                      {i >= 5 && (
+                        <button onClick={() => removePlayer(i)} className="text-red-400 hover:text-red-300 text-xs font-bold uppercase flex items-center gap-1 transition-colors">
+                          <Minus size={12} /> Remove
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
