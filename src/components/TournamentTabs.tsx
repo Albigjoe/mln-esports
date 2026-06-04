@@ -12,6 +12,145 @@ function kdaClr(v: number) { return v >= 5 ? 'text-mln-green' : v >= 3 ? 'text-w
 function wrClr(v: number) { return v >= 60 ? 'text-mln-green' : v <= 40 ? 'text-red-400' : 'text-white'; }
 function ratingClr(v: number) { return v >= 27 ? 'text-mln-green' : v >= 18 ? 'text-white' : 'text-red-400'; }
 
+function parseDurationToMinutes(durationStr: string): number {
+  if (!durationStr) return 0;
+  const parts = durationStr.split(':');
+  if (parts.length === 2) {
+    const minutes = parseFloat(parts[0]) || 0;
+    const seconds = parseFloat(parts[1]) || 0;
+    return minutes + (seconds / 60);
+  }
+  return parseFloat(durationStr) || 0;
+}
+
+function normalizeLane(role: string): string {
+  const r = role.toLowerCase();
+  if (r.includes('gold')) return 'Gold';
+  if (r.includes('mid')) return 'Mid';
+  if (r.includes('exp')) return 'EXP';
+  if (r.includes('jungle') || r.includes('jg')) return 'Jungle';
+  if (r.includes('roam')) return 'Roam';
+  return role;
+}
+
+function getAflClass(heroName: string, lane: string): string {
+  const h = heroName.trim();
+  const l = lane.trim();
+
+  // Pre-locked defaults
+  const key = `${h}+${l}`;
+  const preLocked: Record<string, string> = {
+    'Esmeralda+EXP': 'Fighter EXP',
+    'Mathilda+Roam': 'Utility Roam',
+    'Chou+Roam': 'Damage Roam',
+    'Jawhead+Jungle': 'Fighter JG',
+    'Valentina+Mid': 'Burst Mage Mid',
+    'Alice+EXP': 'Fighter EXP',
+    'Hylos+Roam': 'Tank Roam',
+    'Baxia+Jungle': 'Tank JG',
+    'Leomord+Jungle': 'Fighter JG'
+  };
+  if (preLocked[key]) return preLocked[key];
+
+  // Marksman
+  const MMs = [
+    'Beatrix', 'Brody', 'Bruno', 'Claude', 'Clint', 'Granger', 'Hanabi', 'Irithel', 'Ixia',
+    'Karrie', 'Kimmy', 'Layla', 'Lesley', 'Miya', 'Moskov', 'Natan', 'Popol and Kupa',
+    'Roger', 'Wanwan', 'Yi Sun-shin', 'Melissa'
+  ];
+
+  // Mage
+  const Mages = [
+    'Aurora', 'Cecilion', 'Chang\'e', 'Cyclops', 'Esmeralda', 'Eudora', 'Faramis', 'Gord',
+    'Harith', 'Kagura', 'Kadita', 'Lunox', 'Luo Yi', 'Lylia', 'Nana', 'Novaria', 'Odette',
+    'Pharsa', 'Selena', 'Vale', 'Valentina', 'Valir', 'Vexana', 'Xavier', 'Yve', 'Zhask', 'Zhuxin'
+  ];
+
+  // Fighter
+  const Fighters = [
+    'Aldous', 'Alpha', 'Alucard', 'Argus', 'Arlott', 'Aulus', 'Badang', 'Balmond', 'Bane',
+    'Barats', 'Cici', 'Chou', 'Dyrroth', 'Freya', 'Guinevere', 'Hilda', 'Jawhead', 'Julian',
+    'Kaja', 'Khaleed', 'Lapu-Lapu', 'Leomord', 'Lukas', 'Martis', 'Masha', 'Minsitthar',
+    'Paquito', 'Phoveus', 'Ruby', 'Silvanna', 'Sun', 'Terizla', 'Thamuz', 'X.Borg', 'Yin',
+    'Yu Zhong', 'Zilong', 'Roger', 'Benedetta'
+  ];
+
+  // Assassin
+  const Assassins = [
+    'Aamon', 'Benedetta', 'Fanny', 'Gusion', 'Hanzo', 'Hayabusa', 'Helcurt', 'Joy',
+    'Karina', 'Lancelot', 'Ling', 'Natalia', 'Nolan', 'Saber', 'Selena'
+  ];
+
+  // Tank
+  const Tanks = [
+    'Akai', 'Atlas', 'Barats', 'Baxia', 'Belerick', 'Chip', 'Edith', 'Franco', 'Gatotkaca',
+    'Gloo', 'Grock', 'Hylos', 'Johnson', 'Khufra', 'Lolita', 'Minotaur', 'Obsidia', 'Tigreal',
+    'Uranus', 'Fredrinn'
+  ];
+
+  // Support
+  const Supports = [
+    'Angela', 'Carmilla', 'Chip', 'Diggie', 'Estes', 'Floryn', 'Kaja', 'Lolita', 'Mathilda',
+    'Minotaur', 'Rafaela'
+  ];
+
+  const isMM = MMs.some(x => x.toLowerCase() === h.toLowerCase());
+  const isMage = Mages.some(x => x.toLowerCase() === h.toLowerCase());
+  const isFighter = Fighters.some(x => x.toLowerCase() === h.toLowerCase());
+  const isAssassin = Assassins.some(x => x.toLowerCase() === h.toLowerCase());
+  const isTank = Tanks.some(x => x.toLowerCase() === h.toLowerCase());
+  const isSupport = Supports.some(x => x.toLowerCase() === h.toLowerCase());
+
+  if (l === 'Gold') {
+    if (isMM) return 'MM Gold';
+    if (isFighter) return 'Fighter Gold';
+  } else if (l === 'Mid') {
+    if (['faramis', 'diggie', 'chip'].includes(h.toLowerCase())) return 'Utility Mage Mid';
+    if (isMage) return 'Burst Mage Mid';
+  } else if (l === 'EXP') {
+    if (isFighter) return 'Fighter EXP';
+    if (isMage) return 'Mage EXP';
+  } else if (l === 'Jungle') {
+    if (isAssassin) return 'Assassin JG';
+    if (isFighter) return 'Fighter JG';
+    if (isTank) return 'Tank JG';
+  } else if (l === 'Roam') {
+    if (isTank) return 'Tank Roam';
+    if (isSupport) return 'Utility Roam';
+    if (['chou', 'selena', 'saber', 'kadita', 'natalia', 'gusion', 'helcurt', 'hilda'].includes(h.toLowerCase()) || isAssassin || isFighter) {
+      return 'Damage Roam';
+    }
+  }
+
+  // Fallback rules
+  console.warn(`Fallback triggered for Hero: ${h}, Lane: ${l}`);
+  if (l === 'Gold') return 'Fighter Gold';
+  if (l === 'Mid') return 'Utility Mage Mid';
+  if (l === 'EXP') return 'Fighter EXP';
+  if (l === 'Jungle') return 'Tank JG';
+  if (l === 'Roam') return 'Tank Roam';
+
+  return 'Tank Roam';
+}
+
+function getDamageComponent(aflClass: string, DealtPM: number, TakenPM: number): number {
+  switch (aflClass) {
+    case 'MM Gold':          return (DealtPM - TakenPM) / 8000;
+    case 'Fighter Gold':     return (DealtPM + TakenPM) / 10000;
+    case 'Burst Mage Mid':   return (DealtPM - TakenPM) / 7000;
+    case 'Utility Mage Mid': return (DealtPM - TakenPM) / 12000;
+    case 'Fighter EXP':      return (DealtPM + TakenPM) / 10000;
+    case 'Mage EXP':         return (DealtPM - TakenPM) / 8000;
+    case 'Assassin JG':      return (DealtPM - TakenPM) / 8000;
+    case 'Fighter JG':       return (DealtPM + TakenPM) / 12000;
+    case 'Tank JG':          return (DealtPM + TakenPM) / 15000;
+    case 'Tank Roam':        return (DealtPM + TakenPM) / 15000;
+    case 'Damage Roam':      return (DealtPM - TakenPM) / 9000;
+    case 'Utility Roam':     return (DealtPM - TakenPM) / 14000;
+    default:                 return 0;
+  }
+}
+
 function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = []) {
   const p: Record<string, any> = {};
   
@@ -31,7 +170,19 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
           team: tn || '',
           role: pk.role || '',
           hero: pk.hero || '',
-          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, teamKills: 0, heroes: {}, roles: {}
+          g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0,
+          teamKills: 0,
+          totalDurationMin: 0,
+          validAflGames: 0,
+          aflKills: 0,
+          aflDeaths: 0,
+          aflAssists: 0,
+          aflGold: 0,
+          aflDmg: 0,
+          aflDmgTaken: 0,
+          aflTeamKills: 0,
+          heroes: {},
+          roles: {}
         };
       }
       p[key].g++;
@@ -45,6 +196,22 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
       
       if (pk.team === g.winner) p[key].w++;
       
+      const durationMin = parseDurationToMinutes(g.duration);
+      const isMissingField = !g.duration || durationMin <= 0 || pk.damage === undefined || pk.damage === null || pk.damageTaken === undefined || pk.damageTaken === null;
+      if (!isMissingField) {
+        p[key].validAflGames++;
+        p[key].totalDurationMin += durationMin;
+        p[key].aflKills += pk.kills || 0;
+        p[key].aflDeaths += pk.deaths || 0;
+        p[key].aflAssists += pk.assists || 0;
+        p[key].aflGold += pk.gold || 0;
+        p[key].aflDmg += pk.damage || 0;
+        p[key].aflDmgTaken += pk.damageTaken || 0;
+        p[key].aflTeamKills += teamKills;
+      } else {
+        console.warn(`AFL exclude match: Game ${g.id}, Player ${pk.playerUsername} (duration=${g.duration}, damage=${pk.damage}, damageTaken=${pk.damageTaken})`);
+      }
+      
       if (pk.hero) {
         p[key].heroes[pk.hero] = (p[key].heroes[pk.hero] || 0) + 1;
         if (!p[key].hero) p[key].hero = pk.hero;
@@ -53,21 +220,14 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
         p[key].roles[pk.role] = (p[key].roles[pk.role] || 0) + 1;
         if (!p[key].role) p[key].role = pk.role;
       }
-      
-      const k = pk.kills || 0, d = pk.deaths || 0, a = pk.assists || 0;
-      const kp = teamKills > 0 ? Math.round((k + a) / teamKills * 100) : 0;
-      p[key].score += pk.mvpScore || 0;
-      p[key].kpTotal += kp;
     });
   });
 
-  // Map team IDs to team names to match registered players to their teams
   const teamIdMap = new Map<string, string>();
   teamsList.forEach((t: any) => {
     teamIdMap.set(t.id, t.name);
   });
 
-  // Include registered players who haven't played yet
   playersList.forEach((pl: any) => {
     if (!pl.username) return;
     const tn = pl.teamId ? (teamIdMap.get(pl.teamId) || '') : '';
@@ -79,32 +239,77 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
         team: tn,
         role: pl.role || 'PLAYER',
         hero: '',
-        g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0, kpTotal: 0, teamKills: 0, heroes: {}, roles: {}
+        g: 0, k: 0, d: 0, a: 0, gold: 0, dmg: 0, dmgTaken: 0, w: 0, score: 0,
+        teamKills: 0,
+        totalDurationMin: 0,
+        validAflGames: 0,
+        aflKills: 0,
+        aflDeaths: 0,
+        aflAssists: 0,
+        aflGold: 0,
+        aflDmg: 0,
+        aflDmgTaken: 0,
+        aflTeamKills: 0,
+        heroes: {},
+        roles: {}
       };
     }
   });
-  
+
   return Object.values(p).map((s: any) => {
     const gamesCount = Math.max(s.g, 1);
     const hasPlayed = s.g > 0;
+    
+    const winRate = hasPlayed ? s.w / gamesCount : 0;
+    const avgGold = hasPlayed ? s.gold / gamesCount : 0;
+    
+    const hasValidGames = s.validAflGames > 0;
+    const kda = hasValidGames
+      ? (s.aflDeaths > 0 ? (s.aflKills + s.aflAssists) / s.aflDeaths : (s.aflKills + s.aflAssists))
+      : 0;
+      
+    const kp = hasValidGames
+      ? ((s.aflKills + s.aflAssists) === 0 ? 0 : s.aflTeamKills === 0 ? 0 : (s.aflKills + s.aflAssists) / s.aflTeamKills)
+      : 0;
+
+    const validDuration = s.totalDurationMin;
+    const dmgDealtPM = (hasValidGames && validDuration > 0) ? s.aflDmg / validDuration : 0;
+    const dmgTakenPM = (hasValidGames && validDuration > 0) ? s.aflDmgTaken / validDuration : 0;
+
+    const topHero = Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None';
+    const primaryRole = Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || s.role || 'PLAYER';
+    
+    const normalizedLaneVal = normalizeLane(primaryRole);
+    const aflClass = getAflClass(topHero, normalizedLaneVal);
+    const damageComp = getDamageComponent(aflClass, dmgDealtPM, dmgTakenPM);
+    const deathlessBonus = (s.g >= 5 && s.d === 0) ? 2.0 : 0.0;
+    
+    let rating = 0;
+    const isAflExcluded = s.g > 0 && validDuration === 0;
+    
+    if (hasPlayed && !isAflExcluded) {
+      rating = (kda * 2.0) + (kp * 100 * 0.06) + (avgGold / 2000) + (winRate * 2.5) + damageComp + deathlessBonus;
+    }
+    
     return {
       ...s,
-      kda: hasPlayed ? (s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) : null,
+      kda: hasPlayed ? kda : null,
       avgK: hasPlayed ? s.k / gamesCount : null,
       avgD: hasPlayed ? s.d / gamesCount : null,
       avgA: hasPlayed ? s.a / gamesCount : null,
-      avgKP: (hasPlayed && s.teamKills > 0) ? Math.round((s.k + s.a) / s.teamKills * 100) : null,
-      avgGold: Math.round(s.gold / gamesCount),
-      aflRating: hasPlayed ? +(
-        ((s.d > 0 ? (s.k + s.a) / s.d : s.k + s.a) * 2.0) +
-        ((s.teamKills > 0 ? (s.k + s.a) / s.teamKills * 100 : 0) * 0.06) +
-        ((s.gold / gamesCount) / 2000) +
-        ((s.w / gamesCount) * 2.5) +
-        ((s.d === 0 && s.g >= 5) ? 2.0 : 0.0)
-      ).toFixed(2) : 0,
-      wr: Math.round(s.w / gamesCount * 100),
-      top: Object.entries(s.heroes).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'None',
-      role: Object.entries(s.roles).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || s.role || 'PLAYER',
+      kp,
+      winRate,
+      avgGold,
+      dmgDealtPM,
+      dmgTakenPM,
+      aflClass,
+      damageComp,
+      deathlessBonus,
+      eligible: s.g >= 5 && !isAflExcluded,
+      aflRating: hasPlayed && !isAflExcluded ? +rating.toFixed(2) : 0,
+      wr: Math.round(winRate * 100),
+      top: topHero,
+      role: primaryRole,
     };
   });
 }
@@ -181,25 +386,47 @@ function isCompleted(s: any) {
 export default function TournamentTabs({ tournament, games, teams, players = [], bracketMatches = [] }: any) {
   const [activeTab, setActiveTab] = useState('overview');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [sortField, setSortField] = useState('player');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState('aflRating');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const seriesList = groupGamesIntoSeries(games);
   const ps = playerStats(games, players, teams);
   const filteredPlayers = roleFilter === 'all' ? ps : ps.filter((p: any) => p.role === roleFilter);
   const sortedPlayers = [...filteredPlayers].sort((a: any, b: any) => {
-    let v1 = a[sortField];
-    let v2 = b[sortField];
-    const isDesc = sortDir === 'desc';
-
-    if (v1 === null || v1 === undefined) return 1;
-    if (v2 === null || v2 === undefined) return -1;
-
-    if (typeof v1 === 'string' && typeof v2 === 'string') {
-      return isDesc ? v2.localeCompare(v1) : v1.localeCompare(v2);
+    if (sortField === 'player') {
+      const isDesc = sortDir === 'desc';
+      return isDesc ? b.player.localeCompare(a.player) : a.player.localeCompare(b.player);
     }
 
-    return isDesc ? Number(v2) - Number(v1) : Number(v1) - Number(v2);
+    if (sortField !== 'aflRating') {
+      const isDesc = sortDir === 'desc';
+      let v1 = a[sortField];
+      let v2 = b[sortField];
+      if (v1 === null || v1 === undefined) return 1;
+      if (v2 === null || v2 === undefined) return -1;
+      return isDesc ? Number(v2) - Number(v1) : Number(v1) - Number(v2);
+    }
+
+    // Default: Eligibility first, then AFL Rating, then tiebreakers
+    if (a.eligible !== b.eligible) {
+      return a.eligible ? -1 : 1;
+    }
+    if (b.aflRating !== a.aflRating) {
+      return b.aflRating - a.aflRating;
+    }
+    if (b.winRate !== a.winRate) {
+      return b.winRate - a.winRate;
+    }
+    if (b.kda !== a.kda) {
+      return b.kda - a.kda;
+    }
+    if (b.kp !== a.kp) {
+      return b.kp - a.kp;
+    }
+    if (b.g !== a.g) {
+      return b.g - a.g;
+    }
+    return 0;
   });
 
   const toggleSort = (field: string) => {
@@ -231,18 +458,16 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
       if (b.aflRating !== a.aflRating) {
         return b.aflRating - a.aflRating;
       }
-      const wrA = a.g > 0 ? a.w / a.g : 0;
-      const wrB = b.g > 0 ? b.w / b.g : 0;
-      if (wrB !== wrA) {
-        return wrB - wrA;
+      if (b.winRate !== a.winRate) {
+        return b.winRate - a.winRate;
       }
       const kdaA = a.kda || 0;
       const kdaB = b.kda || 0;
       if (kdaB !== kdaA) {
         return kdaB - kdaA;
       }
-      const kpA = a.avgKP || 0;
-      const kpB = b.avgKP || 0;
+      const kpA = a.kp || 0;
+      const kpB = b.kp || 0;
       if (kpB !== kpA) {
         return kpB - kpA;
       }
@@ -343,10 +568,10 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                     </div>
                     {mvp && (
                       <div className="mt-4 pt-4 border-t border-border-color/60">
-                        <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.aflRating}</div>
+                        <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.aflRating.toFixed(2)}</div>
                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">AFL Rating</div>
-                        <div className="text-[10px] text-gray-400 mt-2">{mvp.kda?.toFixed(1) || 0} KDA · {mvp.avgKP || 0}% KP · {mvp.g} GP</div>
-                        <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{mvp.role}</span>
+                        <div className="text-[10px] text-gray-400 mt-2">{mvp.kda?.toFixed(2) || 0} KDA · {Math.round((mvp.kp || 0) * 100)}% KP · {mvp.g} GP</div>
+                        <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{ROLE_DISPLAY_MAP[mvp.role] || mvp.role}</span>
                       </div>
                     )}
                   </div>
@@ -427,9 +652,12 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[1000px] border-collapse">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[1200px] border-collapse">
                     <thead>
                       <tr>
+                        <th className="px-3 py-4 text-xs font-black uppercase tracking-wider text-center bg-background text-gray-400 border-b border-border-color">
+                          Rank
+                        </th>
                         <th 
                           onClick={() => toggleSort('player')}
                           className={`px-4 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-left ${
@@ -452,7 +680,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'k' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Total Kills {sortField === 'k' && (sortDir === 'desc' ? '↓' : '↑')}
+                          Kills {sortField === 'k' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgK')}
@@ -476,7 +704,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'a' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Total Assists {sortField === 'a' && (sortDir === 'desc' ? '↓' : '↑')}
+                          Assists {sortField === 'a' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgA')}
@@ -492,15 +720,15 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'kda' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          KDA Ratio {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}
+                          KDA {sortField === 'kda' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
-                          onClick={() => toggleSort('avgKP')}
+                          onClick={() => toggleSort('kp')}
                           className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
-                            sortField === 'avgKP' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                            sortField === 'kp' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          Kill Participation % {sortField === 'avgKP' && (sortDir === 'desc' ? '↓' : '↑')}
+                          KP% {sortField === 'kp' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('avgGold')}
@@ -509,6 +737,22 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                           }`}
                         >
                           Avg Gold {sortField === 'avgGold' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('dmg')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'dmg' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                          }`}
+                        >
+                          Avg Dmg Dealt {sortField === 'dmg' && (sortDir === 'desc' ? '↓' : '↑')}
+                        </th>
+                        <th 
+                          onClick={() => toggleSort('dmgTaken')}
+                          className={`px-3 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-center ${
+                            sortField === 'dmgTaken' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
+                          }`}
+                        >
+                          Avg Dmg Taken {sortField === 'dmgTaken' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                         <th 
                           onClick={() => toggleSort('aflRating')}
@@ -521,51 +765,75 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-color/60">
-                      {sortedPlayers.map((p: any) => {
-                        const hasPlayed = p.g > 0;
-                        return (
-                          <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
-                            <td className="px-4 py-3.5 text-left font-black text-white">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-md border border-border-color overflow-hidden shrink-0">
-                                  <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                      {(() => {
+                        let currentRank = 0;
+                        return sortedPlayers.map((p: any) => {
+                          const hasPlayed = p.g > 0;
+                          let rankDisplay = '—';
+                          if (p.eligible) {
+                            currentRank++;
+                            rankDisplay = currentRank.toString();
+                          } else if (hasPlayed) {
+                            rankDisplay = 'Not Eligible';
+                          }
+
+                          return (
+                            <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
+                              <td className="px-3 py-3.5 text-center font-bold text-xs whitespace-nowrap">
+                                {rankDisplay === 'Not Eligible' ? (
+                                  <span className="text-red-400/80 font-bold uppercase text-[9px] tracking-wider bg-red-400/10 border border-red-500/20 px-2 py-0.5 rounded">Not Eligible</span>
+                                ) : (
+                                  <span className="text-mln-green font-mono text-sm">{rankDisplay}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3.5 text-left font-black text-white">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md border border-border-color overflow-hidden shrink-0">
+                                    <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
+                                  </div>
+                                  <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
                                 </div>
-                                <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
-                              {hasPlayed ? p.g : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.k : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.avgK.toFixed(2) : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.avgD.toFixed(2) : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.a : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.avgA.toFixed(2) : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.kda.toFixed(2) : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed && p.avgKP !== null ? p.avgKP + '%' : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
-                              {hasPlayed ? p.avgGold.toLocaleString() : '-'}
-                            </td>
-                            <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
-                              {hasPlayed ? p.aflRating : '-'}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.g : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.k : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.avgK.toFixed(2) : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.avgD.toFixed(2) : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.a : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.avgA.toFixed(2) : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.kda.toFixed(2) : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed && p.kp !== null ? Math.round(p.kp * 100) + '%' : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? p.avgGold.toLocaleString() : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? Math.round(p.dmgDealtPM).toLocaleString() : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                                {hasPlayed ? Math.round(p.dmgTakenPM).toLocaleString() : '-'}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
+                                {hasPlayed ? p.aflRating.toFixed(2) : '-'}
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

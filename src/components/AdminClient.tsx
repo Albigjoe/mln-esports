@@ -786,7 +786,7 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
             </div>
             
             {/* Row 2: Kills, Deaths, Assists, Gold */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-3 mb-3">
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Kills</label>
                 <input placeholder="K" inputMode="numeric" value={p.kills} onChange={e => onChange(i,'kills',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
@@ -802,6 +802,18 @@ function PickSection({ label, picks, teamPlayers, onChange }: { label: string; p
               <div>
                 <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Gold</label>
                 <input placeholder="Gold" inputMode="numeric" value={p.gold} onChange={e => onChange(i,'gold',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+            </div>
+
+            {/* Row 3: Damage Dealt, Damage Taken */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage Dealt</label>
+                <input placeholder="Damage Dealt" inputMode="numeric" value={p.damage} onChange={e => onChange(i,'damage',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Damage Taken</label>
+                <input placeholder="Damage Taken" inputMode="numeric" value={p.damageTaken} onChange={e => onChange(i,'damageTaken',e.target.value)} className="w-full bg-background border border-border-color rounded px-2 py-1.5 text-white text-xs text-center focus:border-mln-green outline-none placeholder:text-gray-600" />
               </div>
             </div>
           </div>

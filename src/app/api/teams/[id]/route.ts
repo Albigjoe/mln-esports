@@ -10,8 +10,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const adminCheck = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!adminCheck || adminCheck.role !== 'ADMIN') {
+    const adminCheck = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
+    const userCheck = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const isAuthorized = !!adminCheck || (userCheck && userCheck.role === 'ADMIN');
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
 
