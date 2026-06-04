@@ -652,12 +652,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[1200px] border-collapse">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[1100px] border-collapse">
                     <thead>
                       <tr>
-                        <th className="px-3 py-4 text-xs font-black uppercase tracking-wider text-center bg-background text-gray-400 border-b border-border-color">
-                          Rank
-                        </th>
                         <th 
                           onClick={() => toggleSort('player')}
                           className={`px-4 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-left ${
@@ -765,35 +762,23 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-color/60">
-                      {(() => {
-                        let currentRank = 0;
-                        return sortedPlayers.map((p: any) => {
-                          const hasPlayed = p.g > 0;
-                          let rankDisplay = '—';
-                          if (p.eligible) {
-                            currentRank++;
-                            rankDisplay = currentRank.toString();
-                          } else if (hasPlayed) {
-                            rankDisplay = 'Not Eligible';
-                          }
-
-                          return (
-                            <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
-                              <td className="px-3 py-3.5 text-center font-bold text-xs whitespace-nowrap">
-                                {rankDisplay === 'Not Eligible' ? (
-                                  <span className="text-red-400/80 font-bold uppercase text-[9px] tracking-wider bg-red-400/10 border border-red-500/20 px-2 py-0.5 rounded">Not Eligible</span>
-                                ) : (
-                                  <span className="text-mln-green font-mono text-sm">{rankDisplay}</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3.5 text-left font-black text-white">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-md border border-border-color overflow-hidden shrink-0">
-                                    <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
-                                  </div>
-                                  <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
+                      {sortedPlayers.map((p: any) => {
+                        const hasPlayed = p.g > 0;
+                        return (
+                          <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
+                            <td className="px-4 py-3.5 text-left font-black text-white">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-md border border-border-color overflow-hidden shrink-0">
+                                  <img src={getPlayerImage(p.player, players)} alt={p.player} className="w-full h-full object-cover" />
                                 </div>
-                              </td>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+                                  <Link href={`/players/${p.player}`} className="hover:text-mln-green transition-all">{p.player}</Link>
+                                  {!p.eligible && hasPlayed && (
+                                    <span className="text-red-400/80 font-bold uppercase text-[9px] tracking-wider bg-red-400/10 border border-red-500/20 px-2 py-0.5 rounded shrink-0">Not Eligible</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
                               <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
                                 {hasPlayed ? p.g : '-'}
                               </td>
@@ -830,10 +815,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                               <td className="px-3 py-3.5 text-center font-mono font-bold text-mln-green">
                                 {hasPlayed ? p.aflRating.toFixed(2) : '-'}
                               </td>
-                            </tr>
-                          );
-                        });
-                      })()}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

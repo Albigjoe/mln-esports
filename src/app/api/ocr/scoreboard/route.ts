@@ -61,10 +61,19 @@ You have been provided with up to 3 screenshots from a single match.
 INSTRUCTIONS:
 1. Look at the screenshots carefully. The screen is split into two halves: Team 1 on the left (or top), and Team 2 on the right (or bottom).
 2. Each half has exactly 5 rows (the 5 players).
-3. For each player row, carefully read: their Hero picture/name, their IGN (In-Game Name), their Kills / Deaths / Assists (KDA), and their total Gold earned.
+3. For each player row, carefully read ALL of these stats:
+   - Hero picture/name
+   - IGN (In-Game Name)
+   - Kills / Deaths / Assists (KDA)
+   - Total Gold earned
+   - Damage Dealt (total damage output, sometimes shown as a bar chart or number)
+   - Damage Taken (total damage received, sometimes shown as a bar chart or number)
 4. Check for 'MVP' or 'MVP Loss' badges on each player.
 5. Determine which team won (the team with the MVP badge player is the winning team).
 6. Determine each player's role based on their hero and position: Roamer, Gold Lane, Jungle, Exp Lane, or Mid Lane.
+7. Read the game duration (MM:SS) if visible at the top of the screen.
+
+IMPORTANT: The scoreboard may have multiple tabs/pages. One tab shows KDA and Gold. Another tab shows Damage Dealt and Damage Taken. If damage stats are not visible in the provided screenshots, set damage and damageTaken to 0.
 
 Think step-by-step. First, write down your observations for Team 1 and Team 2.
 Then, output a final JSON object wrapped in \`\`\`json ... \`\`\` codeblocks. There MUST be exactly 5 players in team1_picks and 5 players in team2_picks.
@@ -78,7 +87,9 @@ JSON Structure:
       "hero": "Exact MLBB Hero Name",
       "playerUsername": "Exact Player IGN",
       "role": "Roamer, Gold Lane, Jungle, Exp Lane, or Mid Lane",
-      "kills": 0, "deaths": 0, "assists": 0, "gold": 0, "isMvp": false
+      "kills": 0, "deaths": 0, "assists": 0, "gold": 0,
+      "damage": 0, "damageTaken": 0,
+      "isMvp": false
     }
   ],
   "team2_picks": [
