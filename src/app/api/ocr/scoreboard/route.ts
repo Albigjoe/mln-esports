@@ -71,7 +71,8 @@ INSTRUCTIONS:
 4. Check for 'MVP' or 'MVP Loss' badges on each player.
 5. Determine which team won (the team with the MVP badge player is the winning team).
 6. Determine each player's role based on their hero and position: Roamer, Gold Lane, Jungle, Exp Lane, or Mid Lane.
-7. Read the game duration (MM:SS) if visible at the top of the screen.
+7. Read the game duration (MM:SS) if visible on the screen.
+8. Read the game date if visible (usually in format like YYYY/MM/DD, DD/MM/YYYY, or similar) and format it as a clean ISO YYYY-MM-DD string.
 
 IMPORTANT: The scoreboard may have multiple tabs/pages. One tab shows KDA and Gold. Another tab shows Damage Dealt and Damage Taken. If damage stats are not visible in the provided screenshots, set damage and damageTaken to 0.
 
@@ -80,7 +81,8 @@ Then, output a final JSON object wrapped in \`\`\`json ... \`\`\` codeblocks. Th
 
 JSON Structure:
 {
-  "duration": "MM:SS format if visible",
+  "duration": "MM:SS format if visible, or null if not found",
+  "date": "YYYY-MM-DD format if visible, or null if not found",
   "winner": "team1 or team2",
   "team1_picks": [
     {

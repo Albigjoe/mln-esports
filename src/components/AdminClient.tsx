@@ -184,9 +184,10 @@ export default function AdminClient({ session, tournaments, teams, recentGames, 
       if (!res.ok) throw new Error(data.error || 'Failed to analyze images');
       if (!data.data) throw new Error('No data returned from AI');
 
-      const { duration: ocrDuration, winner: ocrWinner, team1_picks, team2_picks, team1_bans, team2_bans } = data.data;
+      const { duration: ocrDuration, date: ocrDate, winner: ocrWinner, team1_picks, team2_picks, team1_bans, team2_bans } = data.data;
 
       if (ocrDuration) setDuration(ocrDuration);
+      if (ocrDate) setDate(ocrDate);
       if (ocrWinner === 'team1' || ocrWinner === 'team2') setWinner(ocrWinner);
 
       if (team1_bans && Array.isArray(team1_bans)) {
