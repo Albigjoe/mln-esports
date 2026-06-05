@@ -11,8 +11,8 @@ export default async function TeamsListPage() {
       players: true,
       _count: {
         select: {
-          games1: true,
-          games2: true,
+          homeGames: true,
+          awayGames: true,
         },
       },
     },
@@ -49,7 +49,7 @@ export default async function TeamsListPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {teams.map((team: any) => {
-              const totalGames = team._count.games1 + team._count.games2;
+              const totalGames = team._count.homeGames + team._count.awayGames;
               return (
                 <div
                   key={team.id}
