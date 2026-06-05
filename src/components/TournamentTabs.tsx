@@ -151,7 +151,7 @@ function getDamageComponent(aflClass: string, DealtPM: number, TakenPM: number):
   }
 }
 
-function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = []) {
+function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [], targetRole: string = 'all') {
   const p: Record<string, any> = {};
   
   games.forEach(g => {
@@ -160,6 +160,8 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
     
     (g.picks || []).forEach((pk: any) => {
       if (!pk.playerUsername) return;
+      if (targetRole !== 'all' && pk.role !== targetRole) return;
+      
       const tn = pk.team === 'team1' ? g.team1.name : g.team2.name;
       const teamKills = pk.team === 'team1' ? tk1 : tk2;
       const key = pk.playerUsername.toLowerCase() + '|' + (tn || '');
@@ -256,7 +258,7 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
     }
   });
 
-  return Object.values(p).map((s: any) => {
+  const results = Object.values(p).map((s: any) => {
     const gamesCount = Math.max(s.g, 1);
     const hasPlayed = s.g > 0;
     
@@ -305,13 +307,18 @@ function playerStats(games: any[], playersList: any[] = [], teamsList: any[] = [
       aflClass,
       damageComp,
       deathlessBonus,
-      eligible: s.g >= 5 && !isAflExcluded,
+      eligible: s.g >= 3 && !isAflExcluded,
       aflRating: hasPlayed && !isAflExcluded ? +rating.toFixed(2) : 0,
       wr: Math.round(winRate * 100),
       top: topHero,
       role: primaryRole,
     };
   });
+
+  if (targetRole !== 'all') {
+    return results.filter((r: any) => r.g >= 1);
+  }
+  return results;
 }
 
 function groupGamesIntoSeries(gamesList: any[]) {
@@ -390,16 +397,22 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const seriesList = groupGamesIntoSeries(games);
-  const ps = playerStats(games, players, teams);
-  const filteredPlayers = roleFilter === 'all' ? ps : ps.filter((p: any) => p.role === roleFilter);
+  const ps = playerStats(games, players, teams, roleFilter);
+  const filteredPlayers = ps;
   const sortedPlayers = [...filteredPlayers].sort((a: any, b: any) => {
+    // 1. Eligibility (Ranked vs Unranked) first: Ranked always comes before Unranked
+    if (a.eligible !== b.eligible) {
+      return a.eligible ? -1 : 1;
+    }
+
+    // 2. Sort within same eligibility section
+    const isDesc = sortDir === 'desc';
+
     if (sortField === 'player') {
-      const isDesc = sortDir === 'desc';
       return isDesc ? b.player.localeCompare(a.player) : a.player.localeCompare(b.player);
     }
 
     if (sortField !== 'aflRating') {
-      const isDesc = sortDir === 'desc';
       let v1 = a[sortField];
       let v2 = b[sortField];
       if (v1 === null || v1 === undefined) return 1;
@@ -407,26 +420,36 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
       return isDesc ? Number(v2) - Number(v1) : Number(v1) - Number(v2);
     }
 
-    // Default: Eligibility first, then AFL Rating, then tiebreakers
-    if (a.eligible !== b.eligible) {
-      return a.eligible ? -1 : 1;
-    }
+    // Default or AFL Rating sort: AFL Rating descending, then tiebreakers
     if (b.aflRating !== a.aflRating) {
       return b.aflRating - a.aflRating;
     }
     if (b.winRate !== a.winRate) {
       return b.winRate - a.winRate;
     }
-    if (b.kda !== a.kda) {
-      return b.kda - a.kda;
+    const kdaA = a.kda || 0;
+    const kdaB = b.kda || 0;
+    if (kdaB !== kdaA) {
+      return kdaB - kdaA;
     }
-    if (b.kp !== a.kp) {
-      return b.kp - a.kp;
+    const kpA = a.kp || 0;
+    const kpB = b.kp || 0;
+    if (kpB !== kpA) {
+      return kpB - kpA;
     }
     if (b.g !== a.g) {
       return b.g - a.g;
     }
     return 0;
+  });
+
+  let rankCounter = 1;
+  const playersWithRanks = sortedPlayers.map((p: any) => {
+    if (p.eligible) {
+      return { ...p, rank: rankCounter++ };
+    } else {
+      return { ...p, rank: '-' };
+    }
   });
 
   const toggleSort = (field: string) => {
@@ -438,7 +461,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
     }
   };
 
-  // Best Player per Role for Overview (Eligibility: GP >= 5)
+  // Best Player per Role for Overview (Eligibility: GP >= 3)
   const ROLE_DISPLAY_MAP: Record<string, string> = {
     'Roamer': 'Roam',
     'Gold Lane': 'Gold',
@@ -448,7 +471,8 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
   };
 
   const bestPlayers = ROLES.map(role => {
-    const list = ps.filter((p: any) => p.role === role && p.g >= 5);
+    const roleStats = playerStats(games, players, teams, role);
+    const list = roleStats.filter((p: any) => p.g >= 3);
     const sorted = [...list].sort((a, b) => {
       // Tiebreaker order:
       // 1. Win Rate
@@ -647,14 +671,19 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               </div>
             </div>
 
-            {sortedPlayers.length === 0 ? (
+            {playersWithRanks.length === 0 ? (
               <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No players found. Enter games with stats to see them here!</div>
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400 min-w-[1100px] border-collapse">
+                  <table className="w-full text-left text-sm text-gray-400 min-w-[1150px] border-collapse">
                     <thead>
                       <tr>
+                        <th 
+                          className="px-3 py-4 text-xs font-black uppercase tracking-wider bg-background text-gray-400 border-b border-border-color text-center w-16"
+                        >
+                          Rank
+                        </th>
                         <th 
                           onClick={() => toggleSort('player')}
                           className={`px-4 py-4 text-xs font-black uppercase tracking-wider cursor-pointer select-none transition-all text-left ${
@@ -762,10 +791,13 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-color/60">
-                      {sortedPlayers.map((p: any) => {
+                      {playersWithRanks.map((p: any) => {
                         const hasPlayed = p.g > 0;
                         return (
                           <tr key={p.player + '|' + p.team} className="odd:bg-surface even:bg-background/30 hover:bg-surface-hover/40 transition-colors">
+                            <td className="px-3 py-3.5 text-center font-mono font-bold text-gray-300">
+                              {p.rank}
+                            </td>
                             <td className="px-4 py-3.5 text-left font-black text-white">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-md border border-border-color overflow-hidden shrink-0">
