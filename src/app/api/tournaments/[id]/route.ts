@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await request.json();
-    const { bannerUrl, status, registrationStatus, action } = body;
+    const { name, startDate, format, bannerUrl, logoUrl, status, registrationStatus, action } = body;
 
     // Handle "Restart" action (Clear bracket, reset to upcoming)
     if (action === 'restart') {
@@ -27,7 +27,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Handle normal updates
     const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : undefined;
+    if (format !== undefined) updateData.format = format;
     if (bannerUrl !== undefined) updateData.bannerUrl = bannerUrl;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
     if (status !== undefined) updateData.status = status;
     if (registrationStatus !== undefined) updateData.registrationStatus = registrationStatus;
 

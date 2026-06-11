@@ -26,6 +26,7 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
   const [format, setFormat] = useState('SINGLE_ELIMINATION');
   const [registrationStatus, setRegistrationStatus] = useState('OPEN');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isTBDDate, setIsTBDDate] = useState(false);
   const [bannerUrl, setBannerUrl] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
 
@@ -45,6 +46,7 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
     setFormat('SINGLE_ELIMINATION');
     setRegistrationStatus('OPEN');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setIsTBDDate(false);
     setBannerUrl('');
     setBannerFile(null);
     setBannerPreview('');
@@ -95,7 +97,8 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
   };
 
   const handleCreate = async () => {
-    if (!name || !startDate) { setMsg('Name and start date required'); return; }
+    if (!name) { setMsg('Name is required'); return; }
+    if (!isTBDDate && !startDate) { setMsg('Start date is required'); return; }
     setSaving(true); setMsg('');
     try {
       let finalBannerUrl = bannerUrl;
@@ -111,7 +114,15 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
       const res = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, status, startDate: new Date(startDate).toISOString(), bannerUrl: finalBannerUrl, logoUrl: finalLogoUrl, format, registrationStatus }),
+        body: JSON.stringify({ 
+          name, 
+          status, 
+          startDate: isTBDDate ? '1970-01-01T00:00:00.000Z' : new Date(startDate).toISOString(), 
+          bannerUrl: finalBannerUrl, 
+          logoUrl: finalLogoUrl, 
+          format, 
+          registrationStatus 
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -237,7 +248,27 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Name</label><input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. AFL Season 2" className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
-            <div><label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Start Date</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none" /></div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold">Start Date</label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-400 hover:text-white select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={isTBDDate} 
+                    onChange={e => setIsTBDDate(e.target.checked)} 
+                    className="rounded bg-background border-gray-700 text-mln-green focus:ring-0 focus:ring-offset-0" 
+                  />
+                  <span>TBD</span>
+                </label>
+              </div>
+              <input 
+                type="date" 
+                value={isTBDDate ? '' : startDate} 
+                disabled={isTBDDate} 
+                onChange={e => setStartDate(e.target.value)} 
+                className={`w-full bg-background border border-border-color rounded px-3 py-2 text-white text-sm focus:border-mln-green outline-none ${isTBDDate ? 'opacity-40 cursor-not-allowed' : ''}`} 
+              />
+            </div>
             
             <div>
               <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Format</label>
@@ -247,6 +278,7 @@ export default function TournamentsTab({ tournaments, teams }: { tournaments: an
                 <option value="ROUND_ROBIN">Round Robin (Groups)</option>
                 <option value="SWISS">Swiss Stage</option>
                 <option value="TWO_STAGE">Two-Stage (Groups &rarr; Knockout)</option>
+                <option value="TBD">To Be Decided (TBD)</option>
               </select>
             </div>
             <div>

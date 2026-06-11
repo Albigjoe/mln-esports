@@ -583,7 +583,8 @@ export default function RegisterTeamPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {tournaments.map(t => {
                     const selected = selectedTournament === t.id;
-                    const date = new Date(t.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const isTBD = new Date(t.startDate).getFullYear() <= 1970;
+                    const date = isTBD ? 'TBD' : new Date(t.startDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' });
                     return (
                       <button
                         key={t.id}

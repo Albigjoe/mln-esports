@@ -10,6 +10,40 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
+  const [editName, setEditName] = useState(t.name);
+  const [editFormat, setEditFormat] = useState(t.format || 'SINGLE_ELIMINATION');
+  const [editStartDate, setEditStartDate] = useState(t.startDate ? new Date(t.startDate).toISOString().split('T')[0] : '');
+  const [editIsTBDDate, setEditIsTBDDate] = useState(t.startDate ? new Date(t.startDate).getFullYear() <= 1970 : true);
+  const [updatingDetails, setUpdatingDetails] = useState(false);
+  const [editMsg, setEditMsg] = useState('');
+
+  const handleUpdateDetails = async () => {
+    if (!editName.trim()) { setEditMsg('Name is required'); return; }
+    if (!editIsTBDDate && !editStartDate) { setEditMsg('Start date is required'); return; }
+    setUpdatingDetails(true); setEditMsg('');
+    try {
+      const res = await fetch(`/api/tournaments/${t.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          format: editFormat,
+          startDate: editIsTBDDate ? '1970-01-01T00:00:00.000Z' : new Date(editStartDate).toISOString()
+        })
+      });
+      if (res.ok) {
+        setEditMsg('✓ Details updated!');
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        setEditMsg('Error: ' + data.error);
+      }
+    } catch (e: any) {
+      setEditMsg('Error: ' + e.message);
+    }
+    setUpdatingDetails(false);
+  };
+
   // Fetch participants for this tournament
   const loadData = async () => {
     setLoading(true);
@@ -146,6 +180,73 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
 
         {/* RIGHT COLUMN CONTROLS */}
         <div className="space-y-6">
+          {/* EDIT DETAILS PANEL */}
+          <div className="bg-surface border border-border-color rounded-xl p-6">
+            <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
+              Edit Details
+            </h4>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Tournament Name</label>
+                <input 
+                  type="text" 
+                  value={editName} 
+                  onChange={e => setEditName(e.target.value)} 
+                  className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-xs focus:border-mln-green outline-none" 
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold">Start Date</label>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-400 hover:text-white select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={editIsTBDDate} 
+                      onChange={e => setEditIsTBDDate(e.target.checked)} 
+                      className="rounded bg-background border-gray-700 text-mln-green focus:ring-0 focus:ring-offset-0" 
+                    />
+                    <span>TBD</span>
+                  </label>
+                </div>
+                <input 
+                  type="date" 
+                  value={editIsTBDDate ? '' : editStartDate} 
+                  disabled={editIsTBDDate} 
+                  onChange={e => setEditStartDate(e.target.value)} 
+                  className={`w-full bg-background border border-border-color rounded px-3 py-2 text-white text-xs focus:border-mln-green outline-none ${editIsTBDDate ? 'opacity-40 cursor-not-allowed' : ''}`} 
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Format</label>
+                <select 
+                  value={editFormat} 
+                  onChange={e => setEditFormat(e.target.value)} 
+                  className="w-full bg-background border border-border-color rounded px-3 py-2 text-white text-xs focus:border-mln-green outline-none"
+                >
+                  <option value="SINGLE_ELIMINATION">Single Elimination</option>
+                  <option value="DOUBLE_ELIMINATION">Double Elimination</option>
+                  <option value="ROUND_ROBIN">Round Robin (Groups)</option>
+                  <option value="SWISS">Swiss Stage</option>
+                  <option value="TWO_STAGE">Two-Stage (Groups &rarr; Knockout)</option>
+                  <option value="TBD">To Be Decided (TBD)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button 
+                  onClick={handleUpdateDetails} 
+                  disabled={updatingDetails} 
+                  className="bg-mln-green hover:bg-mln-green-dark text-black px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                >
+                  {updatingDetails ? 'Saving...' : 'Save Details'}
+                </button>
+                {editMsg && <span className={`text-xs font-bold ${editMsg.startsWith('✓') ? 'text-mln-green' : 'text-red-400'}`}>{editMsg}</span>}
+              </div>
+            </div>
+          </div>
+
           {/* LIFECYCLE CONTROLS PANEL */}
           <div className="bg-surface border border-border-color rounded-xl p-6">
             <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
