@@ -64,6 +64,66 @@ export default function RegisterTeamPage() {
       .then(d => setTournaments(d.tournaments || []));
   }, []);
 
+  // Load form data from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem('mln_registration_form');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.teamQuery) setTeamQuery(parsed.teamQuery);
+        if (parsed.selectedTeam) setSelectedTeam(parsed.selectedTeam);
+        if (parsed.isNewTeam !== undefined) setIsNewTeam(parsed.isNewTeam);
+        if (parsed.selectedTournament) setSelectedTournamentId(parsed.selectedTournament);
+        if (parsed.contactEmail) setContactEmail(parsed.contactEmail);
+        if (parsed.lineupImageUrl) setLineupImageUrl(parsed.lineupImageUrl);
+        if (parsed.players && parsed.players.length > 0) {
+          setPlayers(parsed.players.map((p: any) => ({
+            ...p,
+            pictureFile: null,
+            pictureError: ''
+          })));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load registration form from localStorage', e);
+    }
+  }, []);
+
+  // Save form data to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (success) return;
+    const dataToSave = {
+      step,
+      teamQuery,
+      selectedTeam,
+      isNewTeam,
+      selectedTournament,
+      contactEmail,
+      lineupImageUrl,
+      players: players.map(p => ({
+        username: p.username,
+        originalUsername: p.originalUsername,
+        gameId: p.gameId,
+        realName: p.realName,
+        role: p.role,
+        rank: p.rank,
+        state: p.state,
+        pictureUrl: p.pictureUrl,
+        originalPictureUrl: p.originalPictureUrl,
+        picturePreview: p.picturePreview,
+        isExisting: p.isExisting
+      }))
+    };
+    try {
+      localStorage.setItem('mln_registration_form', JSON.stringify(dataToSave));
+    } catch (e) {
+      console.error('Failed to save registration form to localStorage', e);
+    }
+  }, [step, teamQuery, selectedTeam, isNewTeam, selectedTournament, contactEmail, lineupImageUrl, players, success]);
+
   // Team autocomplete
   const fetchTeamSuggestions = useCallback((q: string) => {
     if (!q.trim()) { setTeamSuggestions([]); setShowSuggestions(false); return; }
@@ -336,6 +396,9 @@ export default function RegisterTeamPage() {
       const data = await res.json();
       if (res.ok) {
         setSuccess(true);
+        try {
+          localStorage.removeItem('mln_registration_form');
+        } catch {}
       } else {
         setMsg(data.error || 'Failed to submit registration.');
       }
