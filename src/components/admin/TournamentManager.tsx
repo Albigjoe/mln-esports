@@ -146,27 +146,6 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
 
         {/* RIGHT COLUMN CONTROLS */}
         <div className="space-y-6">
-          {/* BRACKET GENERATION PANEL */}
-          <div className="bg-surface border border-border-color rounded-xl p-6">
-            <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
-              Bracket Generation
-            </h4>
-            <div className="bg-background border border-border-color rounded-lg p-4 mb-4">
-              <div className="text-xs text-gray-400 uppercase tracking-widest mb-2 font-bold">Format: <span className="text-mln-green">{t.format}</span></div>
-              <p className="text-xs text-gray-500">
-                When all teams are enrolled, click Generate Bracket to automatically build the knockout tree and match structure.
-                This will overwrite any existing pending brackets for this tournament.
-              </p>
-            </div>
-            <button 
-              onClick={handleGenerateBracket}
-              disabled={generating || participants.length < 2}
-              className={`w-full font-black uppercase tracking-widest py-3 rounded-lg transition-colors ${generating || participants.length < 2 ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-mln-green hover:bg-mln-green-dark text-black'}`}
-            >
-              {generating ? 'Generating...' : 'Generate Bracket'}
-            </button>
-          </div>
-
           {/* LIFECYCLE CONTROLS PANEL */}
           <div className="bg-surface border border-border-color rounded-xl p-6">
             <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
@@ -182,23 +161,12 @@ export default function TournamentManager({ t, teams, onBack }: { t: any, teams:
             </div>
             
             <div className="border-t border-border-color pt-4 mt-2 space-y-3">
-              <button onClick={handleRestart} className="w-full text-xs font-bold uppercase tracking-wider py-2 rounded border bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20">
-                ⚠️ Clear Bracket & Restart
-              </button>
               <button onClick={handleDelete} className="w-full text-xs font-bold uppercase tracking-wider py-2 rounded border bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20">
                 🚨 Delete Tournament
               </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* BRACKET VIEWER */}
-      <div className="bg-surface border border-border-color rounded-xl p-6 overflow-x-auto">
-        <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4 border-l-2 border-mln-green pl-2">
-          Current Bracket
-        </h4>
-        <BracketViewer matches={matches} isAdmin={true} onMatchUpdated={loadData} />
       </div>
     </div>
   );

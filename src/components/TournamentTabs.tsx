@@ -529,8 +529,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
           { id: 'leaderboard', label: 'Player Leaderboard' },
           { id: 'matches', label: 'Matches' },
           { id: 'teams', label: 'Teams' },
-          { id: 'stats', label: 'Hero Stats' },
-          { id: 'bracket', label: 'Bracket' }
+          { id: 'stats', label: 'Hero Stats' }
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-6 py-4 font-bold uppercase tracking-wider text-sm transition-colors whitespace-nowrap ${

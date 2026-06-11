@@ -70,8 +70,14 @@ export default function RegisterTeamPage() {
     fetch(`/api/teams?q=${encodeURIComponent(q)}`)
       .then(r => r.json())
       .then(d => {
-        setTeamSuggestions(d.teams || []);
+        const teams = d.teams || [];
+        setTeamSuggestions(teams);
         setShowSuggestions(true);
+
+        const exactMatch = teams.find((t: any) => t.name.toLowerCase() === q.trim().toLowerCase());
+        if (exactMatch) {
+          selectExistingTeam(exactMatch);
+        }
       });
   }, []);
 
@@ -259,6 +265,9 @@ export default function RegisterTeamPage() {
     for (let i = 0; i < players.length; i++) {
       if (!players[i].username) return setMsg(`Player ${i + 1} is missing an In-Game Username.`);
       if (!players[i].gameId) return setMsg(`Player ${i + 1} is missing a Game ID. This is required to link their stats.`);
+      if (isNewTeam && !players[i].pictureFile && !players[i].pictureUrl) {
+        return setMsg(`Player ${i + 1} is missing a player picture. Pictures are compulsory for new squads.`);
+      }
       if (players[i].pictureError && !players[i].pictureError.includes('Recommended')) {
         return setMsg(`Player ${i + 1} has a picture upload error: ${players[i].pictureError}`);
       }
@@ -499,9 +508,24 @@ export default function RegisterTeamPage() {
               {msg && <p className="text-red-400 text-center font-bold text-sm bg-red-400/10 py-3 px-4 rounded-xl">{msg}</p>}
 
               <button
-                onClick={() => {
-                  const teamName = isNewTeam ? teamQuery.trim() : selectedTeam?.name || teamQuery.trim();
+                onClick={async () => {
+                  const teamName = teamQuery.trim();
                   if (!teamName) return setMsg('Please enter or select your squad name.');
+
+                  // Auto-select match on click if not explicitly selected or marked new
+                  let currentSelected = selectedTeam;
+                  if (!currentSelected && !isNewTeam) {
+                    const exactMatch = teamSuggestions.find(t => t.name.toLowerCase() === teamName.toLowerCase());
+                    if (exactMatch) {
+                      currentSelected = exactMatch;
+                      await selectExistingTeam(exactMatch);
+                    } else {
+                      setIsNewTeam(true);
+                      return setMsg('Squad not found in database. Marked as New Squad. Please upload your squad logo.');
+                    }
+                  }
+
+                  const finalTeamName = isNewTeam ? teamQuery.trim() : currentSelected?.name || teamQuery.trim();
                   if (isNewTeam && !logoFile) return setMsg('Please upload a squad logo for your new team.');
                   if (isNewTeam && logoError && !logoError.includes('Recommended')) return setMsg('Please resolve the logo upload error before proceeding.');
                   if (!contactEmail) return setMsg('Please enter your contact email.');
@@ -663,7 +687,7 @@ export default function RegisterTeamPage() {
                             onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
                           />
                         </label>
-                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">Max 5MB</span>
+                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">{isNewTeam ? 'Pic *' : 'Pic'} (Max 5MB)</span>
                       </div>
 
                       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
