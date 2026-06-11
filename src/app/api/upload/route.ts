@@ -31,30 +31,40 @@ export async function POST(req: NextRequest) {
 
     let url = '';
 
-    // If Vercel Blob token is present, try Vercel Blob upload first
+    // 1. Try Vercel Blob first (if token is configured)
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         const blob = await put(blobPath, file, {
           access: 'public',
         });
         url = blob.url;
-      } catch (err) {
-        console.warn('Vercel Blob upload failed, falling back to local storage:', err);
+      } catch (err: any) {
+        console.warn('Vercel Blob upload failed (perhaps limit reached), trying local/base64 fallback:', err);
       }
     }
 
-    // If Vercel Blob is not configured or failed, save locally in public/uploads
+    // 2. If Vercel Blob is not configured or failed, try local filesystem, then base64 fallback
     if (!url) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-      const publicDir = join(process.cwd(), 'public', 'uploads', folder);
-      await mkdir(publicDir, { recursive: true });
+        const publicDir = join(process.cwd(), 'public', 'uploads', folder);
+        await mkdir(publicDir, { recursive: true });
 
-      const filePath = join(publicDir, uniqueName);
-      await writeFile(filePath, buffer);
+        const filePath = join(publicDir, uniqueName);
+        await writeFile(filePath, buffer);
 
-      url = `/uploads/${folder}/${uniqueName}`;
+        url = `/uploads/${folder}/${uniqueName}`;
+      } catch (localErr: any) {
+        console.warn('Local filesystem write failed (serverless environment), converting to base64 data URL:', localErr);
+        
+        // 3. Convert to base64 data URL as final fallback
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const base64 = buffer.toString('base64');
+        url = `data:${file.type};base64,${base64}`;
+      }
     }
 
     return NextResponse.json({ success: true, url });
