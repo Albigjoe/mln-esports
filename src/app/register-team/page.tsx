@@ -20,7 +20,7 @@ async function uploadFile(file: File, folder: string): Promise<string> {
 }
 
 const blankPlayer = () => ({
-  username: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: '', isExisting: false
+  username: '', originalUsername: '', gameId: '', realName: '', role: '', rank: 'Mythic', state: '', pictureUrl: '', originalPictureUrl: '', pictureFile: null as File | null, picturePreview: '', pictureError: '', isExisting: false
 });
 
 export default function RegisterTeamPage() {
@@ -106,12 +106,14 @@ export default function RegisterTeamPage() {
       if (data.players && data.players.length > 0) {
         const loaded = data.players.map((p: any) => ({
           username: p.username || '',
+          originalUsername: p.username || '',
           gameId: p.gameId || '',
           realName: p.realName || '',
           role: p.role || '',
           rank: p.rank || 'Mythic',
           state: p.state || '',
           pictureUrl: p.pictureUrl || '',
+          originalPictureUrl: p.pictureUrl || '',
           pictureFile: null,
           picturePreview: p.pictureUrl || '',
           pictureError: '',
@@ -190,7 +192,29 @@ export default function RegisterTeamPage() {
 
   // Player field change
   const handlePlayerChange = (index: number, field: string, value: string) => {
-    setPlayers(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+    setPlayers(prev => prev.map((p, i) => {
+      if (i === index) {
+        const updated = { ...p, [field]: value };
+        if (field === 'username') {
+          const isMatch = value.trim().toLowerCase() === (p.originalUsername || '').trim().toLowerCase();
+          if (isMatch && p.originalUsername) {
+            updated.isExisting = true;
+            updated.pictureUrl = p.originalPictureUrl || '';
+            if (!p.pictureFile) {
+              updated.picturePreview = p.originalPictureUrl || '';
+            }
+          } else if (p.isExisting) {
+            updated.isExisting = false;
+            updated.pictureUrl = '';
+            if (!p.pictureFile) {
+              updated.picturePreview = '';
+            }
+          }
+        }
+        return updated;
+      }
+      return p;
+    }));
   };
 
   // Player picture file
@@ -662,9 +686,19 @@ export default function RegisterTeamPage() {
                   }`}>
                     <div className="absolute top-0 right-0 flex items-center">
                       {p.isExisting && (
-                        <span className="bg-mln-green/20 text-mln-green text-[9px] font-black px-2 py-1 border-b border-l border-mln-green/30 rounded-bl-lg tracking-widest">
-                          ON FILE
-                        </span>
+                        p.pictureFile ? (
+                          <span className="bg-mln-green/20 text-mln-green text-[9px] font-black px-2 py-1 border-b border-l border-mln-green/30 rounded-bl-lg tracking-widest">
+                            PIC UPLOADED
+                          </span>
+                        ) : p.pictureUrl ? (
+                          <span className="bg-mln-green/20 text-mln-green text-[9px] font-black px-2 py-1 border-b border-l border-mln-green/30 rounded-bl-lg tracking-widest">
+                            ON FILE
+                          </span>
+                        ) : (
+                          <span className="bg-red-500/20 text-red-400 text-[9px] font-black px-2 py-1 border-b border-l border-red-500/30 rounded-bl-lg tracking-widest animate-pulse">
+                            NO PIC ON FILE
+                          </span>
+                        )
                       )}
                       <div className="bg-surface border-l border-b border-border-color text-gray-400 text-[10px] font-black px-3 py-1 rounded-bl-xl rounded-tr-xl tracking-widest">
                         {i === 0 ? 'CAPTAIN' : `PLAYER ${i + 1}`}
@@ -675,10 +709,12 @@ export default function RegisterTeamPage() {
                       {/* Player picture upload */}
                       <div className="flex-shrink-0 flex flex-col items-center">
                         <label className="cursor-pointer group">
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-gray-700 group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors">
+                          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed group-hover:border-mln-green bg-surface overflow-hidden flex items-center justify-center transition-colors ${
+                            (isNewTeam || !p.picturePreview) ? 'border-red-500/50' : 'border-gray-700'
+                          }`}>
                             {p.picturePreview
                               ? <img src={p.picturePreview} alt="" className="w-full h-full object-cover" />
-                              : <Camera size={20} className="text-gray-600 group-hover:text-mln-green transition-colors" />
+                              : <Camera size={20} className={`${(isNewTeam || !p.picturePreview) ? 'text-red-500' : 'text-gray-600'} group-hover:text-mln-green transition-colors`} />
                             }
                           </div>
                           <input
@@ -688,7 +724,11 @@ export default function RegisterTeamPage() {
                             onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
                           />
                         </label>
-                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">{(isNewTeam || !p.pictureUrl) ? 'Pic *' : 'Pic'} (Max 5MB)</span>
+                        <span className={`text-[8px] font-bold uppercase tracking-wider mt-1 text-center ${
+                          (isNewTeam || !p.picturePreview) ? 'text-red-400' : 'text-gray-500'
+                        }`}>
+                          {(isNewTeam || !p.pictureUrl) ? 'Pic *' : 'Pic'} (Max 5MB)
+                        </span>
                       </div>
 
                       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
