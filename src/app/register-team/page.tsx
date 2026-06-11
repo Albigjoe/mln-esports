@@ -265,8 +265,9 @@ export default function RegisterTeamPage() {
     for (let i = 0; i < players.length; i++) {
       if (!players[i].username) return setMsg(`Player ${i + 1} is missing an In-Game Username.`);
       if (!players[i].gameId) return setMsg(`Player ${i + 1} is missing a Game ID. This is required to link their stats.`);
-      if (isNewTeam && !players[i].pictureFile && !players[i].pictureUrl) {
-        return setMsg(`Player ${i + 1} is missing a player picture. Pictures are compulsory for new squads.`);
+      const needsPicture = isNewTeam || (!players[i].pictureUrl && !players[i].pictureFile);
+      if (needsPicture) {
+        return setMsg(`Player ${i + 1} is missing a player picture. Pictures are compulsory.`);
       }
       if (players[i].pictureError && !players[i].pictureError.includes('Recommended')) {
         return setMsg(`Player ${i + 1} has a picture upload error: ${players[i].pictureError}`);
@@ -687,7 +688,7 @@ export default function RegisterTeamPage() {
                             onChange={e => e.target.files?.[0] && handlePlayerPicFile(i, e.target.files[0])}
                           />
                         </label>
-                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">{isNewTeam ? 'Pic *' : 'Pic'} (Max 5MB)</span>
+                        <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider mt-1 text-center">{(isNewTeam || !p.pictureUrl) ? 'Pic *' : 'Pic'} (Max 5MB)</span>
                       </div>
 
                       <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
