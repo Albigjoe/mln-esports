@@ -544,9 +544,9 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
           <div className="space-y-8">
             {/* Dynamic Banner */}
             <div className="dash-hero relative overflow-hidden bg-gradient-to-br from-surface to-background border border-border-color p-8 rounded-2xl shadow-lg">
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[140px] font-black text-mln-green/5 tracking-widest pointer-events-none select-none">AFL</div>
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[140px] font-black text-mln-green/5 tracking-widest pointer-events-none select-none">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL' : 'MLN'}</div>
               <div className="relative z-10">
-                <div className="text-xs text-mln-green font-bold uppercase tracking-[4px] mb-2">AFL Nigeria · Official stats</div>
+                <div className="text-xs text-mln-green font-bold uppercase tracking-[4px] mb-2">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL Nigeria' : 'MLN Esports'} · Official stats</div>
                 <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider mb-6">{tournament.name}</h2>
                 <div className="flex gap-6 md:gap-12 flex-wrap">
                   <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{seriesList.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Total Series</div></div>
@@ -592,7 +592,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                     {mvp && (
                       <div className="mt-4 pt-4 border-t border-border-color/60">
                         <div className="text-3xl font-black text-mln-green font-mono leading-none">{mvp.aflRating.toFixed(2)}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">AFL Rating</div>
+                         <div className="text-[9px] text-gray-500 uppercase tracking-widest mt-1">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL Rating' : 'MLN Rating'}</div>
                         <div className="text-[10px] text-gray-400 mt-2">{mvp.kda?.toFixed(2) || 0} KDA · {Math.round((mvp.kp || 0) * 100)}% KP · {mvp.g} GP</div>
                         <span className="inline-block bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded mt-2 uppercase">{ROLE_DISPLAY_MAP[mvp.role] || mvp.role}</span>
                       </div>
@@ -787,7 +787,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                             sortField === 'aflRating' ? 'bg-mln-green text-black font-black' : 'bg-background text-gray-400 hover:text-white border-b border-border-color'
                           }`}
                         >
-                          AFL Rating {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}
+                           {tournament?.name?.toLowerCase().includes('afl') ? 'AFL Rating' : 'MLN Rating'} {sortField === 'aflRating' && (sortDir === 'desc' ? '↓' : '↑')}
                         </th>
                       </tr>
                     </thead>
@@ -1000,11 +1000,11 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       {team.logoUrl ? (
                         <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-gray-500 font-bold text-xs uppercase tracking-wider">AFL</span>
+                        <span className="text-gray-500 font-bold text-xs uppercase tracking-wider">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL' : 'MLN'}</span>
                       )}
                     </div>
                     <h4 className="text-base font-black text-white line-clamp-1 hover:text-mln-green transition-colors">{team.name}</h4>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">AFL Nigeria Season</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL Nigeria Season' : 'MLN Esports Season'}</div>
                   </Link>
                 ))}
               </div>

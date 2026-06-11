@@ -76,7 +76,7 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
             {tournament.logoUrl ? (
               <img src={tournament.logoUrl} alt={tournament.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-mln-green font-black text-4xl">AFL</span>
+              <span className="text-mln-green font-black text-4xl">{tournament.name.toLowerCase().includes('afl') ? 'AFL' : 'MLN'}</span>
             )}
           </div>
           <div className="text-center md:text-left md:mb-2">
