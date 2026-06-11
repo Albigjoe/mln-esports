@@ -20,8 +20,20 @@ export default async function TournamentHub({ params }: { params: Promise<{ id: 
 
   if (!tournament) return notFound();
 
-  const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } });
-  const players = await prisma.player.findMany();
+  const participantsList = await prisma.tournamentParticipant.findMany({
+    where: { tournamentId: id },
+    include: {
+      team: {
+        include: {
+          players: true
+        }
+      }
+    }
+  });
+
+  const teams = participantsList.map(p => p.team).sort((a, b) => a.name.localeCompare(b.name));
+  const players = teams.flatMap(t => t.players);
+
 
   const bracketMatches = await prisma.bracketMatch.findMany({
     where: { tournamentId: id },

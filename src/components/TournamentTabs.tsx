@@ -670,8 +670,10 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
               </div>
             </div>
 
-            {playersWithRanks.length === 0 ? (
-              <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No players found. Enter games with stats to see them here!</div>
+            {players.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No players registered for this tournament yet.</div>
+            ) : playersWithRanks.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No players found matching the role filter.</div>
             ) : (
               <div className="bg-surface border border-border-color rounded-2xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
@@ -988,21 +990,25 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
         {activeTab === 'teams' && (
           <div>
             <h3 className="text-xl font-black text-white uppercase tracking-wider mb-6 border-l-4 border-mln-green pl-3">Participating Teams ({teams.length})</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-              {teams.map((team: any) => (
-                <Link href={`/teams/${team.id}`} key={team.id} className="bg-surface border border-border-color rounded-xl p-6 text-center hover:border-mln-green/30 hover:scale-[1.02] transition-all duration-300 block">
-                  <div className="w-20 h-20 mx-auto bg-background rounded-full border border-border-color flex items-center justify-center mb-4 overflow-hidden relative shadow-inner">
-                    {team.logoUrl ? (
-                      <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-gray-500 font-bold text-xs uppercase tracking-wider">AFL</span>
-                    )}
-                  </div>
-                  <h4 className="text-base font-black text-white line-clamp-1 hover:text-mln-green transition-colors">{team.name}</h4>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">AFL Nigeria Season</div>
-                </Link>
-              ))}
-            </div>
+            {teams.length === 0 ? (
+              <div className="bg-surface border border-border-color rounded-xl p-12 text-center text-gray-500">No teams registered for this tournament yet.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                {teams.map((team: any) => (
+                  <Link href={`/teams/${team.id}`} key={team.id} className="bg-surface border border-border-color rounded-xl p-6 text-center hover:border-mln-green/30 hover:scale-[1.02] transition-all duration-300 block">
+                    <div className="w-20 h-20 mx-auto bg-background rounded-full border border-border-color flex items-center justify-center mb-4 overflow-hidden relative shadow-inner">
+                      {team.logoUrl ? (
+                        <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-gray-500 font-bold text-xs uppercase tracking-wider">AFL</span>
+                      )}
+                    </div>
+                    <h4 className="text-base font-black text-white line-clamp-1 hover:text-mln-green transition-colors">{team.name}</h4>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">AFL Nigeria Season</div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
