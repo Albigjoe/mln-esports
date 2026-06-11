@@ -546,7 +546,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
             <div className="dash-hero relative overflow-hidden bg-gradient-to-br from-surface to-background border border-border-color p-8 rounded-2xl shadow-lg">
               <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[140px] font-black text-mln-green/5 tracking-widest pointer-events-none select-none">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL' : 'MLN'}</div>
               <div className="relative z-10">
-                <div className="text-xs text-mln-green font-bold uppercase tracking-[4px] mb-2">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL Nigeria' : 'MLN Esports'} · Official stats</div>
+                <div className="text-xs text-mln-green font-bold uppercase tracking-[4px] mb-2">{tournament.name} · Official Stats</div>
                 <h2 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider mb-6">{tournament.name}</h2>
                 <div className="flex gap-6 md:gap-12 flex-wrap">
                   <div className="text-center"><div className="text-4xl font-black text-mln-green font-mono">{seriesList.length}</div><div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Total Series</div></div>
@@ -1004,7 +1004,7 @@ export default function TournamentTabs({ tournament, games, teams, players = [],
                       )}
                     </div>
                     <h4 className="text-base font-black text-white line-clamp-1 hover:text-mln-green transition-colors">{team.name}</h4>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">{tournament?.name?.toLowerCase().includes('afl') ? 'AFL Nigeria Season' : 'MLN Esports Season'}</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">{tournament.name}</div>
                   </Link>
                 ))}
               </div>
