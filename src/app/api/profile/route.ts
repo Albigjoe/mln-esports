@@ -91,6 +91,10 @@ export async function PUT(req: Request) {
 
   let player;
   if (existing) {
+    if (gameId.trim() !== existing.gameId) {
+      return NextResponse.json({ error: 'Game ID is permanent and cannot be changed' }, { status: 400 });
+    }
+
     const oldUsername = existing.username;
     const newUsername = username.trim();
 
@@ -99,7 +103,7 @@ export async function PUT(req: Request) {
       where: { id: existing.id },
       data: {
         username:   newUsername,
-        gameId:     gameId.trim(),
+        gameId:     existing.gameId,
         state:      state      || 'Lagos',
         rank:       rank       || 'Epic',
         role:       role       || 'PLAYER',

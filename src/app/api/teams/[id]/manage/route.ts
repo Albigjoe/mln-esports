@@ -55,8 +55,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         updateData.username = newUsername;
       }
 
-      // Handle gameId update if provided and changed
+      // Handle gameId update if provided and changed (block if existing player already has a gameId)
       if (gameId !== undefined && gameId.trim() !== playerRecord.gameId) {
+        if (playerRecord.gameId) {
+          return NextResponse.json({ error: 'Game ID is permanent and cannot be changed' }, { status: 400 });
+        }
+        
         const newGameId = gameId.trim();
         if (!newGameId) {
           return NextResponse.json({ error: 'Game ID cannot be empty' }, { status: 400 });
@@ -137,6 +141,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
 
     if (existingPlayer) {
+      if (existingPlayer.gameId && existingPlayer.gameId !== gameId.trim()) {
+        return NextResponse.json({ error: `This player is already registered with Game ID ${existingPlayer.gameId}. Game ID is permanent.` }, { status: 400 });
+      }
       if (existingGameIdPlayer && existingGameIdPlayer.id !== existingPlayer.id) {
         return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
       }

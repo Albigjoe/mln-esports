@@ -728,11 +728,16 @@ export default function ProfileClient({
                 <input
                   type="text"
                   value={form.gameId}
+                  disabled={!!player?.gameId}
                   onChange={e => setForm(f => ({ ...f, gameId: e.target.value }))}
                   placeholder="e.g. 123456789"
-                  className="w-full bg-background border border-border-color focus:border-mln-green rounded-lg px-4 py-3 text-white font-bold outline-none transition-colors placeholder-gray-600"
+                  className="w-full bg-background border border-border-color focus:border-mln-green rounded-lg px-4 py-3 text-white font-bold outline-none transition-colors placeholder-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">Your unique MLBB numeric ID — this links your match stats to your account.</p>
+                {player?.gameId ? (
+                  <p className="text-[10px] text-yellow-500 mt-1">⚠️ Game ID is permanent and cannot be changed. Contact an admin if you need to update it.</p>
+                ) : (
+                  <p className="text-[10px] text-gray-500 mt-1">Your unique MLBB numeric ID — this links your match stats to your account. This cannot be changed once saved!</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1508,15 +1513,7 @@ export default function ProfileClient({
                                 className="bg-background border border-border-color rounded px-2 py-1 text-xs text-white outline-none focus:border-mln-green w-full font-bold"
                               />
                             </div>
-                            <div>
-                              <label className="block text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1">Game ID</label>
-                              <input 
-                                type="text"
-                                value={editPlayerForm.gameId}
-                                onChange={e => setEditPlayerForm(f => ({ ...f, gameId: e.target.value }))}
-                                className="bg-background border border-border-color rounded px-2 py-1 text-xs text-white outline-none focus:border-mln-green w-full font-bold"
-                              />
-                            </div>
+                            {/* Game ID is permanent and cannot be changed from roster editor */}
                             <div className="flex gap-2 mt-2">
                               <button
                                 type="button"
