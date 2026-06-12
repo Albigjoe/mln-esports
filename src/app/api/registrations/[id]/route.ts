@@ -22,13 +22,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       reg = await prisma.$transaction(async (tx) => {
         // 1. Find or create the team
         let team = await tx.team.findUnique({
-          where: { name: teamName }
+          where: { name: teamName.trim() }
         });
 
         if (!team) {
           team = await tx.team.create({
             data: {
-              name: teamName,
+              name: teamName.trim(),
               logoUrl: logoUrl || '',
               lineupImageUrl: lineupImageUrl || '',
               ownerEmail: registrationRecord.contactEmail

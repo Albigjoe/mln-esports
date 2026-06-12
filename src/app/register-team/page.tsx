@@ -126,15 +126,16 @@ export default function RegisterTeamPage() {
 
   // Team autocomplete
   const fetchTeamSuggestions = useCallback((q: string) => {
-    if (!q.trim()) { setTeamSuggestions([]); setShowSuggestions(false); return; }
-    fetch(`/api/teams?q=${encodeURIComponent(q)}`)
+    const trimmed = q.trim();
+    if (!trimmed) { setTeamSuggestions([]); setShowSuggestions(false); return; }
+    fetch(`/api/teams?q=${encodeURIComponent(trimmed)}`)
       .then(r => r.json())
       .then(d => {
         const teams = d.teams || [];
         setTeamSuggestions(teams);
         setShowSuggestions(true);
 
-        const exactMatch = teams.find((t: any) => t.name.toLowerCase() === q.trim().toLowerCase());
+        const exactMatch = teams.find((t: any) => t.name.trim().toLowerCase() === trimmed.toLowerCase());
         if (exactMatch) {
           selectExistingTeam(exactMatch);
         }

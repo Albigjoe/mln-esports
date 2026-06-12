@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get('q') || '';
+    const q = (searchParams.get('q') || '').trim();
     const teams = await prisma.team.findMany({
       where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
       take: 10,
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const team = await prisma.team.create({
       data: { 
-        name, 
+        name: name.trim(), 
         logoUrl: logoUrl || null,
         ownerEmail: ownerEmail || null
       },

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     // Store registration
     const reg = await prisma.teamRegistration.create({
       data: {
-        teamName,
+        teamName: teamName.trim(),
         logoUrl: logoUrl || null,
         lineupImageUrl: lineupImageUrl || null,
         contactEmail,
