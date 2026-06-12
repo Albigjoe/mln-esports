@@ -12,7 +12,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { name, logoUrl, playerId, pictureUrl } = body;
+    const { name, logoUrl, playerId, pictureUrl, username, gameId } = body;
 
     const team = await prisma.team.findUnique({ where: { id } });
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
@@ -22,8 +22,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Unauthorized: Only the team owner can edit team details' }, { status: 403 });
     }
 
-    // Support updating player photo or role directly
-    if (playerId && (pictureUrl !== undefined || body.role !== undefined)) {
+    // Support updating player details directly
+    if (playerId) {
       const playerRecord = await prisma.player.findFirst({
         where: { id: playerId, teamId: id }
       });
@@ -34,11 +34,57 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       const updateData: any = {};
       if (pictureUrl !== undefined) updateData.pictureUrl = pictureUrl;
       if (body.role !== undefined) updateData.role = body.role;
+      if (body.rank !== undefined) updateData.rank = body.rank;
+      if (body.state !== undefined) updateData.state = body.state;
+
+      // Handle username update if provided and changed
+      if (username !== undefined && username.trim() !== playerRecord.username) {
+        const newUsername = username.trim();
+        if (newUsername.length < 2) {
+          return NextResponse.json({ error: 'Username must be at least 2 characters' }, { status: 400 });
+        }
+        
+        // Conflict check
+        const conflict = await prisma.player.findUnique({
+          where: { username: newUsername }
+        });
+        if (conflict) {
+          return NextResponse.json({ error: 'That username is already taken by another player' }, { status: 400 });
+        }
+        
+        updateData.username = newUsername;
+      }
+
+      // Handle gameId update if provided and changed
+      if (gameId !== undefined && gameId.trim() !== playerRecord.gameId) {
+        const newGameId = gameId.trim();
+        if (!newGameId) {
+          return NextResponse.json({ error: 'Game ID cannot be empty' }, { status: 400 });
+        }
+        
+        // Conflict check
+        const conflict = await prisma.player.findUnique({
+          where: { gameId: newGameId }
+        });
+        if (conflict) {
+          return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
+        }
+        
+        updateData.gameId = newGameId;
+      }
 
       const updatedPlayer = await prisma.player.update({
         where: { id: playerId },
         data: updateData
       });
+
+      // Update historical picks if username changed
+      if (updateData.username && playerRecord.username !== updateData.username) {
+        await prisma.pick.updateMany({
+          where: { playerUsername: playerRecord.username },
+          data: { playerUsername: updateData.username }
+        });
+      }
 
       return NextResponse.json({ success: true, player: updatedPlayer });
     }

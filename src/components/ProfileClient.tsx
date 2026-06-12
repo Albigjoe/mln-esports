@@ -185,6 +185,53 @@ export default function ProfileClient({
     setUpdatingRoleId(null);
   };
 
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [savingPlayerId, setSavingPlayerId] = useState<string | null>(null);
+  const [editPlayerForm, setEditPlayerForm] = useState({ username: '', gameId: '' });
+
+  const handleSavePlayerDetails = async (playerId: string) => {
+    if (!editPlayerForm.username.trim() || editPlayerForm.username.trim().length < 2) {
+      alert('In-Game Username must be at least 2 characters');
+      return;
+    }
+    if (!editPlayerForm.gameId.trim()) {
+      alert('Game ID is required');
+      return;
+    }
+
+    setSavingPlayerId(playerId);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/manage`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          username: editPlayerForm.username.trim(),
+          gameId: editPlayerForm.gameId.trim()
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTeam((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            players: prev.players.map((pl: any) =>
+              pl.id === playerId ? { ...pl, username: data.player.username, gameId: data.player.gameId } : pl
+            )
+          };
+        });
+        setEditingPlayerId(null);
+        router.refresh();
+      } else {
+        alert(data.error || 'Failed to update player details');
+      }
+    } catch (err) {
+      alert('Network error updating player details');
+    }
+    setSavingPlayerId(null);
+  };
+
   // Recruiting a player from free agents list directly
   const [recruitingPlayerId, setRecruitingPlayerId] = useState<string | null>(null);
   const [freeAgentQuery, setFreeAgentQuery] = useState('');
@@ -1450,34 +1497,87 @@ export default function ProfileClient({
                             </div>
                           )
                         )}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-white text-sm uppercase">{p.username}</span>
-                            {isCurrentPlayer && (
-                              <span className="text-[8px] bg-mln-green/20 text-mln-green font-bold px-1.5 py-0.5 rounded">You</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
-                            {isOwner ? (
-                              <select 
-                                value={p.role} 
-                                disabled={updatingRoleId === p.id}
-                                onChange={(e) => handleRoleChange(p.id, e.target.value)}
-                                className="bg-background border border-border-color rounded px-1 py-0.5 text-white outline-none focus:border-mln-green disabled:opacity-50"
-                              >
-                                {PLAYER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                              </select>
-                            ) : (
-                              <span>{p.role}</span>
-                            )}
-                            <span>• {p.rank}</span>
-                          </div>
-                          {p.gameId && (
-                            <div className="text-[9px] text-mln-green font-bold tracking-widest mt-1">
-                              ID: {p.gameId}
+                        {editingPlayerId === p.id ? (
+                          <div className="space-y-2 py-1">
+                            <div>
+                              <label className="block text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1">In-Game Username</label>
+                              <input 
+                                type="text"
+                                value={editPlayerForm.username}
+                                onChange={e => setEditPlayerForm(f => ({ ...f, username: e.target.value }))}
+                                className="bg-background border border-border-color rounded px-2 py-1 text-xs text-white outline-none focus:border-mln-green w-full font-bold"
+                              />
                             </div>
-                          )}
-                        </div>
+                            <div>
+                              <label className="block text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1">Game ID</label>
+                              <input 
+                                type="text"
+                                value={editPlayerForm.gameId}
+                                onChange={e => setEditPlayerForm(f => ({ ...f, gameId: e.target.value }))}
+                                className="bg-background border border-border-color rounded px-2 py-1 text-xs text-white outline-none focus:border-mln-green w-full font-bold"
+                              />
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                type="button"
+                                disabled={savingPlayerId === p.id}
+                                onClick={() => handleSavePlayerDetails(p.id)}
+                                className="bg-mln-green hover:bg-white text-black px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                              >
+                                {savingPlayerId === p.id ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingPlayerId(null)}
+                                className="bg-background border border-border-color text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-white text-sm uppercase">{p.username}</span>
+                              {isCurrentPlayer && (
+                                <span className="text-[8px] bg-mln-green/20 text-mln-green font-bold px-1.5 py-0.5 rounded">You</span>
+                              )}
+                              {isOwner && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingPlayerId(p.id);
+                                    setEditPlayerForm({ username: p.username, gameId: p.gameId || '' });
+                                  }}
+                                  className="text-gray-500 hover:text-mln-green transition-colors p-1"
+                                  title="Edit player details"
+                                >
+                                  <Edit3 size={11} />
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase font-black tracking-wider mt-0.5">
+                              {isOwner ? (
+                                <select 
+                                  value={p.role} 
+                                  disabled={updatingRoleId === p.id}
+                                  onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                                  className="bg-background border border-border-color rounded px-1 py-0.5 text-white outline-none focus:border-mln-green disabled:opacity-50"
+                                >
+                                  {PLAYER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                              ) : (
+                                <span>{p.role}</span>
+                              )}
+                              <span>• {p.rank}</span>
+                            </div>
+                            {p.gameId && (
+                              <div className="text-[9px] text-mln-green font-bold tracking-widest mt-1">
+                                ID: {p.gameId}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {isOwner && !isCurrentPlayer && (

@@ -91,11 +91,14 @@ export async function PUT(req: Request) {
 
   let player;
   if (existing) {
+    const oldUsername = existing.username;
+    const newUsername = username.trim();
+
     // Update in place — never changes the realName (admin tag)
     player = await prisma.player.update({
       where: { id: existing.id },
       data: {
-        username:   username.trim(),
+        username:   newUsername,
         gameId:     gameId.trim(),
         state:      state      || 'Lagos',
         rank:       rank       || 'Epic',
@@ -104,6 +107,13 @@ export async function PUT(req: Request) {
         // Keep realName as adminTag — never expose real name via this route
       },
     });
+
+    if (oldUsername !== newUsername) {
+      await prisma.pick.updateMany({
+        where: { playerUsername: oldUsername },
+        data: { playerUsername: newUsername }
+      });
+    }
   } else {
     // We are setting up a profile for the first time.
     // Check if there is an unlinked player record created during team registration approval.
@@ -120,11 +130,14 @@ export async function PUT(req: Request) {
     });
 
     if (unlinked) {
+      const oldUsername = unlinked.username;
+      const newUsername = username.trim();
+
       // Link the existing player record to this user!
       player = await prisma.player.update({
         where: { id: unlinked.id },
         data: {
-          username:   username.trim(),
+          username:   newUsername,
           gameId:     gameId.trim(),
           realName:   adminTag, // Link it!
           state:      state      || unlinked.state,
@@ -133,6 +146,13 @@ export async function PUT(req: Request) {
           pictureUrl: pictureUrl || unlinked.pictureUrl || null,
         }
       });
+
+      if (oldUsername !== newUsername) {
+        await prisma.pick.updateMany({
+          where: { playerUsername: oldUsername },
+          data: { playerUsername: newUsername }
+        });
+      }
     } else {
       // Create a brand-new player record tagged to this admin account
       player = await prisma.player.create({
