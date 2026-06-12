@@ -135,7 +135,9 @@ export default function RegisterTeamPage() {
         setTeamSuggestions(teams);
         setShowSuggestions(true);
 
-        const exactMatch = teams.find((t: any) => t.name.trim().toLowerCase() === trimmed.toLowerCase());
+        const exactMatch = teams.find((t: any) => 
+          t.name.toLowerCase().replace(/\s+/g, '') === trimmed.toLowerCase().replace(/\s+/g, '')
+        );
         if (exactMatch) {
           selectExistingTeam(exactMatch);
         }
@@ -604,7 +606,9 @@ export default function RegisterTeamPage() {
                   // Auto-select match on click if not explicitly selected or marked new
                   let currentSelected = selectedTeam;
                   if (!currentSelected && !isNewTeam) {
-                    const exactMatch = teamSuggestions.find(t => t.name.toLowerCase() === teamName.toLowerCase());
+                    const exactMatch = teamSuggestions.find(t => 
+                      t.name.toLowerCase().replace(/\s+/g, '') === teamName.toLowerCase().replace(/\s+/g, '')
+                    );
                     if (exactMatch) {
                       currentSelected = exactMatch;
                       await selectExistingTeam(exactMatch);

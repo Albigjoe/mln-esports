@@ -6,13 +6,22 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get('q') || '').trim();
-    const teams = await prisma.team.findMany({
-      where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
-      take: 10,
-      orderBy: { name: 'asc' },
+    
+    const allTeams = await prisma.team.findMany({
       select: { id: true, name: true, logoUrl: true },
+      orderBy: { name: 'asc' }
     });
-    return NextResponse.json({ teams });
+
+    if (!q) {
+      return NextResponse.json({ teams: allTeams.slice(0, 10) });
+    }
+
+    const normalizedQuery = q.toLowerCase().replace(/\s+/g, '');
+    const matchedTeams = allTeams.filter(t => 
+      t.name.toLowerCase().replace(/\s+/g, '').includes(normalizedQuery)
+    );
+
+    return NextResponse.json({ teams: matchedTeams.slice(0, 10) });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
