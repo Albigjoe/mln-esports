@@ -130,22 +130,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'IGN and Game ID are required' }, { status: 400 });
     }
 
-    // Check if player already exists by username
+    // Check if player already exists by Game ID (since Game ID is permanent)
     const existingPlayer = await prisma.player.findUnique({
-      where: { username: username.trim() }
-    });
-
-    // Check if gameId is already taken by a DIFFERENT player
-    const existingGameIdPlayer = await prisma.player.findUnique({
       where: { gameId: gameId.trim() }
     });
 
+    // Check if the username is already taken by a DIFFERENT player
+    const existingUsernamePlayer = await prisma.player.findUnique({
+      where: { username: username.trim() }
+    });
+
     if (existingPlayer) {
-      if (existingPlayer.gameId && existingPlayer.gameId !== gameId.trim()) {
-        return NextResponse.json({ error: `This player is already registered with Game ID ${existingPlayer.gameId}. Game ID is permanent.` }, { status: 400 });
-      }
-      if (existingGameIdPlayer && existingGameIdPlayer.id !== existingPlayer.id) {
-        return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
+      if (existingUsernamePlayer && existingUsernamePlayer.id !== existingPlayer.id) {
+        return NextResponse.json({ error: 'That username is already taken by another player account' }, { status: 400 });
       }
 
       // If player is already on another team, don't allow stealing them unless owner kicks them first
@@ -153,12 +150,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: 'Player is already registered on another team' }, { status: 400 });
       }
 
+      const oldUsername = existingPlayer.username;
+      const newUsername = username.trim();
+
       // Add to team and update fields
       const updatedPlayer = await prisma.player.update({
         where: { id: existingPlayer.id },
         data: {
           teamId: id,
-          gameId: gameId.trim(),
+          username: newUsername, // Update to the new username if it changed
           realName: realName || existingPlayer.realName,
           role: role || existingPlayer.role || 'PLAYER',
           rank: rank || existingPlayer.rank || 'Mythic',
@@ -166,10 +166,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           pictureUrl: pictureUrl || existingPlayer.pictureUrl,
         }
       });
+
+      // Update historical picks if username changed
+      if (oldUsername !== newUsername) {
+        await prisma.pick.updateMany({
+          where: { playerUsername: oldUsername },
+          data: { playerUsername: newUsername }
+        });
+      }
+
       return NextResponse.json({ success: true, player: updatedPlayer });
     } else {
-      if (existingGameIdPlayer) {
-        return NextResponse.json({ error: 'That Game ID is already linked to another player account' }, { status: 400 });
+      if (existingUsernamePlayer) {
+        return NextResponse.json({ error: 'That username is already taken by another player account' }, { status: 400 });
       }
 
       // Create new player record and link to team

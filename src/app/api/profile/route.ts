@@ -121,12 +121,10 @@ export async function PUT(req: Request) {
   } else {
     // We are setting up a profile for the first time.
     // Check if there is an unlinked player record created during team registration approval.
+    // We look up ONLY by gameId, since Game ID is permanent and unique.
     const unlinked = await prisma.player.findFirst({
       where: {
-        OR: [
-          { username: username.trim() },
-          { gameId: gameId.trim() }
-        ],
+        gameId: gameId.trim(),
         NOT: {
           realName: { startsWith: 'admin:' }
         }
