@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { writeFile, mkdir } from 'fs/promises';
@@ -27,23 +27,42 @@ export async function POST(req: NextRequest) {
     // Create unique filename path
     const ext = file.name.split('.').pop() || 'png';
     const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-    const blobPath = `uploads/${folder}/${uniqueName}`;
+    const storagePath = `${folder}/${uniqueName}`;
 
     let url = '';
 
-    // 1. Try Vercel Blob first (if token is configured)
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
+    // 1. Try Supabase Storage first (if configured)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
-        const blob = await put(blobPath, file, {
-          access: 'public',
-        });
-        url = blob.url;
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { persistSession: false } }
+        );
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const { data, error } = await supabase.storage
+          .from('uploads')
+          .upload(storagePath, buffer, {
+            contentType: file.type,
+            upsert: false
+          });
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('uploads')
+          .getPublicUrl(storagePath);
+          
+        url = publicUrl;
       } catch (err: any) {
-        console.warn('Vercel Blob upload failed (perhaps limit reached), trying local/base64 fallback:', err);
+        console.warn('Supabase upload failed, trying local/base64 fallback:', err);
       }
     }
 
-    // 2. If Vercel Blob is not configured or failed, try local filesystem, then base64 fallback
+    // 2. If Supabase is not configured or failed, try local filesystem, then base64 fallback
     if (!url) {
       try {
         const bytes = await file.arrayBuffer();
@@ -73,4 +92,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Upload failed: ${error.message}` }, { status: 500 });
   }
 }
-
